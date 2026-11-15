@@ -45,6 +45,7 @@ services:
       MONGO_PORT: ${MONGO_PORT}
       MONGO_DATABASE: ${MONGO_DATABASE}
       MONGO_COLLECTION: ${MONGO_COLLECTION}
+      MONGO_NOTIFICATION_COLLECTION: ${MONGO_NOTIFICATION_COLLECTION}
     networks:
       - default
       - shared
@@ -70,6 +71,7 @@ services:
       - mongo_data:/data/db
     ports:
       - 127.0.0.1:${MONGO_PORT}:${MONGO_PORT}
+    command: mongod --port ${MONGO_PORT} --bind_ip_all
     restart: always
 
 volumes:
