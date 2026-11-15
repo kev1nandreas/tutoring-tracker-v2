@@ -320,3 +320,4 @@ bash cleanup.sh
 ```
 
 > Review the script before running — it removes files by name pattern.
+

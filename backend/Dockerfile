@@ -4,7 +4,8 @@ FROM golang:1.26-bookworm AS builder
 WORKDIR /app
 
 # Copy dependency files first for better layer caching
-COPY go.mod go.sum ./
+# go.sum is gitignored, so it is generated in the build instead of copied
+COPY go.mod ./
 RUN go mod download
 
 # Install swag before copying source code (cache this layer)
@@ -12,6 +13,9 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 # Copy source code
 COPY . .
+
+# Create go.sum / resolve any missing deps
+RUN go mod tidy
 
 # Generate swagger docs
 RUN swag init -g ./main.go -o ./docs

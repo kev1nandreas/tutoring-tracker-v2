@@ -10,15 +10,20 @@ services:
       - db
       - mongo
     environment:
+      APP_DEBUG: ${APP_DEBUG}
+      APP_MONGO_LOGGING: ${APP_MONGO_LOGGING}
+      APP_URL_PROD: ${APP_URL_PROD}
+      APP_PORT: ${APP_PORT}
+      APP_MIGRATIONS: ${APP_MIGRATIONS}
+      API_SECRET_KEY: ${API_SECRET_KEY}
       POSTGRES_HOST: db
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_PORT: ${POSTGRES_PORT}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      API_SECRET_KEY: ${API_SECRET_KEY}
-      REDIS_HOST: ${REDIS_HOST}
-      REDIS_PORT: ${REDIS_PORT}
+      REDIS_HOST: redis
+      REDIS_PORT: 6381
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       REDIS_DB: ${REDIS_DB}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT}
@@ -30,25 +35,28 @@ services:
       MINIO_PUBLIC_USE_SSL: ${MINIO_PUBLIC_USE_SSL}
       STORAGE_UPLOAD_URL_EXPIRY_MINUTES: ${STORAGE_UPLOAD_URL_EXPIRY_MINUTES}
       STORAGE_DOWNLOAD_URL_EXPIRY_MINUTES: ${STORAGE_DOWNLOAD_URL_EXPIRY_MINUTES}
-      RABBITMQ_HOST: ${RABBITMQ_HOST}
-      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_USE_SSL: ${RABBITMQ_USE_SSL}
       MONGO_HOST: mongo
       MONGO_PORT: ${MONGO_PORT}
-      MONGO_DB: ${MONGO_DB}
-      MONGO_USER: ${MONGO_USER}
-      MONGO_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_DATABASE: ${MONGO_DATABASE}
+      MONGO_COLLECTION: ${MONGO_COLLECTION}
+    networks:
+      - default
+      - shared
 
   db:
     image: postgres:14.1-alpine
     restart: always
     container_name: dockerPostgres-${APP_NAME}
     volumes:
-      - .dbdata:/var/lib/postgres
+      - pg_data:/var/lib/postgresql/data
     ports:
-      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+      - 127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}
     environment:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -61,8 +69,14 @@ services:
     volumes:
       - mongo_data:/data/db
     ports:
-      - "${MONGO_PORT}:${MONGO_PORT}"
+      - 127.0.0.1:${MONGO_PORT}:${MONGO_PORT}
     restart: always
 
 volumes:
   mongo_data: {}
+  pg_data: {}
+
+networks:
+  shared:
+    name: shared_net
+    external: true
