@@ -27,7 +27,7 @@ const ACCESS: {
 	{
 		key: "show_attendance",
 		label: "Attendance",
-		hint: "Their own attendance",
+		hint: "Photo check-in on the meeting day",
 		icon: UserCheck,
 	},
 	{

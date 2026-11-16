@@ -17,6 +17,12 @@ export const MAIN_ENDPOINT = {
 		Download: (id: string) => `/v1/attachments/${id}/download`,
 		Detail: (id: string) => `/v1/attachments/${id}`,
 	},
+	Attendance: {
+		Roster: (meetingId: string) => `/v1/meetings/${meetingId}/attendance`,
+		Mine: (meetingId: string) => `/v1/meetings/${meetingId}/attendance/me`,
+		UploadUrl: (meetingId: string) =>
+			`/v1/meetings/${meetingId}/attendance/upload-url`,
+	},
 	Bundle: {
 		Request: (tutorialId: string) => `/v1/me/tutorials/${tutorialId}/bundle`,
 		Status: (id: string) => `/v1/me/bundles/${id}`,

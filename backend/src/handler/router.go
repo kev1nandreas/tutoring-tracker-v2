@@ -29,6 +29,7 @@ type Handlers struct {
 	Job               *JobHandler
 	Dashboard         *DashboardHandler
 	Bundle            *BundleHandler
+	Attendance        *AttendanceHandler
 }
 
 func NewRouter(
@@ -112,6 +113,12 @@ func NewRouter(
 		protected.POST("/meetings/:id/attachments/upload-url", h.Attachment.CreateUploadTicket)
 		protected.POST("/meetings/:id/attachments/complete", h.Attachment.CompleteUploads)
 		protected.GET("/attachments/:id/download", h.Attachment.DownloadAttachment)
+
+		// attendance by photo (only when the tutorial's attendance switch is on)
+		protected.GET("/meetings/:id/attendance", h.Attendance.Roster)
+		protected.GET("/meetings/:id/attendance/me", h.Attendance.MyAttendance)
+		protected.POST("/meetings/:id/attendance", h.Attendance.MarkAttendance)
+		protected.POST("/meetings/:id/attendance/upload-url", h.Attendance.CreateUploadTicket)
 		protected.DELETE("/attachments/:id", h.Attachment.DeleteAttachment)
 		protected.GET("/meetings/:id/submissions", h.Submission.FindSubmissionsByMeeting)
 		protected.POST("/meetings/:id/submissions", h.Submission.CreateSubmission)

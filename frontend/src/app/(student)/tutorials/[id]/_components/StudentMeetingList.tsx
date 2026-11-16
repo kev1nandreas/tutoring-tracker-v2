@@ -11,7 +11,11 @@ import StudentMeetingDrawer from "./StudentMeetingDrawer";
 import StudentMeetingRow from "./StudentMeetingRow";
 import VideoModal from "./VideoModal";
 
-type Props = { meetings?: StudentMeeting[]; isLoading: boolean };
+type Props = {
+	meetings?: StudentMeeting[];
+	isLoading: boolean;
+	canAttend?: boolean;
+};
 type View = "all" | "upcoming" | "past";
 
 const EMPTY: Record<View, string> = {
@@ -23,6 +27,7 @@ const EMPTY: Record<View, string> = {
 export default function StudentMeetingList({
 	meetings = [],
 	isLoading,
+	canAttend,
 }: Props) {
 	const [view, setView] = useState<View>("all");
 	// ids, not objects, so the panel and player always show fresh data
@@ -113,6 +118,7 @@ export default function StudentMeetingList({
 				meeting={opened}
 				onClose={() => setOpenId(null)}
 				onWatch={(meeting) => setWatchId(meeting.id)}
+				canAttend={canAttend}
 			/>
 			<VideoModal
 				videoId={watching?.video_id || null}

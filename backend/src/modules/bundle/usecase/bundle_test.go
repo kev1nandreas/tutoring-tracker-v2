@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/objstore"
 	"io"
 	"os"
 	"sort"
@@ -103,7 +104,7 @@ func (s *fakeStore) GetObject(_ context.Context, key string) (io.ReadCloser, err
 func (s *fakeStore) StatSize(_ context.Context, key string) (int64, error) {
 	body, ok := s.files[key]
 	if !ok {
-		return 0, errors.New("no such key")
+		return 0, objstore.ErrNotFound
 	}
 	return int64(len(body)), nil
 }

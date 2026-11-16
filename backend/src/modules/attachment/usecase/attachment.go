@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/objstore"
 	"strings"
 	"time"
 
@@ -21,6 +22,8 @@ var (
 	ErrAttachmentNotFound = errors.New("attachment not found")
 	ErrForbidden          = errors.New("you are not allowed to do this")
 	ErrBadRequest         = errors.New("bad request")
+	// ErrStorage means the file storage could not be reached or refused the check.
+	ErrStorage = errors.New("file storage unavailable")
 )
 
 // MaterialNotifier is told whenever material is added to a meeting.
@@ -163,9 +166,12 @@ func (u *attachmentUsecase) CompleteUploads(ctx context.Context, meetingID strin
 		}
 
 		// trust the storage, not the client: the file must exist, and its real size is kept
-		size, err := u.store.StatSize(ctx, in.Key)
+		size, err := objstore.StatWithRetry(ctx, u.store.StatSize, in.Key)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %q was not uploaded", ErrBadRequest, in.Name)
+			if errors.Is(err, objstore.ErrNotFound) {
+				return nil, fmt.Errorf("%w: %q was not uploaded", ErrBadRequest, in.Name)
+			}
+			return nil, fmt.Errorf("could not check %q, please try again: %w", in.Name, ErrStorage)
 		}
 		if size > dto.MaxBytes[in.Type] {
 			_ = u.store.Remove(ctx, in.Key)

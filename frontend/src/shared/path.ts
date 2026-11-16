@@ -19,6 +19,10 @@ export const PATH = {
 export const homeworkPath = (tutorialId: string, meetingId: string) =>
 	`${PATH.TUTORIALS}/${tutorialId}/meetings/${meetingId}/homework`;
 
+/** Attendance (who checked in with a photo) of one meeting. */
+export const attendancePath = (tutorialId: string, meetingId: string) =>
+	`${PATH.TUTORIALS}/${tutorialId}/meetings/${meetingId}/attendance`;
+
 /** Landing page for a role after login. */
 export const homeForRole = (role?: Role): string =>
 	role === "student" ? PATH.STUDENT_HOME : PATH.DASHBOARD;

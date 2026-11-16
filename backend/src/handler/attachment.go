@@ -194,6 +194,8 @@ func (h *AttachmentHandler) fail(c *gin.Context, err error, msg string) {
 		response.NewErrorResponse(http.StatusNotFound, "Not found", err.Error()).Send(c)
 	case errors.Is(err, usecase.ErrForbidden):
 		response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
+	case errors.Is(err, usecase.ErrStorage):
+		response.NewErrorResponse(http.StatusBadGateway, "File storage unavailable", err.Error()).Send(c)
 	case errors.Is(err, usecase.ErrBadRequest):
 		response.NewErrorResponse(http.StatusBadRequest, "Bad Request", err.Error()).Send(c)
 	default:

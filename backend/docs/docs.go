@@ -1066,7 +1066,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UploadTicketRequest"
+                            "$ref": "#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicketRequest"
                         }
                     }
                 ],
@@ -1074,7 +1074,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UploadTicket"
+                            "$ref": "#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicket"
                         }
                     },
                     "400": {
@@ -1085,6 +1085,224 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}/attendance": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "The tutor of the tutorial (or an admin), when attendance is on. Lists every accepted student with their check-in and a short-lived link to their photo.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Who attended a meeting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Roster"
+                        }
+                    },
+                    "403": {
+                        "description": "Attendance is off",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Same access as the upload ticket. Saves the photo as the student's check-in; a second photo replaces the first.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Mark attendance with the uploaded photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Key of the uploaded photo",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MarkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MyAttendance"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Attendance is off, or not the meeting day",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}/attendance/me": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Students accepted into the class, when attendance is on. can_mark is true only on the meeting day.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "My attendance for a meeting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MyAttendance"
+                        }
+                    },
+                    "403": {
+                        "description": "Attendance is off",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}/attendance/upload-url": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Students accepted into the class, only on the day of the meeting, and only when the tutorial's attendance switch (show_attendance) is on. Photo: .jpg, .png or .webp, at most 10 MB. Upload it with the returned form, then call POST /meetings/{id}/attendance.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attendance"
+                ],
+                "summary": "Get a ticket to upload an attendance photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "File name and size",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicket"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Attendance is off, or not the meeting day",
                         "schema": {
                             "type": "string"
                         }
@@ -3015,6 +3233,10 @@ const docTemplate = `{
         "dto.EnrolledTutorial": {
             "type": "object",
             "properties": {
+                "can_attend": {
+                    "description": "CanAttend: the tutor turned on attendance (by photo) for this class.",
+                    "type": "boolean"
+                },
                 "can_download": {
                     "description": "CanDownload: the tutor turned on \"download everything\" for this class.",
                     "type": "boolean"
@@ -3146,6 +3368,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MarkRequest": {
+            "type": "object",
+            "required": [
+                "key"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.MeResponse": {
             "type": "object",
             "properties": {
@@ -3206,6 +3439,25 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tutorial_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MyAttendance": {
+            "type": "object",
+            "properties": {
+                "can_mark": {
+                    "description": "CanMark is true on the meeting's day: the only day a check-in is accepted.",
+                    "type": "boolean"
+                },
+                "marked": {
+                    "type": "boolean"
+                },
+                "marked_at": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "description": "PhotoURL is a short-lived link to the photo, only when marked.",
                     "type": "string"
                 }
             }
@@ -3403,6 +3655,46 @@ const docTemplate = `{
                 },
                 "total_bytes": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.Roster": {
+            "type": "object",
+            "properties": {
+                "present": {
+                    "type": "integer"
+                },
+                "students": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.StudentAttendance"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.StudentAttendance": {
+            "type": "object",
+            "properties": {
+                "marked_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "photo_url": {
+                    "type": "string"
+                },
+                "present": {
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -3743,50 +4035,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UploadTicket": {
-            "type": "object",
-            "properties": {
-                "content_type": {
-                    "type": "string"
-                },
-                "expires_in": {
-                    "description": "seconds",
-                    "type": "integer"
-                },
-                "fields": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "key": {
-                    "type": "string"
-                },
-                "upload_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "dto.UploadTicketRequest": {
-            "type": "object",
-            "required": [
-                "name",
-                "size",
-                "type"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string",
-                    "maxLength": 100
-                },
-                "size": {
-                    "type": "integer"
-                },
-                "type": {
-                    "type": "string"
-                }
-            }
-        },
         "dto.ValidateRequest": {
             "type": "object",
             "required": [
@@ -4065,6 +4313,90 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicket": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "description": "seconds",
+                    "type": "integer"
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "key": {
+                    "type": "string"
+                },
+                "upload_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicketRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "size",
+                "type"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicket": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "description": "seconds",
+                    "type": "integer"
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "key": {
+                    "type": "string"
+                },
+                "upload_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicketRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "size"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "size": {
+                    "type": "integer"
                 }
             }
         }

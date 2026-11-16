@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/objstore"
 	"io"
 	"log"
 	"sync"
@@ -294,11 +295,16 @@ func (u *bundleUsecase) settleFiles(ctx context.Context, plan *repository.Plan) 
 		kept := plan.Meetings[i].Files[:0]
 		for _, f := range plan.Meetings[i].Files {
 			size, err := u.store.StatSize(ctx, f.Key)
-			if err != nil {
-				log.Printf("bundle: leaving out %q (%s): %v", f.Name, f.Key, err)
+			switch {
+			case errors.Is(err, objstore.ErrNotFound):
+				log.Printf("bundle: leaving out %q (%s): not in storage", f.Name, f.Key)
 				continue
+			case err != nil:
+				// cannot tell: keep the file, copying it will skip it if it really is missing
+				log.Printf("bundle: could not check %q (%s): %v", f.Name, f.Key, err)
+			default:
+				f.Size = size
 			}
-			f.Size = size
 			f.ZipName = uniqueName(safeName(f.Name), used)
 			kept = append(kept, f)
 		}

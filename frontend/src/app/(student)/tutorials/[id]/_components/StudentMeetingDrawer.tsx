@@ -3,6 +3,7 @@
 import Drawer from "@mui/material/Drawer";
 import {
 	CalendarDays,
+	Camera,
 	Check,
 	Clock,
 	NotebookPen,
@@ -14,12 +15,15 @@ import {
 import Button from "@/components/button/Button";
 import { formatTimeRange, timeOf } from "@/lib/helper";
 import type { StudentMeeting } from "@/types/student-meeting";
+import StudentAttendance from "./StudentAttendance";
 import StudentMaterials from "./StudentMaterials";
 
 type Props = {
 	meeting: StudentMeeting | null;
 	onClose: () => void;
 	onWatch: (meeting: StudentMeeting) => void;
+	/** The tutor turned attendance on for this class. */
+	canAttend?: boolean;
 };
 
 const longDate = (iso: string) =>
@@ -55,6 +59,7 @@ export default function StudentMeetingDrawer({
 	meeting,
 	onClose,
 	onWatch,
+	canAttend,
 }: Props) {
 	return (
 		<Drawer
@@ -127,6 +132,12 @@ export default function StudentMeetingDrawer({
 								</p>
 							)}
 						</Section>
+
+						{canAttend && (
+							<Section icon={Camera} title="Attendance">
+								<StudentAttendance meetingId={meeting.id} />
+							</Section>
+						)}
 
 						<Section icon={Paperclip} title="Materials">
 							<StudentMaterials meetingId={meeting.id} />

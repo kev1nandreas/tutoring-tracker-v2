@@ -88,6 +88,7 @@ export default function TutorialDetail({ id }: { id: string }) {
 					) : (
 						<MeetingLedger
 							tutorialId={id}
+							showAttendance={tutorial?.show_attendance}
 							meetings={meetings}
 							isLoading={meetingsQuery.isLoading}
 						/>

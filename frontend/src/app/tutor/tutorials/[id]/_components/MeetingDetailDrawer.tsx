@@ -3,6 +3,7 @@
 import Drawer from "@mui/material/Drawer";
 import {
 	CalendarDays,
+	Camera,
 	Check,
 	ClipboardCheck,
 	Clock,
@@ -10,14 +11,19 @@ import {
 	Paperclip,
 	Pencil,
 	StickyNote,
+	Trash2,
 	Video,
 	X,
 } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 import Button from "@/components/button/Button";
+import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import { formatTimeRange, timeOf } from "@/lib/helper";
 import { homeworkPath } from "@/shared/path";
 import type { Meeting } from "@/types/meeting";
+import { useDeleteMeetingMutation } from "../_hooks/useMeetingMutations";
+import MeetingAttendance from "./MeetingAttendance";
 import MeetingMaterials from "./materials/MeetingMaterials";
 
 type Props = {
@@ -25,6 +31,8 @@ type Props = {
 	onClose: () => void;
 	onEdit: (meeting: Meeting) => void;
 	tutorialId: string;
+	/** Attendance is on for this tutorial: show who checked in. */
+	showAttendance?: boolean;
 };
 
 const longDate = (iso: string) =>
@@ -61,7 +69,13 @@ export default function MeetingDetailDrawer({
 	onClose,
 	onEdit,
 	tutorialId,
+	showAttendance,
 }: Props) {
+	const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
+	const remove = useDeleteMeetingMutation(meeting?.id ?? "", tutorialId, {
+		onSuccess: onClose,
+	});
+
 	return (
 		<Drawer
 			anchor="right"
@@ -145,6 +159,15 @@ export default function MeetingDetailDrawer({
 							)}
 						</Section>
 
+						{showAttendance && (
+							<Section icon={Camera} title="Attendance">
+								<MeetingAttendance
+									meetingId={meeting.id}
+									tutorialId={tutorialId}
+								/>
+							</Section>
+						)}
+
 						<Section icon={Paperclip} title="Materials">
 							<MeetingMaterials
 								meetingId={meeting.id}
@@ -178,20 +201,39 @@ export default function MeetingDetailDrawer({
 						</Section>
 					</div>
 
-					<footer className="flex justify-end gap-2 border-t border-gray-100 px-6 py-4">
-						<Button variant="outline" onClick={onClose}>
-							Close
-						</Button>
+					<footer className="flex items-center justify-between gap-2 border-t border-gray-100 px-6 py-4">
 						<Button
-							variant="brand"
-							leftIcon={Pencil}
-							onClick={() => onEdit(meeting)}
+							variant="outline"
+							leftIcon={Trash2}
+							isLoading={remove.isPending}
+							onClick={() => setIsDeleteOpen(true)}
 						>
-							Edit meeting
+							Delete
 						</Button>
+						<div className="flex gap-2">
+							<Button variant="outline" onClick={onClose}>
+								Close
+							</Button>
+							<Button
+								variant="brand"
+								leftIcon={Pencil}
+								onClick={() => onEdit(meeting)}
+							>
+								Edit meeting
+							</Button>
+						</div>
 					</footer>
 				</div>
 			)}
+			<ConfirmationDialog
+				isOpen={isDeleteOpen}
+				setIsOpen={setIsDeleteOpen}
+				message={`Delete "${meeting?.title ?? ""}"? Its files, submissions, grades and attendance photos are deleted too. This cannot be undone.`}
+				confirmLabel="Delete"
+				cancelLabel="Cancel"
+				confirmVariant="red"
+				onConfirm={() => remove.mutate()}
+			/>
 		</Drawer>
 	);
 }

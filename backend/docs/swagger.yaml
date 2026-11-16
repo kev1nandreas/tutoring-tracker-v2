@@ -170,6 +170,10 @@ definitions:
     type: object
   dto.EnrolledTutorial:
     properties:
+      can_attend:
+        description: 'CanAttend: the tutor turned on attendance (by photo) for this
+          class.'
+        type: boolean
       can_download:
         description: 'CanDownload: the tutor turned on "download everything" for this
           class.'
@@ -259,6 +263,13 @@ definitions:
       user:
         $ref: '#/definitions/dto.MeResponse'
     type: object
+  dto.MarkRequest:
+    properties:
+      key:
+        type: string
+    required:
+    - key
+    type: object
   dto.MeResponse:
     properties:
       created_at:
@@ -299,6 +310,20 @@ definitions:
       tutorial_id:
         type: string
       tutorial_name:
+        type: string
+    type: object
+  dto.MyAttendance:
+    properties:
+      can_mark:
+        description: 'CanMark is true on the meeting''s day: the only day a check-in
+          is accepted.'
+        type: boolean
+      marked:
+        type: boolean
+      marked_at:
+        type: string
+      photo_url:
+        description: PhotoURL is a short-lived link to the photo, only when marked.
         type: string
     type: object
   dto.MyEnrollment:
@@ -434,6 +459,32 @@ definitions:
         type: string
       total_bytes:
         type: integer
+    type: object
+  dto.Roster:
+    properties:
+      present:
+        type: integer
+      students:
+        items:
+          $ref: '#/definitions/dto.StudentAttendance'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.StudentAttendance:
+    properties:
+      marked_at:
+        type: string
+      name:
+        type: string
+      photo_url:
+        type: string
+      present:
+        type: boolean
+      user_id:
+        type: string
+      username:
+        type: string
     type: object
   dto.StudentDashboard:
     properties:
@@ -661,36 +712,6 @@ definitions:
       username:
         type: string
     type: object
-  dto.UploadTicket:
-    properties:
-      content_type:
-        type: string
-      expires_in:
-        description: seconds
-        type: integer
-      fields:
-        additionalProperties:
-          type: string
-        type: object
-      key:
-        type: string
-      upload_url:
-        type: string
-    type: object
-  dto.UploadTicketRequest:
-    properties:
-      name:
-        maxLength: 100
-        type: string
-      size:
-        type: integer
-      type:
-        type: string
-    required:
-    - name
-    - size
-    - type
-    type: object
   dto.ValidateRequest:
     properties:
       action:
@@ -879,6 +900,63 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicket:
+    properties:
+      content_type:
+        type: string
+      expires_in:
+        description: seconds
+        type: integer
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      key:
+        type: string
+      upload_url:
+        type: string
+    type: object
+  github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicketRequest:
+    properties:
+      name:
+        maxLength: 100
+        type: string
+      size:
+        type: integer
+      type:
+        type: string
+    required:
+    - name
+    - size
+    - type
+    type: object
+  github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicket:
+    properties:
+      content_type:
+        type: string
+      expires_in:
+        description: seconds
+        type: integer
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      key:
+        type: string
+      upload_url:
+        type: string
+    type: object
+  github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicketRequest:
+    properties:
+      name:
+        maxLength: 100
+        type: string
+      size:
+        type: integer
+    required:
+    - name
+    - size
     type: object
 externalDocs:
   description: OpenAPI
@@ -1588,14 +1666,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/dto.UploadTicketRequest'
+          $ref: '#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicketRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.UploadTicket'
+            $ref: '#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attachment_dto.UploadTicket'
         "400":
           description: Bad Request
           schema:
@@ -1613,6 +1691,152 @@ paths:
       summary: Get a ticket to upload a file to a meeting
       tags:
       - attachment
+  /meetings/{id}/attendance:
+    get:
+      description: The tutor of the tutorial (or an admin), when attendance is on.
+        Lists every accepted student with their check-in and a short-lived link to
+        their photo.
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Roster'
+        "403":
+          description: Attendance is off
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Who attended a meeting
+      tags:
+      - attendance
+    post:
+      consumes:
+      - application/json
+      description: Same access as the upload ticket. Saves the photo as the student's
+        check-in; a second photo replaces the first.
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Key of the uploaded photo
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MarkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MyAttendance'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Attendance is off, or not the meeting day
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Mark attendance with the uploaded photo
+      tags:
+      - attendance
+  /meetings/{id}/attendance/me:
+    get:
+      description: Students accepted into the class, when attendance is on. can_mark
+        is true only on the meeting day.
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MyAttendance'
+        "403":
+          description: Attendance is off
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: My attendance for a meeting
+      tags:
+      - attendance
+  /meetings/{id}/attendance/upload-url:
+    post:
+      consumes:
+      - application/json
+      description: 'Students accepted into the class, only on the day of the meeting,
+        and only when the tutorial''s attendance switch (show_attendance) is on. Photo:
+        .jpg, .png or .webp, at most 10 MB. Upload it with the returned form, then
+        call POST /meetings/{id}/attendance.'
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: File name and size
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_kev1nandreas_go-rest-api-template_src_modules_attendance_dto.UploadTicket'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Attendance is off, or not the meeting day
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Get a ticket to upload an attendance photo
+      tags:
+      - attendance
   /meetings/{id}/submissions:
     get:
       description: Includes the submitting user (id, name, username, school), grade

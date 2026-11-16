@@ -14,6 +14,8 @@ export type EnrolledTutorial = {
 	next_meeting_date: string;
 	/** The tutor turned on "download everything" for this class. */
 	can_download: boolean;
+	/** The tutor turned on attendance (by photo) for this class. */
+	can_attend: boolean;
 };
 
 export type EnrolledFilter = "all" | "active" | "done";

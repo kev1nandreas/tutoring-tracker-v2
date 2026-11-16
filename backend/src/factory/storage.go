@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/objstore"
 	"io"
 	"log"
 
@@ -109,11 +110,18 @@ func (s *Storage) PresignedPost(ctx context.Context, objectKey, contentType stri
 	return s.publicClient.PresignedPostPolicy(ctx, policy)
 }
 
-// StatSize returns the size of a stored object, or an error if it does not exist.
+// StatSize returns the size of a stored object. A missing object gives
+// objstore.ErrNotFound; any other failure (unreachable, denied, ...) is logged with its
+// real reason and returned, so it is not mistaken for "the file was not uploaded".
 func (s *Storage) StatSize(ctx context.Context, objectKey string) (int64, error) {
 	info, err := s.client.StatObject(ctx, s.bucket, objectKey, minio.StatObjectOptions{})
 	if err != nil {
-		return 0, err
+		resp := minio.ToErrorResponse(err)
+		if resp.Code == "NoSuchKey" || resp.Code == "NotFound" || resp.StatusCode == 404 {
+			return 0, objstore.ErrNotFound
+		}
+		log.Printf("storage: stat %q in bucket %q failed: code=%q status=%d: %v", objectKey, s.bucket, resp.Code, resp.StatusCode, err)
+		return 0, fmt.Errorf("storage unavailable: %w", err)
 	}
 	return info.Size, nil
 }

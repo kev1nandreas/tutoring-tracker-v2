@@ -178,7 +178,7 @@ export default function TutorialFormDialog({
 							<SwitchInput
 								id="show_attendance"
 								label="Attendance"
-								helperText="Students can see their attendance."
+								helperText="Students check in to each meeting with a photo, on the day of the meeting."
 							/>
 							<SwitchInput
 								id="show_feedback"

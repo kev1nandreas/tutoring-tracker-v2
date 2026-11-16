@@ -13,7 +13,13 @@ import MeetingDetailDrawer from "./MeetingDetailDrawer";
 import MeetingFormDialog from "./MeetingFormDialog";
 import MeetingRow from "./MeetingRow";
 
-type Props = { tutorialId: string; meetings?: Meeting[]; isLoading: boolean };
+type Props = {
+	tutorialId: string;
+	/** The tutorial's attendance switch; undefined while it loads. */
+	showAttendance?: boolean;
+	meetings?: Meeting[];
+	isLoading: boolean;
+};
 
 type View = "all" | "upcoming" | "past";
 
@@ -25,6 +31,7 @@ const EMPTY_TEXT: Record<View, string> = {
 
 export default function MeetingLedger({
 	tutorialId,
+	showAttendance,
 	meetings = [],
 	isLoading,
 }: Props) {
@@ -111,6 +118,7 @@ export default function MeetingLedger({
 								{showToday && i === todayAt && <TodayLine today={today} />}
 								<MeetingRow
 									meeting={m}
+									showAttendance={showAttendance}
 									isNext={m.id === nextId}
 									isPast={dateOf(m) < today}
 									onEdit={setEditing}
@@ -134,6 +142,7 @@ export default function MeetingLedger({
 					setEditing(meeting);
 				}}
 				tutorialId={tutorialId}
+				showAttendance={showAttendance}
 			/>
 			<MeetingFormDialog
 				isOpen={isAddOpen}

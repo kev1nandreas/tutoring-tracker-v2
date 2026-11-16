@@ -16,4 +16,6 @@ type EnrolledTutorial struct {
 	NextMeetingDate string `json:"next_meeting_date"`
 	// CanDownload: the tutor turned on "download everything" for this class.
 	CanDownload bool `json:"can_download"`
+	// CanAttend: the tutor turned on attendance (by photo) for this class.
+	CanAttend bool `json:"can_attend"`
 }

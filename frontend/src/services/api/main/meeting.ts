@@ -1,5 +1,5 @@
 import { ApiError } from "@/lib/errors";
-import { get, post, put } from "@/services/api/main/call";
+import { del, get, post, put } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
 import type { MainResponse } from "@/types/api";
 import type { Meeting, MeetingFormValues } from "@/types/meeting";
@@ -55,4 +55,18 @@ export async function fetchMeeting(id: string) {
 		);
 	}
 	return response.data;
+}
+
+/** Deletes the meeting; the server also removes its files, submissions and attendance photos. */
+export async function deleteMeeting(id: string) {
+	const { OK, Kind, StatusCode } = await del<MainResponse>(
+		MAIN_ENDPOINT.Meeting.Detail(id),
+	);
+	if (!OK) {
+		const response = Kind as MainResponse;
+		throw new ApiError(
+			response?.error || response?.message || "Failed to delete the meeting.",
+			StatusCode,
+		);
+	}
 }

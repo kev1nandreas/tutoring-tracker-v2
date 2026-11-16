@@ -79,6 +79,7 @@ export default function MyTutorialDetail({ id }: { id: string }) {
 					<StudentMeetingList
 						meetings={meetingsQuery.data}
 						isLoading={meetingsQuery.isLoading}
+						canAttend={tutorial?.can_attend}
 					/>
 				)}
 				{tutorial && (

@@ -24,19 +24,8 @@ export default function DownloadPackageCard({
 	const working =
 		b.isRequesting || status === "queued" || status === "preparing";
 
-	if (!tutorial.can_download) {
-		return (
-			<section className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-				<h2 className="flex items-center gap-2 text-base font-semibold text-gray-900">
-					<PackageOpen size={18} className="text-gray-400" aria-hidden />{" "}
-					Download everything
-				</h2>
-				<p className="mt-2 text-sm text-gray-500">
-					Your tutor has not turned on downloads for this class.
-				</p>
-			</section>
-		);
-	}
+	// the tutor turned it off: there is nothing to show
+	if (!tutorial.can_download) return null;
 
 	return (
 		<section className="rounded-xl border border-gray-200 bg-white">

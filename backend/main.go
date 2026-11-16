@@ -10,6 +10,7 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/factory"
 	"github.com/kev1nandreas/go-rest-api-template/src/handler"
 	attachmentFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/factory"
+	attendanceFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/attendance/factory"
 	bundleFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/factory"
 	bundleUsecase "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/usecase"
 	dashboardFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/dashboard/factory"
@@ -138,6 +139,7 @@ func main() {
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),
 		Dashboard:         handler.NewDashboardHandler(dashboardFactory.NewDashboardUsecase(db)),
 		Bundle:            handler.NewBundleHandler(bundleService),
+		Attendance:        handler.NewAttendanceHandler(attendanceFactory.NewAttendanceUsecase(db, storage)),
 	}
 
 	// Setup router
