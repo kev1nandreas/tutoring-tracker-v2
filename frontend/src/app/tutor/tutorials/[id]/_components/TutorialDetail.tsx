@@ -12,6 +12,7 @@ import {
 	useTutorialQuery,
 } from "../_hooks/useTutorialDetail";
 import MeetingLedger from "./MeetingLedger";
+import StudentsCard from "./StudentsCard";
 import TutorialActions from "./TutorialActions";
 import TutorialHeader from "./TutorialHeader";
 import TutorialInfoCard from "./TutorialInfoCard";
@@ -78,18 +79,23 @@ export default function TutorialDetail({ id }: { id: string }) {
 			)}
 
 			<div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-				{meetingsQuery.isError ? (
-					<DashboardError
-						message={meetingsQuery.error.message}
-						onRetry={() => meetingsQuery.refetch()}
-					/>
-				) : (
-					<MeetingLedger
-						tutorialId={id}
-						meetings={meetings}
-						isLoading={meetingsQuery.isLoading}
-					/>
-				)}
+				<div className="flex min-w-0 flex-col gap-4">
+					{meetingsQuery.isError ? (
+						<DashboardError
+							message={meetingsQuery.error.message}
+							onRetry={() => meetingsQuery.refetch()}
+						/>
+					) : (
+						<MeetingLedger
+							tutorialId={id}
+							meetings={meetings}
+							isLoading={meetingsQuery.isLoading}
+						/>
+					)}
+					{tutorial && (
+						<StudentsCard tutorialId={id} tutorialCode={tutorial.custom_id} />
+					)}
+				</div>
 				{tutorial && <TutorialInfoCard tutorial={tutorial} />}
 			</div>
 		</PageTemplate>

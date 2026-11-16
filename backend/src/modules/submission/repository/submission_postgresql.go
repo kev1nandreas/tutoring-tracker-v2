@@ -52,7 +52,7 @@ func (r *submissionPostgresRepository) FindByMeetingID(meetingID uuid.UUID, user
 
 func (r *submissionPostgresRepository) FindByID(id uuid.UUID) (*entity.Submission, error) {
 	var submission entity.Submission
-	if err := r.db.Where("id = ?", id).First(&submission).Error; err != nil {
+	if err := r.db.Preload("User").Where("id = ?", id).First(&submission).Error; err != nil {
 		return nil, err
 	}
 	return &submission, nil
@@ -64,4 +64,24 @@ func (r *submissionPostgresRepository) Create(submission *entity.Submission) err
 
 func (r *submissionPostgresRepository) Delete(submission *entity.Submission) error {
 	return r.db.Delete(submission).Error
+}
+
+func (r *submissionPostgresRepository) TutorialCreatorOfMeeting(meetingID uuid.UUID) (*uuid.UUID, error) {
+	var row struct{ CreatedBy *uuid.UUID }
+	res := r.db.Table("meetings").
+		Select("tutorials.created_by AS created_by").
+		Joins("JOIN tutorials ON tutorials.id = meetings.tutorial_id").
+		Where("meetings.id = ?", meetingID).
+		Limit(1).Scan(&row)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return row.CreatedBy, nil
+}
+
+func (r *submissionPostgresRepository) Update(submission *entity.Submission) error {
+	return r.db.Save(submission).Error
 }

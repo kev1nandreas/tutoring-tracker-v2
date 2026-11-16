@@ -22,7 +22,7 @@ func NewSubmissionHandler(uc usecase.SubmissionUsecase) *SubmissionHandler {
 
 // FindSubmissionsByMeeting godoc
 // @Summary List submissions of a meeting with pagination
-// @Description Includes the submitting user (id, name, username, school). A student only sees their own submissions; other roles see all.
+// @Description Includes the submitting user (id, name, username, school), grade and feedback. A student only sees their own submissions; a tutor only those of their own tutorials; an admin sees all.
 // @Tags submission
 // @Security JwtAuth
 // @Produce json
@@ -119,6 +119,41 @@ func (h *SubmissionHandler) DeleteSubmission(c *gin.Context) {
 	}.Send(c)
 }
 
+// GradeSubmission godoc
+// @Summary Grade a submission
+// @Description Sets grade (0-100) and feedback. Only the tutor of the meeting's tutorial, or an admin.
+// @Tags submission
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Submission ID"
+// @Param input body dto.GradeSubmissionRequest true "Grade and feedback"
+// @Success 200 {object} dto.SubmissionResponse
+// @Failure 400 {string} string "Bad Request"
+// @Failure 403 {string} string "Not a tutor"
+// @Failure 404 {string} string "Not found"
+// @Router /submissions/{id}/grade [put]
+func (h *SubmissionHandler) GradeSubmission(c *gin.Context) {
+	var input dto.GradeSubmissionRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", err.Error()).Send(c)
+		return
+	}
+
+	callerID, ok := h.callerID(c)
+	if !ok {
+		return
+	}
+
+	item, err := h.usecase.Grade(c.Param("id"), callerID, c.GetString("role"), input)
+	if err != nil {
+		h.fail(c, err, "Failed to grade submission")
+		return
+	}
+
+	response.NewSuccessResponse("Submission graded successfully", item).Send(c)
+}
+
 func (h *SubmissionHandler) callerID(c *gin.Context) (uuid.UUID, bool) {
 	id, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {
@@ -132,7 +167,7 @@ func (h *SubmissionHandler) fail(c *gin.Context, err error, msg string) {
 	switch {
 	case errors.Is(err, usecase.ErrMeetingNotFound), errors.Is(err, usecase.ErrSubmissionNotFound):
 		response.NewErrorResponse(http.StatusNotFound, "Not found", err.Error()).Send(c)
-	case errors.Is(err, usecase.ErrForbidden):
+	case errors.Is(err, usecase.ErrForbidden), errors.Is(err, usecase.ErrGradeForbidden):
 		response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
 	default:
 		response.NewErrorResponse(http.StatusInternalServerError, msg, err.Error()).Send(c)

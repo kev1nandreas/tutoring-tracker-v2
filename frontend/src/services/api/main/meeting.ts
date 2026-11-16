@@ -1,5 +1,5 @@
 import { ApiError } from "@/lib/errors";
-import { post, put } from "@/services/api/main/call";
+import { get, post, put } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
 import type { MainResponse } from "@/types/api";
 import type { Meeting, MeetingFormValues } from "@/types/meeting";
@@ -36,6 +36,21 @@ export async function updateMeeting(id: string, data: MeetingFormValues) {
 	if (!OK) {
 		throw new ApiError(
 			response?.error || response?.message || "Failed to update the meeting.",
+			StatusCode,
+		);
+	}
+	return response.data;
+}
+
+export async function fetchMeeting(id: string) {
+	const { OK, Kind, StatusCode } = await get<MainResponse<Meeting>>(
+		MAIN_ENDPOINT.Meeting.Detail(id),
+	);
+	const response = Kind as MainResponse<Meeting>;
+
+	if (!OK || !response?.data) {
+		throw new ApiError(
+			response?.error || response?.message || "Failed to load the meeting.",
 			StatusCode,
 		);
 	}

@@ -128,6 +128,7 @@ export default function MeetingLedger({
 									isPast={dateOf(m) < today}
 									onEdit={setEditing}
 									onOpen={(meeting) => setSelectedId(meeting.id)}
+									tutorialId={tutorialId}
 								/>
 							</Fragment>
 						))}
@@ -145,6 +146,7 @@ export default function MeetingLedger({
 					setSelectedId(null);
 					setEditing(meeting);
 				}}
+				tutorialId={tutorialId}
 			/>
 			<MeetingFormDialog
 				isOpen={isAddOpen}

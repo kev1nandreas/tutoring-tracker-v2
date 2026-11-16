@@ -10,7 +10,10 @@ type SubmissionRepository interface {
 	MeetingExists(meetingID uuid.UUID) (bool, error)
 	// FindByMeetingID lists submissions of a meeting; a non-nil userID limits it to that user's.
 	FindByMeetingID(meetingID uuid.UUID, userID *uuid.UUID, params pagination.Params) ([]entity.Submission, pagination.Meta, error)
+	// TutorialCreatorOfMeeting returns tutorials.created_by for the meeting (nil when unset); gorm.ErrRecordNotFound if the meeting is missing.
+	TutorialCreatorOfMeeting(meetingID uuid.UUID) (*uuid.UUID, error)
 	FindByID(id uuid.UUID) (*entity.Submission, error)
+	Update(submission *entity.Submission) error
 	Create(submission *entity.Submission) error
 	Delete(submission *entity.Submission) error
 }

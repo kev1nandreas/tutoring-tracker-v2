@@ -4,6 +4,7 @@ import Drawer from "@mui/material/Drawer";
 import {
 	CalendarDays,
 	Check,
+	ClipboardCheck,
 	Clock,
 	NotebookPen,
 	Pencil,
@@ -11,14 +12,17 @@ import {
 	Video,
 	X,
 } from "lucide-react";
+import Link from "next/link";
 import Button from "@/components/button/Button";
 import { formatTimeRange, timeOf } from "@/lib/helper";
+import { homeworkPath } from "@/shared/path";
 import type { Meeting } from "@/types/meeting";
 
 type Props = {
 	meeting: Meeting | null;
 	onClose: () => void;
 	onEdit: (meeting: Meeting) => void;
+	tutorialId: string;
 };
 
 const longDate = (iso: string) =>
@@ -54,6 +58,7 @@ export default function MeetingDetailDrawer({
 	meeting,
 	onClose,
 	onEdit,
+	tutorialId,
 }: Props) {
 	return (
 		<Drawer
@@ -116,10 +121,21 @@ export default function MeetingDetailDrawer({
 
 						<Section icon={NotebookPen} title="Homework">
 							{meeting.has_homework ? (
-								<p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-									{meeting.text_homework ||
-										"Homework is assigned, but no instructions were added."}
-								</p>
+								<>
+									<p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+										{meeting.text_homework ||
+											"Homework is assigned, but no instructions were added."}
+									</p>
+									<div className="mt-3">
+										<Link
+											href={homeworkPath(tutorialId, meeting.id)}
+											className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 transition-colors hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-brand-600"
+										>
+											<ClipboardCheck size={14} aria-hidden />
+											See homework
+										</Link>
+									</div>
+								</>
 							) : (
 								<p className="text-sm text-gray-400">
 									No homework for this meeting.

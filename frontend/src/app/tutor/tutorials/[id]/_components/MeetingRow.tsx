@@ -1,6 +1,14 @@
-import { Check, NotebookPen, Pencil, Video } from "lucide-react";
+import {
+	Check,
+	ClipboardCheck,
+	NotebookPen,
+	Pencil,
+	Video,
+} from "lucide-react";
+import Link from "next/link";
 import clsxm from "@/lib/clsxm";
 import { formatTimeRange, timeOf } from "@/lib/helper";
+import { homeworkPath } from "@/shared/path";
 import type { Meeting } from "@/types/meeting";
 
 type Props = {
@@ -10,6 +18,7 @@ type Props = {
 	isPast: boolean;
 	onEdit: (meeting: Meeting) => void;
 	onOpen: (meeting: Meeting) => void;
+	tutorialId: string;
 };
 
 const WEEKDAY = new Intl.DateTimeFormat("en-GB", { weekday: "short" });
@@ -22,6 +31,7 @@ export default function MeetingRow({
 	isPast,
 	onEdit,
 	onOpen,
+	tutorialId,
 }: Props) {
 	const day = new Date(`${meeting.date.slice(0, 10)}T00:00:00`);
 	const needsUpdate = isPast && !meeting.is_done;
@@ -97,6 +107,17 @@ export default function MeetingRow({
 					</span>
 				) : null}
 			</div>
+
+			{meeting.has_homework && (
+				<Link
+					href={homeworkPath(tutorialId, meeting.id)}
+					aria-label={`See homework for ${meeting.title}`}
+					className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-md border border-[#d8e0f0] bg-white px-2.5 py-1.5 text-xs font-medium text-brand-800 transition-colors hover:border-brand-300 hover:bg-brand-50 focus-visible:outline-2 focus-visible:outline-brand-600"
+				>
+					<ClipboardCheck size={14} aria-hidden />
+					<span className="hidden sm:inline">See homework</span>
+				</Link>
+			)}
 
 			<button
 				type="button"

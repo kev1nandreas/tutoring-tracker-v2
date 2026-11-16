@@ -6,10 +6,18 @@ export const MAIN_ENDPOINT = {
 		List: "/v1/tutorials",
 		Detail: (id: string) => `/v1/tutorials/${id}`,
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
+		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
+	},
+	Enrollment: {
+		Validate: "/v1/pending-validations/validate",
+	},
+	Submission: {
+		Grade: (id: string) => `/v1/submissions/${id}/grade`,
 	},
 	Meeting: {
 		Create: "/v1/meetings",
 		Detail: (id: string) => `/v1/meetings/${id}`,
+		Submissions: (id: string) => `/v1/meetings/${id}/submissions`,
 	},
 	Dashboard: {
 		Tutor: "/v1/dashboard/tutor",

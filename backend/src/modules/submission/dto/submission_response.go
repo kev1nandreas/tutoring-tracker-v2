@@ -22,6 +22,9 @@ type SubmissionResponse struct {
 	User      *SubmissionUser `json:"user,omitempty"`
 	Answer    string          `json:"answer"`
 	Files     string          `json:"files"`
+	Grade     *int            `json:"grade"`
+	Feedback  string          `json:"feedback"`
+	GradedAt  *time.Time      `json:"graded_at"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
 }
@@ -34,6 +37,9 @@ func ToSubmissionResponse(s entity.Submission) SubmissionResponse {
 		UserID:    s.UserID,
 		Answer:    s.Answer,
 		Files:     s.Files,
+		Grade:     s.Grade,
+		Feedback:  s.Feedback,
+		GradedAt:  s.GradedAt,
 		CreatedAt: s.CreatedAt,
 		UpdatedAt: s.UpdatedAt,
 	}

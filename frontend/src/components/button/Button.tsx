@@ -102,6 +102,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 					}),
 					...(variant === "outline" && {
 						color: "text.primary",
+						// solid, so it stays legible over graph paper and artwork
+						backgroundColor: "common.white",
 						borderColor: "grey.300",
 						"&:hover": {
 							backgroundColor: "grey.200",

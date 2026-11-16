@@ -101,6 +101,7 @@ func NewRouter(
 		protected.DELETE("/attachments/:id", h.Attachment.DeleteAttachment)
 		protected.GET("/meetings/:id/submissions", h.Submission.FindSubmissionsByMeeting)
 		protected.POST("/meetings/:id/submissions", h.Submission.CreateSubmission)
+		protected.PUT("/submissions/:id/grade", h.Submission.GradeSubmission)
 		protected.DELETE("/submissions/:id", h.Submission.DeleteSubmission)
 		protected.PUT("/meetings/:id", h.Meeting.UpdateMeeting)
 		protected.DELETE("/meetings/:id", h.Meeting.DeleteMeeting)

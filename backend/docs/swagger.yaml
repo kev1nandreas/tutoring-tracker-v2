@@ -124,6 +124,18 @@ definitions:
     required:
     - tutorial_code
     type: object
+  dto.GradeSubmissionRequest:
+    properties:
+      feedback:
+        maxLength: 500
+        type: string
+      grade:
+        maximum: 100
+        minimum: 0
+        type: integer
+    required:
+    - grade
+    type: object
   dto.Income:
     properties:
       month:
@@ -317,7 +329,13 @@ definitions:
         type: string
       created_at:
         type: string
+      feedback:
+        type: string
       files:
+        type: string
+      grade:
+        type: integer
+      graded_at:
         type: string
       id:
         type: string
@@ -1125,8 +1143,9 @@ paths:
       - attachment
   /meetings/{id}/submissions:
     get:
-      description: Includes the submitting user (id, name, username, school). A student
-        only sees their own submissions; other roles see all.
+      description: Includes the submitting user (id, name, username, school), grade
+        and feedback. A student only sees their own submissions; a tutor only those
+        of their own tutorials; an admin sees all.
       parameters:
       - description: Meeting ID
         in: path
@@ -1723,6 +1742,48 @@ paths:
       security:
       - JwtAuth: []
       summary: Delete a submission by ID
+      tags:
+      - submission
+  /submissions/{id}/grade:
+    put:
+      consumes:
+      - application/json
+      description: Sets grade (0-100) and feedback. Only the tutor of the meeting's
+        tutorial, or an admin.
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Grade and feedback
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GradeSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.SubmissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Not a tutor
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Grade a submission
       tags:
       - submission
   /tutorials:

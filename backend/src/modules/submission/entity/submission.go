@@ -16,6 +16,10 @@ type Submission struct {
 	User      userEntity.User       `json:"-" gorm:"foreignKey:UserID"`
 	Answer    string                `json:"answer" gorm:"type:text"`
 	Files     string                `json:"files" gorm:"size:255;not null"`
-	CreatedAt time.Time             `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt time.Time             `json:"updated_at" gorm:"autoUpdateTime"`
+	// Set by the tutor: 0-100, nil until graded.
+	Grade     *int       `json:"grade" gorm:"type:smallint"`
+	Feedback  string     `json:"feedback" gorm:"size:500"`
+	GradedAt  *time.Time `json:"graded_at"`
+	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 }

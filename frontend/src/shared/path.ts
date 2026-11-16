@@ -12,6 +12,10 @@ export const PATH = {
 	RESET_PASSWORD: "/reset-password",
 };
 
+/** Homework (submissions and grading) of one meeting. */
+export const homeworkPath = (tutorialId: string, meetingId: string) =>
+	`${PATH.TUTORIALS}/${tutorialId}/meetings/${meetingId}/homework`;
+
 /** Landing page for a role after login. */
 export const homeForRole = (role?: Role): string =>
 	role === "student" ? PATH.STUDENT_HOME : PATH.DASHBOARD;
