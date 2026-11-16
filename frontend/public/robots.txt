@@ -7,7 +7,7 @@ User-agent: *
 Disallow: /sandbox
 
 # Host
-Host: 'http://localhost:3000/' # Site URL
+Host: 'https://tutoring-tracker.kevin-andreas.com' # Site URL
 
 # Sitemaps
-Sitemap: 'http://localhost:3000/' # Site URL/sitemap.xml
+Sitemap: 'https://tutoring-tracker.kevin-andreas.com' # Site URL/sitemap.xml

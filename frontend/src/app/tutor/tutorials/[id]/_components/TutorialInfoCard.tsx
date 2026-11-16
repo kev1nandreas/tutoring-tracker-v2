@@ -9,6 +9,7 @@ import Typography from "@/components/Typography";
 import clsxm from "@/lib/clsxm";
 import { formatShortDate } from "@/lib/helper";
 import type { Tutorial } from "@/types/tutorial";
+import { CopyEnrollButton, CopyFeedbackButton } from "./CopyActions";
 
 type AccessKey = "show_download" | "show_attendance" | "show_feedback";
 
@@ -69,6 +70,11 @@ export default function TutorialInfoCard({ tutorial }: { tutorial: Tutorial }) {
 				<Row label="Ends" value={formatShortDate(tutorial.date_ended)} />
 				<Row label="Created" value={formatShortDate(tutorial.created_at)} />
 			</dl>
+
+			<div className="flex flex-col items-start gap-2 border-t border-gray-100 px-5 py-4">
+				<CopyEnrollButton tutorial={tutorial} />
+				<CopyFeedbackButton tutorial={tutorial} />
+			</div>
 
 			<div className="border-t border-gray-100 px-5 py-4">
 				<Typography weight="medium" className="text-sm text-gray-900">
