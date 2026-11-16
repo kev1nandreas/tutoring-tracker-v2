@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -13,17 +14,23 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 )
 
-type meetingUsecase struct {
-	repo repository.MeetingRepository
-	loc  *time.Location
+// FileCleaner removes the stored files of meetings that were deleted.
+type FileCleaner interface {
+	RemoveMeetingFiles(ctx context.Context, meetingIDs []uuid.UUID)
 }
 
-func NewMeetingUsecase(repo repository.MeetingRepository) MeetingUsecase {
+type meetingUsecase struct {
+	repo  repository.MeetingRepository
+	loc   *time.Location
+	files FileCleaner
+}
+
+func NewMeetingUsecase(repo repository.MeetingRepository, files FileCleaner) MeetingUsecase {
 	loc, err := time.LoadLocation(config.GetEnvString("APP_TIMEZONE", "Asia/Jakarta"))
 	if err != nil {
 		loc = time.UTC
 	}
-	return &meetingUsecase{repo: repo, loc: loc}
+	return &meetingUsecase{repo: repo, loc: loc, files: files}
 }
 
 func (u *meetingUsecase) FindAll(params pagination.Params) ([]entity.Meeting, pagination.Meta, error) {
@@ -135,5 +142,10 @@ func (u *meetingUsecase) Delete(id string) error {
 		return err
 	}
 
-	return u.repo.Delete(meeting)
+	// the database removes its attachments and submissions; sweep the stored files after
+	if err := u.repo.Delete(meeting); err != nil {
+		return err
+	}
+	u.files.RemoveMeetingFiles(context.Background(), []uuid.UUID{meeting.ID})
+	return nil
 }

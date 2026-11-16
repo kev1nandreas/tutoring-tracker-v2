@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewTutorialUsecase(db *gorm.DB) usecase.TutorialUsecase {
+func NewTutorialUsecase(db *gorm.DB, files usecase.FileCleaner) usecase.TutorialUsecase {
 	repo := repository.NewTutorialPostgresRepository(db)
-	return usecase.NewTutorialUsecase(repo)
+	return usecase.NewTutorialUsecase(repo, files)
 }

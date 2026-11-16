@@ -10,7 +10,7 @@ import (
 type Meeting struct {
 	ID           uuid.UUID               `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	TutorialID   uuid.UUID               `json:"tutorial_id" gorm:"type:uuid;not null"`
-	Tutorial     tutorialEntity.Tutorial `json:"-" gorm:"foreignKey:TutorialID"`
+	Tutorial     tutorialEntity.Tutorial `json:"-" gorm:"foreignKey:TutorialID;constraint:OnDelete:CASCADE"`
 	Title        string                  `json:"title" gorm:"size:100;not null"`
 	Date         time.Time               `json:"date" gorm:"type:date;not null"`
 	YoutubeLink  string                  `json:"youtube_link" gorm:"size:100;not null"`

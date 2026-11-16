@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -140,12 +141,57 @@ func Xss() gin.HandlerFunc {
 	return xssMdlwr.RemoveXss()
 }
 
-// RateLimiter limits request rate
+// clientLimiter is one client's token bucket and when it was last used.
+type clientLimiter struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
+// RateLimiter gives every client its own token bucket: r tokens refill per second up to
+// a burst of b, and each request costs one. For 60 requests per minute use
+// rate.Every(time.Minute/60) and a burst of 60.
+//
+// A client is the signed-in user when the JWT middleware has already run (put this
+// AFTER it), otherwise the IP. Keying by IP alone would be wrong here: the web app calls
+// the API from its own server, so every user would share one bucket.
+// Idle clients are forgotten after 10 minutes so the map cannot grow without bound.
 func RateLimiter(r rate.Limit, b int) gin.HandlerFunc {
-	limiter := rate.NewLimiter(r, b)
+	var (
+		mu      sync.Mutex
+		clients = make(map[string]*clientLimiter)
+	)
+
+	go func() {
+		for range time.Tick(time.Minute) {
+			mu.Lock()
+			for key, c := range clients {
+				if time.Since(c.lastSeen) > 10*time.Minute {
+					delete(clients, key)
+				}
+			}
+			mu.Unlock()
+		}
+	}()
+
 	return func(c *gin.Context) {
-		if !limiter.AllowN(time.Now(), 1) {
-			c.String(http.StatusTooManyRequests, "Rate limit exceeded")
+		key := "ip:" + c.ClientIP()
+		if uid := c.GetString("user_id"); uid != "" {
+			key = "user:" + uid
+		}
+
+		mu.Lock()
+		client, ok := clients[key]
+		if !ok {
+			client = &clientLimiter{limiter: rate.NewLimiter(r, b)}
+			clients[key] = client
+		}
+		client.lastSeen = time.Now()
+		allowed := client.limiter.Allow()
+		mu.Unlock()
+
+		if !allowed {
+			c.Header("Retry-After", "1")
+			response.NewErrorResponse(http.StatusTooManyRequests, "Too many requests", "rate limit exceeded, please wait a moment").Send(c)
 			c.Abort()
 			return
 		}

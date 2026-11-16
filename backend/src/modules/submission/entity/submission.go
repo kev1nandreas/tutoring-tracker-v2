@@ -11,7 +11,7 @@ import (
 type Submission struct {
 	ID        uuid.UUID             `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	MeetingID uuid.UUID             `json:"meeting_id" gorm:"type:uuid;not null"`
-	Meeting   meetingEntity.Meeting `json:"-" gorm:"foreignKey:MeetingID"`
+	Meeting   meetingEntity.Meeting `json:"-" gorm:"foreignKey:MeetingID;constraint:OnDelete:CASCADE"`
 	UserID    uuid.UUID             `json:"user_id" gorm:"type:uuid;not null"`
 	User      userEntity.User       `json:"-" gorm:"foreignKey:UserID"`
 	Answer    string                `json:"answer" gorm:"type:text"`

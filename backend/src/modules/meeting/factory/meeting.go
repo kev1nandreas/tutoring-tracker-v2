@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewMeetingUsecase(db *gorm.DB) usecase.MeetingUsecase {
+func NewMeetingUsecase(db *gorm.DB, files usecase.FileCleaner) usecase.MeetingUsecase {
 	repo := repository.NewMeetingPostgresRepository(db)
-	return usecase.NewMeetingUsecase(repo)
+	return usecase.NewMeetingUsecase(repo, files)
 }

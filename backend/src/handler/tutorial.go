@@ -239,7 +239,7 @@ func (h *TutorialHandler) UpdateTutorial(c *gin.Context) {
 
 // DeleteTutorial godoc
 // @Summary Delete a tutorial by ID
-// @Description Only the tutor who created the tutorial (or an admin) can delete it. Fails with 409 while it still has meetings, payments or students.
+// @Description Only the tutor who created the tutorial (or an admin) can delete it. Also deletes its meetings with their files and submissions, and its enrollments. Fails with 409 while it still has payments (payment records are never deleted automatically).
 // @Tags tutorial
 // @Security JwtAuth
 // @Produce json
@@ -247,7 +247,7 @@ func (h *TutorialHandler) UpdateTutorial(c *gin.Context) {
 // @Success 204 {string} string "Deleted"
 // @Failure 403 {string} string "Forbidden"
 // @Failure 404 {string} string "Not found"
-// @Failure 409 {string} string "Tutorial still has related data"
+// @Failure 409 {string} string "Tutorial still has payments"
 // @Router /tutorials/{id} [delete]
 func (h *TutorialHandler) DeleteTutorial(c *gin.Context) {
 	if !h.canManage(c) {
@@ -296,7 +296,7 @@ func (h *TutorialHandler) notFoundOrError(c *gin.Context, err error) {
 	// foreign key violation: meetings, payments or students still reference it
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
-		response.NewErrorResponse(http.StatusConflict, "Tutorial still has related data", "remove its meetings, payments and students first").Send(c)
+		response.NewErrorResponse(http.StatusConflict, "Tutorial still has related data", "this tutorial still has payments; payment records are kept, so delete or reassign them first").Send(c)
 		return
 	}
 

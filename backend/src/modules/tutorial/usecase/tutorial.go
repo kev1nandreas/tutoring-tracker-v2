@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"gorm.io/gorm"
 	"time"
 
@@ -17,12 +18,18 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 )
 
-type tutorialUsecase struct {
-	repo repository.TutorialRepository
+// FileCleaner removes the stored files of meetings that were deleted.
+type FileCleaner interface {
+	RemoveMeetingFiles(ctx context.Context, meetingIDs []uuid.UUID)
 }
 
-func NewTutorialUsecase(repo repository.TutorialRepository) TutorialUsecase {
-	return &tutorialUsecase{repo: repo}
+type tutorialUsecase struct {
+	repo  repository.TutorialRepository
+	files FileCleaner
+}
+
+func NewTutorialUsecase(repo repository.TutorialRepository, files FileCleaner) TutorialUsecase {
+	return &tutorialUsecase{repo: repo, files: files}
 }
 
 func (u *tutorialUsecase) FindAll(params pagination.Params, creatorID *uuid.UUID) ([]entity.Tutorial, pagination.Meta, error) {
@@ -136,7 +143,17 @@ func (u *tutorialUsecase) Delete(id string) error {
 		return err
 	}
 
-	return u.repo.Delete(tutorial)
+	// the database removes the meetings, submissions, attachments and enrollments with
+	// the tutorial; the stored files need their ids first, then a sweep once it is gone
+	meetingIDs, err := u.repo.MeetingIDs(tutorial.ID)
+	if err != nil {
+		return err
+	}
+	if err := u.repo.Delete(tutorial); err != nil {
+		return err
+	}
+	u.files.RemoveMeetingFiles(context.Background(), meetingIDs)
+	return nil
 }
 
 const (

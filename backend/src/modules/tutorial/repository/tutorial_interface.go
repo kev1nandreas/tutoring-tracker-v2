@@ -14,6 +14,8 @@ type TutorialRepository interface {
 	FindEnrolled(userID uuid.UUID, done *bool, today string, params pagination.Params) ([]dto.EnrolledTutorial, pagination.Meta, error)
 	// FindEnrolledByID returns one tutorial the user was accepted into; gorm.ErrRecordNotFound otherwise.
 	FindEnrolledByID(userID, tutorialID uuid.UUID, today string) (*dto.EnrolledTutorial, error)
+	// MeetingIDs lists the ids of the tutorial's meetings.
+	MeetingIDs(tutorialID uuid.UUID) ([]uuid.UUID, error)
 	ExistsByCustomID(customID string) (bool, error)
 	Create(tutorial *entity.Tutorial) error
 	Update(tutorial *entity.Tutorial) error

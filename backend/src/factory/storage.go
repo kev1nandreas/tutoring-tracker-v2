@@ -1,8 +1,11 @@
 package factory
 
 import (
+	"log"
+
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"net/url"
 	"time"
 
@@ -80,4 +83,67 @@ func (s *Storage) PresignedUploadURL(ctx context.Context, objectKey string) (*ur
 // PresignedDownloadURL returns a GET URL valid for DownloadExpiry.
 func (s *Storage) PresignedDownloadURL(ctx context.Context, objectKey string) (*url.URL, error) {
 	return s.publicClient.PresignedGetObject(ctx, s.bucket, objectKey, s.DownloadExpiry, nil)
+}
+
+// PresignedPost returns a browser form-upload (POST) target: the URL and the form fields
+// to send before the file. MinIO itself enforces the key, the content type and the size
+// range (1..maxBytes), so a client cannot upload anything else with this ticket.
+func (s *Storage) PresignedPost(ctx context.Context, objectKey, contentType string, maxBytes int64) (*url.URL, map[string]string, error) {
+	policy := minio.NewPostPolicy()
+	if err := policy.SetBucket(s.bucket); err != nil {
+		return nil, nil, err
+	}
+	if err := policy.SetKey(objectKey); err != nil {
+		return nil, nil, err
+	}
+	if err := policy.SetExpires(time.Now().UTC().Add(s.UploadExpiry)); err != nil {
+		return nil, nil, err
+	}
+	if err := policy.SetContentType(contentType); err != nil {
+		return nil, nil, err
+	}
+	if err := policy.SetContentLengthRange(1, maxBytes); err != nil {
+		return nil, nil, err
+	}
+	return s.publicClient.PresignedPostPolicy(ctx, policy)
+}
+
+// StatSize returns the size of a stored object, or an error if it does not exist.
+func (s *Storage) StatSize(ctx context.Context, objectKey string) (int64, error) {
+	info, err := s.client.StatObject(ctx, s.bucket, objectKey, minio.StatObjectOptions{})
+	if err != nil {
+		return 0, err
+	}
+	return info.Size, nil
+}
+
+// PresignedDownload returns a GET URL. The response headers are set from the
+// arguments (not from whatever was stored), so inline vs attachment is decided here.
+func (s *Storage) PresignedDownload(ctx context.Context, objectKey, filename, contentType string, inline bool) (*url.URL, error) {
+	disposition := "attachment"
+	if inline {
+		disposition = "inline"
+	}
+	params := url.Values{}
+	params.Set("response-content-disposition", fmt.Sprintf("%s; filename*=UTF-8''%s", disposition, url.PathEscape(filename)))
+	params.Set("response-content-type", contentType)
+	return s.publicClient.PresignedGetObject(ctx, s.bucket, objectKey, s.DownloadExpiry, params)
+}
+
+// Remove deletes an object (no error if it is already gone).
+func (s *Storage) Remove(ctx context.Context, objectKey string) error {
+	return s.client.RemoveObject(ctx, s.bucket, objectKey, minio.RemoveObjectOptions{})
+}
+
+// RemoveMeetingFiles deletes everything stored under the given meetings' prefixes
+// (attached files and any upload that never completed). Failures are logged, not
+// returned: the database rows are already gone, so a leftover file is only clutter.
+func (s *Storage) RemoveMeetingFiles(ctx context.Context, meetingIDs []uuid.UUID) {
+	for _, id := range meetingIDs {
+		prefix := "meetings/" + id.String() + "/"
+		objects := s.client.ListObjects(ctx, s.bucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true})
+		for rerr := range s.client.RemoveObjects(ctx, s.bucket, objects, minio.RemoveObjectsOptions{}) {
+			log.Printf("storage: could not remove %q under %s: %v", rerr.ObjectName, prefix, rerr.Err)
+		}
+	}
 }

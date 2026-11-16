@@ -44,14 +44,14 @@
                         "JwtAuth": []
                     }
                 ],
-                "description": "Only the user who created the attachment.",
+                "description": "Tutor of the tutorial (or admin). Also removes the stored file.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "attachment"
                 ],
-                "summary": "Delete an attachment",
+                "summary": "Delete a file",
                 "parameters": [
                     {
                         "type": "string",
@@ -69,7 +69,59 @@
                         }
                     },
                     "403": {
-                        "description": "Not the creator",
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/attachments/{id}/download": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Same access as listing the files. With ?inline=true, images, video and PDF are returned to be shown in the browser; everything else is a download.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attachment"
+                ],
+                "summary": "Get a short-lived link to open or download a file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Attachment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Show in the browser when possible",
+                        "name": "inline",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DownloadResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Files not shared",
                         "schema": {
                             "type": "string"
                         }
@@ -713,13 +765,14 @@
                         "JwtAuth": []
                     }
                 ],
+                "description": "A tutor sees files of their own tutorials. A student sees them only when accepted into the tutorial and the tutor shares files (show_download). Types: ppt, picture, book, video, other. The storage key is never returned.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "attachment"
                 ],
-                "summary": "List attachments of a meeting with pagination",
+                "summary": "List the files of a meeting",
                 "parameters": [
                     {
                         "type": "string",
@@ -761,8 +814,14 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/entity.Attachment"
+                                "$ref": "#/definitions/dto.AttachmentResponse"
                             }
+                        }
+                    },
+                    "403": {
+                        "description": "Files not shared",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "404": {
@@ -772,14 +831,16 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/meetings/{id}/attachments/complete": {
             "post": {
                 "security": [
                     {
                         "JwtAuth": []
                     }
                 ],
-                "description": "Up to 50 per request, saved all or nothing. The creator is taken from the JWT.",
+                "description": "Tutor of the tutorial (or admin). Checks every file exists in storage, keeps its real size, saves all or nothing and notifies the students.",
                 "consumes": [
                     "application/json"
                 ],
@@ -789,7 +850,7 @@
                 "tags": [
                     "attachment"
                 ],
-                "summary": "Add one or many attachments to a meeting",
+                "summary": "Save files that were uploaded with a ticket",
                 "parameters": [
                     {
                         "type": "string",
@@ -799,12 +860,12 @@
                         "required": true
                     },
                     {
-                        "description": "Attachments",
+                        "description": "Uploaded files",
                         "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CreateAttachmentsRequest"
+                            "$ref": "#/definitions/dto.CompleteUploadsRequest"
                         }
                     }
                 ],
@@ -814,12 +875,76 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/entity.Attachment"
+                                "$ref": "#/definitions/dto.AttachmentResponse"
                             }
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}/attachments/upload-url": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Tutor of the tutorial (or admin). Validates type, extension and size, then returns a MinIO form target: POST multipart/form-data to upload_url with every entry of fields first, then the file under the field \"file\". MinIO enforces the size limit. Finish with POST /meetings/{id}/attachments/complete.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attachment"
+                ],
+                "summary": "Get a ticket to upload a file to a meeting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "File name, type and size",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadTicket"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "string"
                         }
@@ -2089,7 +2214,7 @@
                         "JwtAuth": []
                     }
                 ],
-                "description": "Only the tutor who created the tutorial (or an admin) can delete it. Fails with 409 while it still has meetings, payments or students.",
+                "description": "Only the tutor who created the tutorial (or an admin) can delete it. Also deletes its meetings with their files and submissions, and its enrollments. Fails with 409 while it still has payments (payment records are never deleted automatically).",
                 "produces": [
                     "application/json"
                 ],
@@ -2126,7 +2251,7 @@
                         }
                     },
                     "409": {
-                        "description": "Tutorial still has related data",
+                        "description": "Tutorial still has payments",
                         "schema": {
                             "type": "string"
                         }
@@ -2503,38 +2628,69 @@
         }
     },
     "definitions": {
-        "dto.AttachmentInput": {
+        "dto.AttachmentResponse": {
             "type": "object",
-            "required": [
-                "link",
-                "name",
-                "type"
-            ],
             "properties": {
-                "link": {
+                "content_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "external": {
+                    "description": "External is true for old rows that point at a web link instead of a stored file.",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meeting_id": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
+                },
+                "size": {
+                    "type": "integer"
                 },
                 "type": {
                     "type": "string"
                 }
             }
         },
-        "dto.CreateAttachmentsRequest": {
+        "dto.CompleteUploadsRequest": {
             "type": "object",
             "required": [
-                "attachments"
+                "items"
             ],
             "properties": {
-                "attachments": {
+                "items": {
                     "type": "array",
-                    "maxItems": 50,
+                    "maxItems": 20,
                     "minItems": 1,
                     "items": {
-                        "$ref": "#/definitions/dto.AttachmentInput"
+                        "$ref": "#/definitions/dto.CompletedUpload"
                     }
+                }
+            }
+        },
+        "dto.CompletedUpload": {
+            "type": "object",
+            "required": [
+                "key",
+                "name",
+                "type"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -2671,6 +2827,30 @@
                 },
                 "show_feedback": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.DownloadResponse": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "inline": {
+                    "description": "true when the browser can show it in place",
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },
@@ -3378,6 +3558,50 @@
                 }
             }
         },
+        "dto.UploadTicket": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "description": "seconds",
+                    "type": "integer"
+                },
+                "fields": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "key": {
+                    "type": "string"
+                },
+                "upload_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UploadTicketRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "size",
+                "type"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.ValidateRequest": {
             "type": "object",
             "required": [
@@ -3421,35 +3645,6 @@
                     "items": {
                         "type": "string"
                     }
-                }
-            }
-        },
-        "entity.Attachment": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "link": {
-                    "type": "string"
-                },
-                "meeting_id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },

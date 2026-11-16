@@ -70,7 +70,7 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
-	return db.AutoMigrate(
+	if err := db.AutoMigrate(
 		&roleEntity.Role{},
 		&userEntity.User{},
 		&tutorialEntity.Tutorial{},
@@ -81,5 +81,74 @@ func Migrate(db *gorm.DB) error {
 		&pendingValidationEntity.PendingValidation{},
 		&submissionEntity.Submission{},
 		&jobEntity.Job{},
-	)
+	); err != nil {
+		return err
+	}
+
+	return ensureCascadeDeletes(db)
+}
+
+// cascadeFK is a foreign key that must delete its rows together with the parent row.
+type cascadeFK struct{ table, column, refTable string }
+
+// cascadeFKs: deleting a tutorial removes its meetings and enrollments; deleting a
+// meeting removes its attachments and submissions. Payments are deliberately NOT
+// here: financial records must not vanish with a tutorial.
+var cascadeFKs = []cascadeFK{
+	{"meetings", "tutorial_id", "tutorials"},
+	{"attachments", "meeting_id", "meetings"},
+	{"submissions", "meeting_id", "meetings"},
+	{"pending_validations", "tutorial_id", "tutorials"},
+	{"tutorial_students", "tutorial_id", "tutorials"},
+}
+
+// ensureCascadeDeletes makes every cascadeFK exist with ON DELETE CASCADE. It is safe to
+// run on every start: AutoMigrate never changes an existing constraint, and some links
+// (enrollments) had no constraint at all. Rows left behind by tutorials deleted earlier
+// (orphans) are removed, because the constraint cannot be added while they exist.
+func ensureCascadeDeletes(db *gorm.DB) error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		for _, fk := range cascadeFKs {
+			var existing []struct {
+				Name       string
+				DeleteRule string
+			}
+			err := tx.Raw(`
+				SELECT con.conname AS name, con.confdeltype::text AS delete_rule
+				FROM pg_constraint con
+				JOIN pg_class rel ON rel.oid = con.conrelid
+				JOIN pg_class ref ON ref.oid = con.confrelid
+				JOIN pg_attribute att ON att.attrelid = con.conrelid AND att.attnum = ANY (con.conkey)
+				WHERE con.contype = 'f' AND rel.relname = ? AND att.attname = ? AND ref.relname = ?`,
+				fk.table, fk.column, fk.refTable).Scan(&existing).Error
+			if err != nil {
+				return err
+			}
+
+			add := fmt.Sprintf(`FOREIGN KEY (%s) REFERENCES %s(id) ON DELETE CASCADE`, fk.column, fk.refTable)
+
+			if len(existing) == 0 {
+				orphans := fmt.Sprintf(`DELETE FROM %s WHERE %s NOT IN (SELECT id FROM %s)`, fk.table, fk.column, fk.refTable)
+				if err := tx.Exec(orphans).Error; err != nil {
+					return err
+				}
+				name := fmt.Sprintf("fk_%s_%s", fk.table, fk.column)
+				if err := tx.Exec(fmt.Sprintf(`ALTER TABLE %s ADD CONSTRAINT %s %s`, fk.table, name, add)).Error; err != nil {
+					return err
+				}
+				continue
+			}
+
+			for _, c := range existing {
+				if c.DeleteRule == "c" { // already cascades
+					continue
+				}
+				stmt := fmt.Sprintf(`ALTER TABLE %s DROP CONSTRAINT %s, ADD CONSTRAINT %s %s`, fk.table, c.Name, c.Name, add)
+				if err := tx.Exec(stmt).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 }

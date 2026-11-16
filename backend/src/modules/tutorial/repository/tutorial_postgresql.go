@@ -143,3 +143,9 @@ func (r *tutorialPostgresRepository) FindEnrolledByID(userID, tutorialID uuid.UU
 	}
 	return &item, nil
 }
+
+func (r *tutorialPostgresRepository) MeetingIDs(tutorialID uuid.UUID) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Table("meetings").Where("tutorial_id = ?", tutorialID).Pluck("id", &ids).Error
+	return ids, err
+}

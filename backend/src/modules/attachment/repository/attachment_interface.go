@@ -6,10 +6,22 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 )
 
+// MeetingAccess is what is needed to decide who may touch a meeting's files.
+type MeetingAccess struct {
+	TutorialID uuid.UUID
+	// CreatedBy is the tutor who owns the tutorial (nil when unset).
+	CreatedBy *uuid.UUID
+	// ShowDownload is the tutorial's switch for sharing files with students.
+	ShowDownload bool
+}
+
 type AttachmentRepository interface {
-	MeetingExists(meetingID uuid.UUID) (bool, error)
+	// MeetingAccess returns gorm.ErrRecordNotFound when the meeting does not exist.
+	MeetingAccess(meetingID uuid.UUID) (*MeetingAccess, error)
+	IsAcceptedStudent(tutorialID, userID uuid.UUID) (bool, error)
 	FindByMeetingID(meetingID uuid.UUID, params pagination.Params) ([]entity.Attachment, pagination.Meta, error)
 	FindByID(id uuid.UUID) (*entity.Attachment, error)
+	LinkExists(link string) (bool, error)
 	// CreateBatch inserts all attachments in one statement (all or nothing).
 	CreateBatch(attachments []entity.Attachment) error
 	Delete(attachment *entity.Attachment) error

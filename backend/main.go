@@ -115,9 +115,9 @@ func main() {
 	handlers := &handler.Handlers{
 		Role:              handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
 		User:              handler.NewUserHandler(userFactory.NewUserUsecase(db)),
-		Tutorial:          handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db)),
-		Meeting:           handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db)),
-		Attachment:        handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier)),
+		Tutorial:          handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage)),
+		Meeting:           handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db, storage)),
+		Attachment:        handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier, storage)),
 		Payment:           handler.NewPaymentHandler(paymentFactory.NewPaymentUsecase(db)),
 		PendingValidation: handler.NewPendingValidationHandler(pendingValidationFactory.NewPendingValidationUsecase(db)),
 		Submission:        handler.NewSubmissionHandler(submissionFactory.NewSubmissionUsecase(db)),

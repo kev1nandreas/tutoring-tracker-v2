@@ -1,7 +1,11 @@
 package usecase
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/dto"
@@ -11,12 +15,13 @@ import (
 	"gorm.io/gorm"
 )
 
-// ErrMeetingNotFound is returned when the meeting id is malformed or unknown.
-var ErrMeetingNotFound = errors.New("meeting not found")
-
 var (
+	// ErrMeetingNotFound is also returned for meetings the caller may not see.
+	ErrMeetingNotFound    = errors.New("meeting not found")
 	ErrAttachmentNotFound = errors.New("attachment not found")
-	ErrForbidden          = errors.New("only the creator can delete this attachment")
+	ErrForbidden          = errors.New("you are not allowed to do this")
+	ErrFilesNotShared     = errors.New("your tutor has not shared files for this class")
+	ErrBadRequest         = errors.New("bad request")
 )
 
 // MaterialNotifier is told whenever material is added to a meeting.
@@ -24,81 +29,238 @@ type MaterialNotifier interface {
 	MeetingMaterialAdded(meetingID uuid.UUID, count int)
 }
 
+// ObjectStore is the file storage (MinIO). Keys are never accepted from clients as-is.
+type ObjectStore interface {
+	PresignedPost(ctx context.Context, key, contentType string, maxBytes int64) (url string, fields map[string]string, err error)
+	StatSize(ctx context.Context, key string) (int64, error)
+	PresignedDownload(ctx context.Context, key, filename, contentType string, inline bool) (url string, err error)
+	Remove(ctx context.Context, key string) error
+}
+
 type attachmentUsecase struct {
 	repo     repository.AttachmentRepository
 	notifier MaterialNotifier
+	store    ObjectStore
+	// uploadTTL / downloadTTL are only reported back to clients as expires_in.
+	uploadTTL, downloadTTL time.Duration
 }
 
-func NewAttachmentUsecase(repo repository.AttachmentRepository, notifier MaterialNotifier) AttachmentUsecase {
-	return &attachmentUsecase{repo: repo, notifier: notifier}
+func NewAttachmentUsecase(repo repository.AttachmentRepository, notifier MaterialNotifier, store ObjectStore, uploadTTL, downloadTTL time.Duration) AttachmentUsecase {
+	return &attachmentUsecase{repo: repo, notifier: notifier, store: store, uploadTTL: uploadTTL, downloadTTL: downloadTTL}
 }
 
-func (u *attachmentUsecase) existingMeeting(meetingID string) (uuid.UUID, error) {
+// keyPrefix is where all files of a meeting live in the bucket.
+func keyPrefix(meetingID uuid.UUID) string { return "meetings/" + meetingID.String() + "/" }
+
+// access finds the meeting and decides whether the caller may read (write=false) or
+// change (write=true) its files.
+func (u *attachmentUsecase) access(meetingID string, callerID uuid.UUID, role string, write bool) (uuid.UUID, error) {
 	id, err := uuid.Parse(meetingID)
 	if err != nil {
 		return uuid.Nil, ErrMeetingNotFound
 	}
-	ok, err := u.repo.MeetingExists(id)
+	a, err := u.repo.MeetingAccess(id)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return uuid.Nil, ErrMeetingNotFound
+		}
 		return uuid.Nil, err
 	}
-	if !ok {
-		return uuid.Nil, ErrMeetingNotFound
+
+	switch role {
+	case "admin":
+		return id, nil
+	case "tutor":
+		// someone else's meeting looks the same as a missing one
+		if a.CreatedBy == nil || *a.CreatedBy != callerID {
+			return uuid.Nil, ErrMeetingNotFound
+		}
+		return id, nil
+	case "student":
+		if write {
+			return uuid.Nil, ErrForbidden
+		}
+		ok, err := u.repo.IsAcceptedStudent(a.TutorialID, callerID)
+		if err != nil {
+			return uuid.Nil, err
+		}
+		if !ok {
+			return uuid.Nil, ErrMeetingNotFound
+		}
+		if !a.ShowDownload {
+			return uuid.Nil, ErrFilesNotShared
+		}
+		return id, nil
+	default:
+		return uuid.Nil, ErrForbidden
 	}
-	return id, nil
 }
 
-func (u *attachmentUsecase) FindByMeetingID(meetingID string, params pagination.Params) ([]entity.Attachment, pagination.Meta, error) {
-	id, err := u.existingMeeting(meetingID)
+func (u *attachmentUsecase) FindByMeetingID(meetingID string, callerID uuid.UUID, role string, params pagination.Params) ([]dto.AttachmentResponse, pagination.Meta, error) {
+	id, err := u.access(meetingID, callerID, role, false)
 	if err != nil {
 		return nil, pagination.Meta{}, err
 	}
-	return u.repo.FindByMeetingID(id, params)
+	items, meta, err := u.repo.FindByMeetingID(id, params)
+	if err != nil {
+		return nil, pagination.Meta{}, err
+	}
+	out := make([]dto.AttachmentResponse, len(items))
+	for i, it := range items {
+		out[i] = dto.ToAttachmentResponse(it)
+	}
+	return out, meta, nil
 }
 
-func (u *attachmentUsecase) CreateBatch(meetingID string, creatorID uuid.UUID, req dto.CreateAttachmentsRequest) ([]entity.Attachment, error) {
-	id, err := u.existingMeeting(meetingID)
+func (u *attachmentUsecase) PrepareUpload(ctx context.Context, meetingID string, callerID uuid.UUID, role string, req dto.UploadTicketRequest) (*dto.UploadTicket, error) {
+	id, err := u.access(meetingID, callerID, role, true)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]entity.Attachment, len(req.Attachments))
-	for i, in := range req.Attachments {
-		items[i] = entity.Attachment{
-			MeetingID: id,
-			CreatedBy: &creatorID,
-			Name:      in.Name,
-			Type:      in.Type,
-			Link:      in.Link,
+	contentType, err := dto.ContentTypeFor(req.Type, req.Name)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrBadRequest, err)
+	}
+	max := dto.MaxBytes[req.Type]
+	if req.Size > max {
+		return nil, fmt.Errorf("%w: a %s file can be at most %d MB", ErrBadRequest, req.Type, max>>20)
+	}
+
+	// the name only matters for display; the key is random so it can never collide or escape
+	key := keyPrefix(id) + uuid.NewString() + dto.Ext(req.Name)
+	postURL, fields, err := u.store.PresignedPost(ctx, key, contentType, max)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.UploadTicket{
+		UploadURL:   postURL,
+		Fields:      fields,
+		Key:         key,
+		ContentType: contentType,
+		ExpiresIn:   int(u.uploadTTL.Seconds()),
+	}, nil
+}
+
+func (u *attachmentUsecase) CompleteUploads(ctx context.Context, meetingID string, callerID uuid.UUID, role string, req dto.CompleteUploadsRequest) ([]dto.AttachmentResponse, error) {
+	id, err := u.access(meetingID, callerID, role, true)
+	if err != nil {
+		return nil, err
+	}
+
+	prefix := keyPrefix(id)
+	rows := make([]entity.Attachment, len(req.Items))
+	for i, in := range req.Items {
+		// only keys under this meeting; the extension must still fit the category
+		if !strings.HasPrefix(in.Key, prefix) || strings.Contains(in.Key, "..") {
+			return nil, fmt.Errorf("%w: invalid file key", ErrBadRequest)
+		}
+		contentType, err := dto.ContentTypeFor(in.Type, in.Key)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrBadRequest, err)
+		}
+		if exists, err := u.repo.LinkExists(in.Key); err != nil {
+			return nil, err
+		} else if exists {
+			return nil, fmt.Errorf("%w: %q was already saved", ErrBadRequest, in.Name)
+		}
+
+		// trust the storage, not the client: the file must exist, and its real size is kept
+		size, err := u.store.StatSize(ctx, in.Key)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %q was not uploaded", ErrBadRequest, in.Name)
+		}
+		if size > dto.MaxBytes[in.Type] {
+			_ = u.store.Remove(ctx, in.Key)
+			return nil, fmt.Errorf("%w: %q is too large", ErrBadRequest, in.Name)
+		}
+
+		rows[i] = entity.Attachment{
+			MeetingID:   id,
+			CreatedBy:   &callerID,
+			Name:        in.Name,
+			Type:        in.Type,
+			Link:        in.Key,
+			ContentType: contentType,
+			Size:        size,
 		}
 	}
 
-	if err := u.repo.CreateBatch(items); err != nil {
+	if err := u.repo.CreateBatch(rows); err != nil {
+		return nil, err
+	}
+	u.notifier.MeetingMaterialAdded(id, len(rows))
+
+	out := make([]dto.AttachmentResponse, len(rows))
+	for i, r := range rows {
+		out[i] = dto.ToAttachmentResponse(r)
+	}
+	return out, nil
+}
+
+func (u *attachmentUsecase) load(id string) (*entity.Attachment, error) {
+	aid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, ErrAttachmentNotFound
+	}
+	a, err := u.repo.FindByID(aid)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrAttachmentNotFound
+		}
+		return nil, err
+	}
+	return a, nil
+}
+
+func (u *attachmentUsecase) DownloadURL(ctx context.Context, id string, callerID uuid.UUID, role string, wantInline bool) (*dto.DownloadResponse, error) {
+	a, err := u.load(id)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := u.access(a.MeetingID.String(), callerID, role, false); err != nil {
+		// do not reveal that the file exists
+		if errors.Is(err, ErrMeetingNotFound) {
+			return nil, ErrAttachmentNotFound
+		}
 		return nil, err
 	}
 
-	u.notifier.MeetingMaterialAdded(id, len(items))
+	resp := &dto.DownloadResponse{Name: a.Name, Type: a.Type, ContentType: a.ContentType, ExpiresIn: int(u.downloadTTL.Seconds())}
 
-	return items, nil
-}
-
-func (u *attachmentUsecase) Delete(id string, callerID uuid.UUID) error {
-	aid, err := uuid.Parse(id)
-	if err != nil {
-		return ErrAttachmentNotFound
+	if dto.IsExternalLink(a.Link) { // old rows that point at a web link
+		resp.URL = a.Link
+		return resp, nil
 	}
 
-	attachment, err := u.repo.FindByID(aid)
+	inline := wantInline && dto.CanOpenInline(a.ContentType)
+	link, err := u.store.PresignedDownload(ctx, a.Link, a.Name, a.ContentType, inline)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	resp.URL = link
+	resp.Inline = inline
+	return resp, nil
+}
+
+func (u *attachmentUsecase) Delete(ctx context.Context, id string, callerID uuid.UUID, role string) error {
+	a, err := u.load(id)
+	if err != nil {
+		return err
+	}
+	if _, err := u.access(a.MeetingID.String(), callerID, role, true); err != nil {
+		if errors.Is(err, ErrMeetingNotFound) {
 			return ErrAttachmentNotFound
 		}
 		return err
 	}
 
-	if attachment.CreatedBy == nil || *attachment.CreatedBy != callerID {
-		return ErrForbidden
+	if err := u.repo.Delete(a); err != nil {
+		return err
 	}
-
-	return u.repo.Delete(attachment)
+	if !dto.IsExternalLink(a.Link) {
+		_ = u.store.Remove(ctx, a.Link) // best effort: the row is already gone
+	}
+	return nil
 }

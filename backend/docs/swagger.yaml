@@ -1,28 +1,50 @@
 basePath: /api/v1
 definitions:
-  dto.AttachmentInput:
+  dto.AttachmentResponse:
     properties:
-      link:
+      content_type:
+        type: string
+      created_at:
+        type: string
+      external:
+        description: External is true for old rows that point at a web link instead
+          of a stored file.
+        type: boolean
+      id:
+        type: string
+      meeting_id:
         type: string
       name:
+        type: string
+      size:
+        type: integer
+      type:
+        type: string
+    type: object
+  dto.CompleteUploadsRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/dto.CompletedUpload'
+        maxItems: 20
+        minItems: 1
+        type: array
+    required:
+    - items
+    type: object
+  dto.CompletedUpload:
+    properties:
+      key:
+        type: string
+      name:
+        maxLength: 100
         type: string
       type:
         type: string
     required:
-    - link
+    - key
     - name
     - type
-    type: object
-  dto.CreateAttachmentsRequest:
-    properties:
-      attachments:
-        items:
-          $ref: '#/definitions/dto.AttachmentInput'
-        maxItems: 50
-        minItems: 1
-        type: array
-    required:
-    - attachments
     type: object
   dto.CreateMeetingRequest:
     properties:
@@ -116,6 +138,22 @@ definitions:
     - date_ended
     - date_started
     - name
+    type: object
+  dto.DownloadResponse:
+    properties:
+      content_type:
+        type: string
+      expires_in:
+        type: integer
+      inline:
+        description: true when the browser can show it in place
+        type: boolean
+      name:
+        type: string
+      type:
+        type: string
+      url:
+        type: string
     type: object
   dto.EnrollRequest:
     properties:
@@ -589,6 +627,36 @@ definitions:
       username:
         type: string
     type: object
+  dto.UploadTicket:
+    properties:
+      content_type:
+        type: string
+      expires_in:
+        description: seconds
+        type: integer
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      key:
+        type: string
+      upload_url:
+        type: string
+    type: object
+  dto.UploadTicketRequest:
+    properties:
+      name:
+        maxLength: 100
+        type: string
+      size:
+        type: integer
+      type:
+        type: string
+    required:
+    - name
+    - size
+    - type
+    type: object
   dto.ValidateRequest:
     properties:
       action:
@@ -620,25 +688,6 @@ definitions:
         items:
           type: string
         type: array
-    type: object
-  entity.Attachment:
-    properties:
-      created_at:
-        type: string
-      created_by:
-        type: string
-      id:
-        type: string
-      link:
-        type: string
-      meeting_id:
-        type: string
-      name:
-        type: string
-      type:
-        type: string
-      updated_at:
-        type: string
     type: object
   entity.Job:
     properties:
@@ -821,7 +870,7 @@ paths:
       - health
   /attachments/{id}:
     delete:
-      description: Only the user who created the attachment.
+      description: Tutor of the tutorial (or admin). Also removes the stored file.
       parameters:
       - description: Attachment ID
         in: path
@@ -836,7 +885,7 @@ paths:
           schema:
             type: string
         "403":
-          description: Not the creator
+          description: Forbidden
           schema:
             type: string
         "404":
@@ -845,7 +894,41 @@ paths:
             type: string
       security:
       - JwtAuth: []
-      summary: Delete an attachment
+      summary: Delete a file
+      tags:
+      - attachment
+  /attachments/{id}/download:
+    get:
+      description: Same access as listing the files. With ?inline=true, images, video
+        and PDF are returned to be shown in the browser; everything else is a download.
+      parameters:
+      - description: Attachment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Show in the browser when possible
+        in: query
+        name: inline
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.DownloadResponse'
+        "403":
+          description: Files not shared
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Get a short-lived link to open or download a file
       tags:
       - attachment
   /dashboard/student:
@@ -1262,6 +1345,9 @@ paths:
       - meeting
   /meetings/{id}/attachments:
     get:
+      description: 'A tutor sees files of their own tutorials. A student sees them
+        only when accepted into the tutorial and the tutor shares files (show_download).
+        Types: ppt, picture, book, video, other. The storage key is never returned.'
       parameters:
       - description: Meeting ID
         in: path
@@ -1293,34 +1379,39 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/entity.Attachment'
+              $ref: '#/definitions/dto.AttachmentResponse'
             type: array
+        "403":
+          description: Files not shared
+          schema:
+            type: string
         "404":
           description: Meeting not found
           schema:
             type: string
       security:
       - JwtAuth: []
-      summary: List attachments of a meeting with pagination
+      summary: List the files of a meeting
       tags:
       - attachment
+  /meetings/{id}/attachments/complete:
     post:
       consumes:
       - application/json
-      description: Up to 50 per request, saved all or nothing. The creator is taken
-        from the JWT.
+      description: Tutor of the tutorial (or admin). Checks every file exists in storage,
+        keeps its real size, saves all or nothing and notifies the students.
       parameters:
       - description: Meeting ID
         in: path
         name: id
         required: true
         type: string
-      - description: Attachments
+      - description: Uploaded files
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateAttachmentsRequest'
+          $ref: '#/definitions/dto.CompleteUploadsRequest'
       produces:
       - application/json
       responses:
@@ -1328,7 +1419,7 @@ paths:
           description: Created
           schema:
             items:
-              $ref: '#/definitions/entity.Attachment'
+              $ref: '#/definitions/dto.AttachmentResponse'
             type: array
         "400":
           description: Bad Request
@@ -1340,7 +1431,51 @@ paths:
             type: string
       security:
       - JwtAuth: []
-      summary: Add one or many attachments to a meeting
+      summary: Save files that were uploaded with a ticket
+      tags:
+      - attachment
+  /meetings/{id}/attachments/upload-url:
+    post:
+      consumes:
+      - application/json
+      description: 'Tutor of the tutorial (or admin). Validates type, extension and
+        size, then returns a MinIO form target: POST multipart/form-data to upload_url
+        with every entry of fields first, then the file under the field "file". MinIO
+        enforces the size limit. Finish with POST /meetings/{id}/attachments/complete.'
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: File name, type and size
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UploadTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UploadTicket'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Get a ticket to upload a file to a meeting
       tags:
       - attachment
   /meetings/{id}/submissions:
@@ -2096,7 +2231,9 @@ paths:
   /tutorials/{id}:
     delete:
       description: Only the tutor who created the tutorial (or an admin) can delete
-        it. Fails with 409 while it still has meetings, payments or students.
+        it. Also deletes its meetings with their files and submissions, and its enrollments.
+        Fails with 409 while it still has payments (payment records are never deleted
+        automatically).
       parameters:
       - description: Tutorial ID
         in: path
@@ -2119,7 +2256,7 @@ paths:
           schema:
             type: string
         "409":
-          description: Tutorial still has related data
+          description: Tutorial still has payments
           schema:
             type: string
       security:

@@ -127,3 +127,16 @@ export function timeOf(value: string | null | undefined) {
 export function todayISO() {
 	return new Date().toLocaleDateString("en-CA");
 }
+
+/** 1536 -> "1.5 KB", 5242880 -> "5 MB". */
+export function formatBytes(bytes: number) {
+	if (bytes < 1024) return `${bytes} B`;
+	const units = ["KB", "MB", "GB", "TB"];
+	let value = bytes / 1024;
+	let i = 0;
+	while (value >= 1024 && i < units.length - 1) {
+		value /= 1024;
+		i++;
+	}
+	return `${value >= 10 || Number.isInteger(value) ? Math.round(value) : value.toFixed(1)} ${units[i]}`;
+}

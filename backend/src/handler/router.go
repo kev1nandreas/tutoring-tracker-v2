@@ -52,20 +52,22 @@ func NewRouter(
 		r.Use(factory.Xss())
 	}
 	r.Use(factory.Cors())
-	r.Use(factory.RateLimiter(rate.Every(1*time.Minute), 60))
 
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	v1 := r.Group("/api/v1")
 	{
 		v1.GET("/", Healthcheck)
 
-		v1.POST("/login", h.User.LoginHandler)
-		v1.POST("/register", h.User.RegisterHandler)
-		v1.GET("/me", factory.JWTAuth(), h.User.MeHandler)
+		// 60 requests per minute: per IP on the public routes, per user once signed in
+		limit := factory.RateLimiter(rate.Every(time.Minute/60), 60)
+
+		v1.POST("/login", limit, h.User.LoginHandler)
+		v1.POST("/register", limit, h.User.RegisterHandler)
+		v1.GET("/me", factory.JWTAuth(), limit, h.User.MeHandler)
 
 		// everything below requires a valid JWT
 		protected := v1.Group("")
-		protected.Use(factory.JWTAuth())
+		protected.Use(factory.JWTAuth(), limit)
 		protected.POST("/register/tutor", h.User.RegisterTutorHandler)
 
 		protected.GET("/dashboard/tutor", h.Dashboard.TutorDashboard)
@@ -101,7 +103,9 @@ func NewRouter(
 		protected.POST("/meetings", h.Meeting.CreateMeeting)
 		protected.GET("/meetings/:id", h.Meeting.FindMeeting)
 		protected.GET("/meetings/:id/attachments", h.Attachment.FindAttachmentsByMeeting)
-		protected.POST("/meetings/:id/attachments", h.Attachment.CreateAttachments)
+		protected.POST("/meetings/:id/attachments/upload-url", h.Attachment.CreateUploadTicket)
+		protected.POST("/meetings/:id/attachments/complete", h.Attachment.CompleteUploads)
+		protected.GET("/attachments/:id/download", h.Attachment.DownloadAttachment)
 		protected.DELETE("/attachments/:id", h.Attachment.DeleteAttachment)
 		protected.GET("/meetings/:id/submissions", h.Submission.FindSubmissionsByMeeting)
 		protected.POST("/meetings/:id/submissions", h.Submission.CreateSubmission)

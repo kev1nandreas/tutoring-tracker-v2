@@ -51,7 +51,7 @@ export default function TutorialActions({ tutorial }: { tutorial: Tutorial }) {
 			<ConfirmationDialog
 				isOpen={isDeleteOpen}
 				setIsOpen={setIsDeleteOpen}
-				message={`Delete "${tutorial.name}"? This cannot be undone.`}
+				message={`Delete "${tutorial.name}"? Its meetings, uploaded files, submissions and student list are deleted too. This cannot be undone.`}
 				confirmLabel="Delete"
 				cancelLabel="Cancel"
 				confirmVariant="red"

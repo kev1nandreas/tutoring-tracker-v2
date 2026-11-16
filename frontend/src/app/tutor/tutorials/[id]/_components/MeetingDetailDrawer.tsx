@@ -7,6 +7,7 @@ import {
 	ClipboardCheck,
 	Clock,
 	NotebookPen,
+	Paperclip,
 	Pencil,
 	StickyNote,
 	Video,
@@ -17,6 +18,7 @@ import Button from "@/components/button/Button";
 import { formatTimeRange, timeOf } from "@/lib/helper";
 import { homeworkPath } from "@/shared/path";
 import type { Meeting } from "@/types/meeting";
+import MeetingMaterials from "./materials/MeetingMaterials";
 
 type Props = {
 	meeting: Meeting | null;
@@ -141,6 +143,13 @@ export default function MeetingDetailDrawer({
 									No homework for this meeting.
 								</p>
 							)}
+						</Section>
+
+						<Section icon={Paperclip} title="Materials">
+							<MeetingMaterials
+								meetingId={meeting.id}
+								meetingTitle={meeting.title}
+							/>
 						</Section>
 
 						<Section icon={StickyNote} title="Notes">

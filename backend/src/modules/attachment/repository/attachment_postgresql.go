@@ -3,7 +3,6 @@ package repository
 import (
 	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/entity"
-	meetingEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"gorm.io/gorm"
 )
@@ -26,10 +25,38 @@ func NewAttachmentPostgresRepository(db *gorm.DB) AttachmentRepository {
 	return &attachmentPostgresRepository{db: db}
 }
 
-func (r *attachmentPostgresRepository) MeetingExists(meetingID uuid.UUID) (bool, error) {
-	var count int64
-	err := r.db.Model(&meetingEntity.Meeting{}).Where("id = ?", meetingID).Count(&count).Error
-	return count > 0, err
+func (r *attachmentPostgresRepository) MeetingAccess(meetingID uuid.UUID) (*MeetingAccess, error) {
+	var row struct {
+		TutorialID   uuid.UUID
+		CreatedBy    *uuid.UUID
+		ShowDownload bool
+	}
+	res := r.db.Table("meetings").
+		Select("tutorials.id AS tutorial_id, tutorials.created_by AS created_by, tutorials.show_download AS show_download").
+		Joins("JOIN tutorials ON tutorials.id = meetings.tutorial_id").
+		Where("meetings.id = ?", meetingID).
+		Limit(1).Scan(&row)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &MeetingAccess{TutorialID: row.TutorialID, CreatedBy: row.CreatedBy, ShowDownload: row.ShowDownload}, nil
+}
+
+func (r *attachmentPostgresRepository) IsAcceptedStudent(tutorialID, userID uuid.UUID) (bool, error) {
+	var n int64
+	err := r.db.Table("pending_validations").
+		Where("tutorial_id = ? AND user_id = ? AND is_validated = 1", tutorialID, userID).
+		Count(&n).Error
+	return n > 0, err
+}
+
+func (r *attachmentPostgresRepository) LinkExists(link string) (bool, error) {
+	var n int64
+	err := r.db.Model(&entity.Attachment{}).Where("link = ?", link).Count(&n).Error
+	return n > 0, err
 }
 
 func (r *attachmentPostgresRepository) FindByMeetingID(meetingID uuid.UUID, params pagination.Params) ([]entity.Attachment, pagination.Meta, error) {

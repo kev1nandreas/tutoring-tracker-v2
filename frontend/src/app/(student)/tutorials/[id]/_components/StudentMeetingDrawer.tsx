@@ -6,6 +6,7 @@ import {
 	Check,
 	Clock,
 	NotebookPen,
+	Paperclip,
 	PlayCircle,
 	Video,
 	X,
@@ -13,6 +14,7 @@ import {
 import Button from "@/components/button/Button";
 import { formatTimeRange, timeOf } from "@/lib/helper";
 import type { StudentMeeting } from "@/types/student-meeting";
+import StudentMaterials from "./StudentMaterials";
 
 type Props = {
 	meeting: StudentMeeting | null;
@@ -124,6 +126,10 @@ export default function StudentMeetingDrawer({
 									No homework for this meeting.
 								</p>
 							)}
+						</Section>
+
+						<Section icon={Paperclip} title="Materials">
+							<StudentMaterials meetingId={meeting.id} />
 						</Section>
 
 						<Section icon={Video} title="Recording">
