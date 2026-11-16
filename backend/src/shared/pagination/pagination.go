@@ -13,6 +13,10 @@ type Params struct {
 	PageSize int    `form:"page_size"`
 	Sort     string `form:"sort"`
 	Order    string `form:"order"`
+
+	// Filters holds column filters taken from the query string (?name=foo).
+	// Only columns whitelisted by the repository are applied.
+	Filters map[string]string `form:"-"`
 }
 
 type Meta struct {
@@ -23,6 +27,8 @@ type Meta struct {
 	HasNext    bool  `json:"has_next"`
 	HasPrev    bool  `json:"has_prev"`
 }
+
+var reservedParams = map[string]bool{"page": true, "page_size": true, "sort": true, "order": true}
 
 const (
 	DefaultPage     = 1
@@ -38,11 +44,20 @@ func ParseParams(c *gin.Context) Params {
 	sort := c.DefaultQuery("sort", DefaultSort)
 	order := c.DefaultQuery("order", DefaultOrder)
 
+	filters := map[string]string{}
+	for key, values := range c.Request.URL.Query() {
+		if reservedParams[key] || len(values) == 0 || values[0] == "" {
+			continue
+		}
+		filters[key] = values[0]
+	}
+
 	return Params{
 		Page:     validatePage(page),
 		PageSize: validatePageSize(pageSize),
 		Sort:     sort,
 		Order:    validateOrder(order),
+		Filters:  filters,
 	}
 }
 

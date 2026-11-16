@@ -6,7 +6,14 @@ import (
 	"time"
 
 	"github.com/kev1nandreas/go-rest-api-template/config"
-	bookEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/book/entity"
+	attachmentEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/entity"
+	jobEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/job/entity"
+	meetingEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/entity"
+	paymentEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/payment/entity"
+	pendingValidationEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/pending_validation/entity"
+	roleEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/role/entity"
+	submissionEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/submission/entity"
+	tutorialEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/entity"
 	userEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/user/entity"
 
 	"gorm.io/driver/postgres"
@@ -62,5 +69,15 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
-	return db.AutoMigrate(&bookEntity.Book{}, &userEntity.User{})
+	return db.AutoMigrate(
+		&roleEntity.Role{},
+		&userEntity.User{},
+		&tutorialEntity.Tutorial{},
+		&meetingEntity.Meeting{},
+		&attachmentEntity.Attachment{},
+		&paymentEntity.Payment{},
+		&pendingValidationEntity.PendingValidation{},
+		&submissionEntity.Submission{},
+		&jobEntity.Job{},
+	)
 }

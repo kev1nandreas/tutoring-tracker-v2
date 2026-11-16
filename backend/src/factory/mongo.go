@@ -10,10 +10,14 @@ import (
 )
 
 func NewMongoDB() *mongo.Collection {
+	return NewMongoCollection(config.GetEnvString("MONGO_COLLECTION", "logs"))
+}
+
+// NewMongoCollection connects to MongoDB and returns the named collection.
+func NewMongoCollection(name string) *mongo.Collection {
 	mongoHost := config.GetEnvString("MONGO_HOST", "localhost")
 	mongoPort := config.GetEnvInt("MONGO_PORT", 27017)
 	mongoDatabase := config.GetEnvString("MONGO_DATABASE", "logging")
-	mongoCollection := config.GetEnvString("MONGO_COLLECTION", "logs")
 
 	uri := "mongodb://" + mongoHost + ":" + strconv.Itoa(mongoPort)
 
@@ -28,5 +32,5 @@ func NewMongoDB() *mongo.Collection {
 		panic(err)
 	}
 
-	return client.Database(mongoDatabase).Collection(mongoCollection)
+	return client.Database(mongoDatabase).Collection(name)
 }

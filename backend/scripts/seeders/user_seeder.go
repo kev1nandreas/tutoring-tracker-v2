@@ -4,23 +4,33 @@ import (
 	"log"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
-	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/entity"
+	"github.com/kev1nandreas/go-rest-api-template/src/modules/role/entity"
+	userEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/user/entity"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
+// SeedUsers requires roles to be seeded first.
 func SeedUsers(db *gorm.DB, count int) error {
 	gofakeit.Seed(0)
 
-	for i := 0; i < count; i++ {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
+	var student entity.Role
+	if err := db.Where("name = ?", "student").First(&student).Error; err != nil {
+		return err
+	}
 
-		user := entity.User{
-			ID:       uuid.New(),
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	for i := 0; i < count; i++ {
+		user := userEntity.User{
+			RoleID:   student.ID,
+			Name:     gofakeit.Name(),
+			School:   gofakeit.Company(),
+			Phone:    gofakeit.Numerify("08##########"),
+			Email:    gofakeit.Email(),
 			Username: gofakeit.Username(),
 			Password: string(hashedPassword),
 		}
