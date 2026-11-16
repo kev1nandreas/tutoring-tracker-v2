@@ -7,7 +7,7 @@ export const registerRequestSchema = z
 		phone: z
 			.string()
 			.min(1, "Phone is required")
-			.max(12, "Phone must be at most 12 digits")
+			.max(13, "Phone must be at most 13 digits")
 			.regex(/^\d+$/, "Phone must contain digits only"),
 		email: z.email("Invalid email address").max(100),
 		username: z

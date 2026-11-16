@@ -6,7 +6,7 @@ export const googleRegisterSchema = z.object({
 	phone: z
 		.string()
 		.min(1, "Phone is required")
-		.max(12, "Phone must be at most 12 digits")
+		.max(13, "Phone must be at most 13 digits")
 		.regex(/^\d+$/, "Phone must contain digits only"),
 	username: z
 		.string()

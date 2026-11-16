@@ -44,7 +44,7 @@ type ResetPasswordRequest struct {
 type CompleteProfileRequest struct {
 	Name     string `json:"name" binding:"required,max=100"`
 	School   string `json:"school" binding:"required,max=100"`
-	Phone    string `json:"phone" binding:"required,max=12,numeric"`
+	Phone    string `json:"phone" binding:"required,max=13,numeric"`
 	Username string `json:"username" binding:"required,min=3,max=50"`
 	// Email is optional: empty keeps the current one. A new email must be verified again.
 	Email string `json:"email" binding:"omitempty,email,max=100"`
@@ -63,6 +63,6 @@ type GoogleRegisterRequest struct {
 	RegistrationToken string `json:"registration_token" binding:"required"`
 	Name              string `json:"name" binding:"required,max=100"`
 	School            string `json:"school" binding:"required,max=100"`
-	Phone             string `json:"phone" binding:"required,max=12,numeric"`
+	Phone             string `json:"phone" binding:"required,max=13,numeric"`
 	Username          string `json:"username" binding:"required,min=3,max=50"`
 }

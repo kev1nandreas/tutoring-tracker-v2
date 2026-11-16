@@ -213,7 +213,7 @@ func (h *UserHandler) ResetPasswordHandler(c *gin.Context) {
 func (h *UserHandler) CompleteProfileHandler(c *gin.Context) {
 	var req dto.CompleteProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.NewErrorResponse(http.StatusBadRequest, "Check your details: phone must be digits only (max 12) and username 3+ characters", err.Error()).Send(c)
+		response.NewErrorResponse(http.StatusBadRequest, "Check your details: phone must be digits only (max 13) and username 3+ characters", err.Error()).Send(c)
 		return
 	}
 
@@ -333,7 +333,7 @@ func (h *UserHandler) EmailNotificationsHandler(c *gin.Context) {
 func (h *UserHandler) GoogleRegisterHandler(c *gin.Context) {
 	var req dto.GoogleRegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.NewErrorResponse(http.StatusBadRequest, "Check your details: phone must be digits only (max 12) and username 3+ characters", err.Error()).Send(c)
+		response.NewErrorResponse(http.StatusBadRequest, "Check your details: phone must be digits only (max 13) and username 3+ characters", err.Error()).Send(c)
 		return
 	}
 

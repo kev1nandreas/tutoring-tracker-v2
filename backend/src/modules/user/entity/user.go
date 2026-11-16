@@ -13,7 +13,7 @@ type User struct {
 	Role     roleEntity.Role `json:"role,omitempty" gorm:"foreignKey:RoleID"`
 	Name     string          `json:"name" gorm:"size:100;not null"`
 	School   string          `json:"school" gorm:"size:100;not null"`
-	Phone    string          `json:"phone" gorm:"size:12;not null"`
+	Phone    string          `json:"phone" gorm:"size:13;not null"`
 	Email    string          `json:"email" gorm:"size:100;not null"`
 	Username string          `json:"username" gorm:"size:50;not null;unique"`
 	Password string          `json:"-" gorm:"not null"`
