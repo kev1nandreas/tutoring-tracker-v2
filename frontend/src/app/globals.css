@@ -29,3 +29,18 @@ body {
 .primary-500 {
 	color: #0070f3;
 }
+
+/* Graph paper, shared with the auth pages: four small squares per large one. */
+.bg-graph {
+	background-color: #f6f8fc;
+	background-image:
+		linear-gradient(#d8e0f0 1px, transparent 1px),
+		linear-gradient(90deg, #d8e0f0 1px, transparent 1px),
+		linear-gradient(rgb(216 224 240 / 0.45) 1px, transparent 1px),
+		linear-gradient(90deg, rgb(216 224 240 / 0.45) 1px, transparent 1px);
+	background-size:
+		96px 96px,
+		96px 96px,
+		24px 24px,
+		24px 24px;
+}

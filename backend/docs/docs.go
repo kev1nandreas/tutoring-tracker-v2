@@ -1733,6 +1733,7 @@ const docTemplate = `{
                         "JwtAuth": []
                     }
                 ],
+                "description": "Only the tutor who created the tutorial (or an admin) can update it.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1768,6 +1769,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/entity.Tutorial"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "404": {
                         "description": "Not found",
                         "schema": {
@@ -1782,6 +1789,7 @@ const docTemplate = `{
                         "JwtAuth": []
                     }
                 ],
+                "description": "Only the tutor who created the tutorial (or an admin) can delete it. Fails with 409 while it still has meetings, payments or students.",
                 "produces": [
                     "application/json"
                 ],
@@ -1805,8 +1813,20 @@ const docTemplate = `{
                             "type": "string"
                         }
                     },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "404": {
                         "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Tutorial still has related data",
                         "schema": {
                             "type": "string"
                         }

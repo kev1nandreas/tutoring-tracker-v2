@@ -4,6 +4,8 @@ export const MAIN_ENDPOINT = {
 	},
 	Tutorial: {
 		List: "/v1/tutorials",
+		Detail: (id: string) => `/v1/tutorials/${id}`,
+		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 	},
 	Dashboard: {
 		Tutor: "/v1/dashboard/tutor",

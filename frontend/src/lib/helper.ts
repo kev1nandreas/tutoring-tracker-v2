@@ -117,3 +117,13 @@ export function formatShortDate(value: string | null | undefined) {
 		year: "numeric",
 	}).format(new Date(`${value.slice(0, 10)}T00:00:00`));
 }
+
+/** "2026-11-20T10:30:00+07:00" -> "10:30". Reads the wall time as written, no timezone conversion. */
+export function timeOf(value: string | null | undefined) {
+	return /T(\d{2}:\d{2})/.exec(value ?? "")?.[1] ?? "";
+}
+
+/** Local date as "YYYY-MM-DD". */
+export function todayISO() {
+	return new Date().toLocaleDateString("en-CA");
+}

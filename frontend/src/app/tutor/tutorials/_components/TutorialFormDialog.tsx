@@ -5,6 +5,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import * as React from "react";
 import { FormProvider, type SubmitHandler, useForm } from "react-hook-form";
 import Button from "@/components/button/Button";
 import Input from "@/components/form/Input";
@@ -14,33 +15,64 @@ import TextArea from "@/components/form/TextArea";
 import {
 	type CreateTutorialRequest,
 	createTutorialSchema,
+	type Tutorial,
 } from "@/types/tutorial";
 import { useCreateTutorialMutation } from "../_hooks/useCreateTutorialMutation";
+import { useUpdateTutorialMutation } from "../_hooks/useUpdateTutorialMutation";
 
-type Props = { isOpen: boolean; onClose: () => void };
+type Props = {
+	isOpen: boolean;
+	onClose: () => void;
+	/** Pass a tutorial to edit it; omit to create a new one. */
+	tutorial?: Tutorial;
+};
 
 const EMPTY: CreateTutorialRequest = {
 	name: "",
 	date_started: "",
 	date_ended: "",
 	description: "",
+	is_done: false,
 	show_download: false,
 	show_attendance: false,
 	show_feedback: false,
 };
 
-export default function AddTutorialDialog({ isOpen, onClose }: Props) {
+const toFormValues = (t: Tutorial): CreateTutorialRequest => ({
+	name: t.name,
+	date_started: t.date_started.slice(0, 10),
+	date_ended: t.date_ended.slice(0, 10),
+	description: t.description,
+	is_done: t.is_done,
+	show_download: t.show_download,
+	show_attendance: t.show_attendance,
+	show_feedback: t.show_feedback,
+});
+
+/** Add or edit a tutorial; the same fields either way. */
+export default function TutorialFormDialog({
+	isOpen,
+	onClose,
+	tutorial,
+}: Props) {
+	const isEdit = Boolean(tutorial);
+
 	const methods = useForm<CreateTutorialRequest>({
 		resolver: zodResolver(createTutorialSchema),
-		defaultValues: EMPTY,
+		defaultValues: tutorial ? toFormValues(tutorial) : EMPTY,
 	});
 
-	const handleClose = () => {
-		methods.reset(EMPTY);
-		onClose();
-	};
+	// Start from the current values each time the dialog opens.
+	const { reset } = methods;
+	React.useEffect(() => {
+		if (isOpen) reset(tutorial ? toFormValues(tutorial) : EMPTY);
+	}, [isOpen, tutorial, reset]);
 
-	const mutation = useCreateTutorialMutation({ onSuccess: handleClose });
+	const create = useCreateTutorialMutation({ onSuccess: onClose });
+	const update = useUpdateTutorialMutation(tutorial?.id ?? "", {
+		onSuccess: onClose,
+	});
+	const mutation = isEdit ? update : create;
 
 	const onSubmit: SubmitHandler<CreateTutorialRequest> = (data) =>
 		mutation.mutate(data);
@@ -48,11 +80,13 @@ export default function AddTutorialDialog({ isOpen, onClose }: Props) {
 	return (
 		<Dialog
 			open={isOpen}
-			onClose={mutation.isPending ? undefined : handleClose}
+			onClose={mutation.isPending ? undefined : onClose}
 			maxWidth="sm"
 			fullWidth
 		>
-			<DialogTitle sx={{ fontWeight: 600 }}>Add tutorial</DialogTitle>
+			<DialogTitle sx={{ fontWeight: 600 }}>
+				{isEdit ? "Edit tutorial" : "Add tutorial"}
+			</DialogTitle>
 
 			<FormProvider {...methods}>
 				<form onSubmit={methods.handleSubmit(onSubmit)} noValidate>
@@ -97,6 +131,14 @@ export default function AddTutorialDialog({ isOpen, onClose }: Props) {
 							/>
 						</div>
 
+						{isEdit && (
+							<SwitchInput
+								id="is_done"
+								label="Mark as done"
+								helperText="Finished tutorials leave the active lists."
+							/>
+						)}
+
 						<fieldset className="flex flex-col gap-1 rounded-lg border border-gray-200 px-4 py-3">
 							<legend className="px-1 text-sm font-semibold text-gray-700">
 								Student access
@@ -123,7 +165,7 @@ export default function AddTutorialDialog({ isOpen, onClose }: Props) {
 						<Button
 							type="button"
 							variant="outline"
-							onClick={handleClose}
+							onClick={onClose}
 							disabled={mutation.isPending}
 						>
 							Cancel
@@ -133,7 +175,7 @@ export default function AddTutorialDialog({ isOpen, onClose }: Props) {
 							variant="brand"
 							isLoading={mutation.isPending}
 						>
-							Create tutorial
+							{isEdit ? "Save changes" : "Create tutorial"}
 						</Button>
 					</DialogActions>
 				</form>

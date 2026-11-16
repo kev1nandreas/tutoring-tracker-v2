@@ -23,6 +23,7 @@ export const createTutorialSchema = z
 		date_started: z.string().min(1, "Start date is required"),
 		date_ended: z.string().min(1, "End date is required"),
 		description: z.string().max(255, "At most 255 characters"),
+		is_done: z.boolean(),
 		show_download: z.boolean(),
 		show_attendance: z.boolean(),
 		show_feedback: z.boolean(),

@@ -1782,6 +1782,8 @@ paths:
       - tutorial
   /tutorials/{id}:
     delete:
+      description: Only the tutor who created the tutorial (or an admin) can delete
+        it. Fails with 409 while it still has meetings, payments or students.
       parameters:
       - description: Tutorial ID
         in: path
@@ -1795,8 +1797,16 @@ paths:
           description: Deleted
           schema:
             type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
         "404":
           description: Not found
+          schema:
+            type: string
+        "409":
+          description: Tutorial still has related data
           schema:
             type: string
       security:
@@ -1831,6 +1841,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Only the tutor who created the tutorial (or an admin) can update
+        it.
       parameters:
       - description: Tutorial ID
         in: path
@@ -1850,6 +1862,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/entity.Tutorial'
+        "403":
+          description: Forbidden
+          schema:
+            type: string
         "404":
           description: Not found
           schema:

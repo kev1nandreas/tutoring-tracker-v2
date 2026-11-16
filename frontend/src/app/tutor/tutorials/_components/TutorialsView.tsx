@@ -1,5 +1,7 @@
 "use client";
 
+import Tab from "@mui/material/Tab";
+import Tabs from "@mui/material/Tabs";
 import { Plus } from "lucide-react";
 import * as React from "react";
 import Button from "@/components/button/Button";
@@ -10,8 +12,8 @@ import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
 import type { TutorialStatus } from "@/types/tutorial";
 import { useTutorialsQuery } from "../_hooks/useTutorialsQuery";
-import AddTutorialDialog from "./AddTutorialDialog";
 import TutorialCard from "./TutorialCard";
+import TutorialFormDialog from "./TutorialFormDialog";
 
 const PAGE_SIZE = 9;
 
@@ -59,27 +61,27 @@ export default function TutorialsView() {
 				</Button>
 			}
 		>
-			<fieldset
-				aria-label="Filter by status"
-				className="flex gap-2 border-0 p-0"
+			<Tabs
+				value={status}
+				onChange={(_, next: TutorialStatus) => changeStatus(next)}
+				aria-label="Filter tutorials by status"
+				sx={{
+					minHeight: 44,
+					borderBottom: 1,
+					borderColor: "divider",
+					"& .MuiTab-root": {
+						textTransform: "none",
+						fontWeight: 500,
+						fontSize: 14,
+						minHeight: 44,
+						minWidth: 80,
+					},
+				}}
 			>
 				{FILTERS.map((f) => (
-					<button
-						key={f.value}
-						type="button"
-						aria-pressed={status === f.value}
-						onClick={() => changeStatus(f.value)}
-						className={clsxm(
-							"rounded-full border px-3.5 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-brand-600",
-							status === f.value
-								? "border-brand-600 bg-brand-600 text-white"
-								: "border-gray-200 bg-white text-gray-600 hover:border-brand-300",
-						)}
-					>
-						{f.label}
-					</button>
+					<Tab key={f.value} value={f.value} label={f.label} />
 				))}
-			</fieldset>
+			</Tabs>
 
 			{isError ? (
 				<DashboardError message={error.message} onRetry={() => refetch()} />
@@ -91,12 +93,12 @@ export default function TutorialsView() {
 					{Array.from({ length: 6 }, (_, i) => (
 						<div
 							key={`sk-${i + 1}`}
-							className="h-44 animate-pulse rounded-xl bg-gray-100"
+							className="h-48 animate-pulse rounded-xl bg-gray-100"
 						/>
 					))}
 				</div>
 			) : items.length === 0 ? (
-				<div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-gray-300 bg-white px-6 py-14 text-center">
+				<div className="bg-graph flex flex-col items-center gap-3 rounded-xl border border-[#d8e0f0] px-6 py-16 text-center">
 					<Typography weight="medium" className="text-gray-900">
 						{status === "all" ? "No tutorials yet" : `No ${status} tutorials`}
 					</Typography>
@@ -156,7 +158,7 @@ export default function TutorialsView() {
 				</>
 			)}
 
-			<AddTutorialDialog
+			<TutorialFormDialog
 				isOpen={isAddOpen}
 				onClose={() => setIsAddOpen(false)}
 			/>

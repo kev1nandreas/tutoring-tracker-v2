@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/usecase"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
@@ -127,6 +128,7 @@ func (h *TutorialHandler) FindTutorial(c *gin.Context) {
 
 // UpdateTutorial godoc
 // @Summary Update a tutorial by ID
+// @Description Only the tutor who created the tutorial (or an admin) can update it.
 // @Tags tutorial
 // @Security JwtAuth
 // @Accept json
@@ -134,10 +136,15 @@ func (h *TutorialHandler) FindTutorial(c *gin.Context) {
 // @Param id path string true "Tutorial ID"
 // @Param input body dto.UpdateTutorialRequest true "Update tutorial"
 // @Success 200 {object} entity.Tutorial
+// @Failure 403 {string} string "Forbidden"
 // @Failure 404 {string} string "Not found"
 // @Router /tutorials/{id} [put]
 func (h *TutorialHandler) UpdateTutorial(c *gin.Context) {
 	var input dto.UpdateTutorialRequest
+
+	if !h.canManage(c) {
+		return
+	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", err.Error()).Send(c)
@@ -155,14 +162,21 @@ func (h *TutorialHandler) UpdateTutorial(c *gin.Context) {
 
 // DeleteTutorial godoc
 // @Summary Delete a tutorial by ID
+// @Description Only the tutor who created the tutorial (or an admin) can delete it. Fails with 409 while it still has meetings, payments or students.
 // @Tags tutorial
 // @Security JwtAuth
 // @Produce json
 // @Param id path string true "Tutorial ID"
 // @Success 204 {string} string "Deleted"
+// @Failure 403 {string} string "Forbidden"
 // @Failure 404 {string} string "Not found"
+// @Failure 409 {string} string "Tutorial still has related data"
 // @Router /tutorials/{id} [delete]
 func (h *TutorialHandler) DeleteTutorial(c *gin.Context) {
+	if !h.canManage(c) {
+		return
+	}
+
 	if err := h.usecase.Delete(c.Param("id")); err != nil {
 		h.notFoundOrError(c, err)
 		return
@@ -176,7 +190,39 @@ func (h *TutorialHandler) DeleteTutorial(c *gin.Context) {
 	}.Send(c)
 }
 
+// canManage lets only the creating tutor, or an admin, change a tutorial.
+// It writes the error response itself and returns false when access is denied.
+func (h *TutorialHandler) canManage(c *gin.Context) bool {
+	role := c.GetString("role")
+	if role == "admin" {
+		return true
+	}
+	if role != "tutor" {
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor can change a tutorial").Send(c)
+		return false
+	}
+
+	item, err := h.usecase.FindByID(c.Param("id"))
+	if err != nil {
+		h.notFoundOrError(c, err)
+		return false
+	}
+	// someone else's tutorial looks the same as a missing one
+	if item.CreatedBy == nil || item.CreatedBy.String() != c.GetString("user_id") {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "record not found").Send(c)
+		return false
+	}
+	return true
+}
+
 func (h *TutorialHandler) notFoundOrError(c *gin.Context, err error) {
+	// foreign key violation: meetings, payments or students still reference it
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		response.NewErrorResponse(http.StatusConflict, "Tutorial still has related data", "remove its meetings, payments and students first").Send(c)
+		return
+	}
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", err.Error()).Send(c)
 		return

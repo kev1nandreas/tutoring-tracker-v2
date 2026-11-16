@@ -13,11 +13,17 @@ export default function ConfirmationDialog({
 	setIsOpen,
 	message,
 	onConfirm,
+	confirmLabel = "Ya",
+	cancelLabel = "Tidak",
+	confirmVariant = "brand",
 }: {
 	isOpen: boolean;
 	setIsOpen: (open: boolean) => void;
 	message: string;
 	onConfirm: () => void;
+	confirmLabel?: string;
+	cancelLabel?: string;
+	confirmVariant?: "brand" | "red";
 }) {
 	return (
 		<Dialog
@@ -45,16 +51,16 @@ export default function ConfirmationDialog({
 
 			<DialogActions sx={{ justifyContent: "center", pb: 3, gap: 2 }}>
 				<Button onClick={() => setIsOpen(false)} variant="outline">
-					Tidak
+					{cancelLabel}
 				</Button>
 				<Button
 					onClick={() => {
 						onConfirm();
 						setIsOpen(false);
 					}}
-					variant="brand"
+					variant={confirmVariant}
 				>
-					Ya
+					{confirmLabel}
 				</Button>
 			</DialogActions>
 		</Dialog>
