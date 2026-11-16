@@ -18,7 +18,8 @@ type PaymentResponse struct {
 	ID          uuid.UUID        `json:"id"`
 	TutorialID  uuid.UUID        `json:"tutorial_id"`
 	Tutorial    *PaymentTutorial `json:"tutorial,omitempty"`
-	UserID      uuid.UUID        `json:"user_id"`
+	UserID      *uuid.UUID       `json:"user_id"`
+	StudentName string           `json:"student_name,omitempty"`
 	Nominal     int              `json:"nominal"`
 	IsPaid      bool             `json:"is_paid"`
 	PaymentDate int64            `json:"payment_date"`
@@ -27,7 +28,7 @@ type PaymentResponse struct {
 	UpdatedAt   time.Time        `json:"updated_at"`
 }
 
-// ToPaymentResponse maps an entity; tutorial info is included when Tutorial is preloaded.
+// ToPaymentResponse maps an entity; tutorial and student info are included when Tutorial and User are preloaded.
 func ToPaymentResponse(p entity.Payment) PaymentResponse {
 	out := PaymentResponse{
 		ID:          p.ID,
@@ -39,6 +40,9 @@ func ToPaymentResponse(p entity.Payment) PaymentResponse {
 		Note:        p.Note,
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
+	}
+	if p.User != nil {
+		out.StudentName = p.User.Name
 	}
 	if p.Tutorial != nil {
 		out.Tutorial = &PaymentTutorial{

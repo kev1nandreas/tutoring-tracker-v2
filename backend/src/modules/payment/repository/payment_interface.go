@@ -13,4 +13,6 @@ type PaymentRepository interface {
 	Create(payment *entity.Payment) error
 	Update(payment *entity.Payment) error
 	Delete(payment *entity.Payment) error
+	// IsTutorialOwner reports whether the tutorial was created by that user.
+	IsTutorialOwner(tutorialID, tutorID uuid.UUID) (bool, error)
 }

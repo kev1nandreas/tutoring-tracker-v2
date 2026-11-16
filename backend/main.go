@@ -25,6 +25,7 @@ import (
 	submissionFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/submission/factory"
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/incomesync"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/notifier"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -129,12 +130,15 @@ func main() {
 
 	// Initialize module usecases and handlers via factories
 	handlers := &handler.Handlers{
-		Role:              handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
-		User:              handler.NewUserHandler(userFactory.NewUserUsecase(db)),
-		Tutorial:          handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage)),
-		Meeting:           handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db, storage)),
-		Attachment:        handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier, storage)),
-		Payment:           handler.NewPaymentHandler(paymentFactory.NewPaymentUsecase(db)),
+		Role:       handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
+		User:       handler.NewUserHandler(userFactory.NewUserUsecase(db)),
+		Tutorial:   handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage)),
+		Meeting:    handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db, storage)),
+		Attachment: handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier, storage)),
+		Payment: handler.NewPaymentHandler(paymentFactory.NewPaymentUsecase(db, incomesync.New(
+			config.GetEnvString("PERSONAL_WEBSITE_URL", ""),
+			config.GetEnvString("PERSONAL_WEBSITE_API_KEY", ""),
+		))),
 		PendingValidation: handler.NewPendingValidationHandler(pendingValidationFactory.NewPendingValidationUsecase(db)),
 		Submission:        handler.NewSubmissionHandler(submissionFactory.NewSubmissionUsecase(db)),
 		Notification:      handler.NewNotificationHandler(notificationUsecase),

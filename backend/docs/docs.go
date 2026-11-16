@@ -3361,8 +3361,8 @@ const docTemplate = `{
         "dto.CreatePaymentRequest": {
             "type": "object",
             "required": [
-                "tutorial_id",
-                "user_id"
+                "nominal",
+                "tutorial_id"
             ],
             "properties": {
                 "is_paid": {
@@ -3803,6 +3803,9 @@ const docTemplate = `{
                 },
                 "payment_date": {
                     "type": "integer"
+                },
+                "student_name": {
+                    "type": "string"
                 },
                 "tutorial": {
                     "$ref": "#/definitions/dto.PaymentTutorial"

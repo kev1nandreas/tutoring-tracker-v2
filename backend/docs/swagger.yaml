@@ -93,8 +93,8 @@ definitions:
       user_id:
         type: string
     required:
+    - nominal
     - tutorial_id
-    - user_id
     type: object
   dto.CreateRoleRequest:
     properties:
@@ -383,6 +383,8 @@ definitions:
         type: string
       payment_date:
         type: integer
+      student_name:
+        type: string
       tutorial:
         $ref: '#/definitions/dto.PaymentTutorial'
       tutorial_id:

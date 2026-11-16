@@ -11,7 +11,7 @@ type PaymentUsecase interface {
 	// other payments behave as not found.
 	FindAll(params pagination.Params, tutorID *uuid.UUID) ([]dto.PaymentResponse, pagination.Meta, error)
 	FindByID(id string, tutorID *uuid.UUID) (*dto.PaymentResponse, error)
-	Create(req dto.CreatePaymentRequest) (*dto.PaymentResponse, error)
+	Create(req dto.CreatePaymentRequest, tutorID *uuid.UUID) (*dto.PaymentResponse, error)
 	Update(id string, tutorID *uuid.UUID, req dto.UpdatePaymentRequest) (*dto.PaymentResponse, error)
 	Delete(id string, tutorID *uuid.UUID) error
 }

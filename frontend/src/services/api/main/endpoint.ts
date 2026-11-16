@@ -12,6 +12,10 @@ export const MAIN_ENDPOINT = {
 		List: "/v1/students",
 		Detail: (id: string) => `/v1/students/${id}`,
 	},
+	Payment: {
+		List: "/v1/payments",
+		Detail: (id: string) => `/v1/payments/${id}`,
+	},
 	Feedback: {
 		Form: (code: string) => `/v1/public/feedback/${code}`,
 		Status: (tutorialId: string) =>

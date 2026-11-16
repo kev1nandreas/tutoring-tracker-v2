@@ -34,7 +34,7 @@ func (r *paymentPostgresRepository) FindAll(params pagination.Params, tutorID *u
 		params.Sort = ""
 	}
 
-	q := r.db.Preload("Tutorial")
+	q := r.db.Preload("Tutorial").Preload("User")
 	if tutorID != nil {
 		q = q.Where("tutorial_id IN (?)", r.db.Table("tutorials").Select("id").Where("created_by = ?", *tutorID))
 	}
@@ -49,7 +49,7 @@ func (r *paymentPostgresRepository) FindAll(params pagination.Params, tutorID *u
 
 func (r *paymentPostgresRepository) FindByID(id string) (*entity.Payment, error) {
 	var payment entity.Payment
-	if err := r.db.Preload("Tutorial").Where("id = ?", id).First(&payment).Error; err != nil {
+	if err := r.db.Preload("Tutorial").Preload("User").Where("id = ?", id).First(&payment).Error; err != nil {
 		return nil, err
 	}
 	return &payment, nil
@@ -65,4 +65,10 @@ func (r *paymentPostgresRepository) Update(payment *entity.Payment) error {
 
 func (r *paymentPostgresRepository) Delete(payment *entity.Payment) error {
 	return r.db.Delete(payment).Error
+}
+
+func (r *paymentPostgresRepository) IsTutorialOwner(tutorialID, tutorID uuid.UUID) (bool, error) {
+	var n int64
+	err := r.db.Table("tutorials").Where("id = ? AND created_by = ?", tutorialID, tutorID).Count(&n).Error
+	return n > 0, err
 }

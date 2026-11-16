@@ -8,6 +8,7 @@ import {
 	LayoutGrid,
 	UserCheck,
 	Users,
+	Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -55,6 +56,12 @@ const NAV_ITEMS: NavItem[] = [
 		icon: <UserCheck className="w-5 h-5" />,
 		path: PATH.PENDING_VALIDATION,
 		description: "Students waiting for approval",
+	},
+	{
+		name: "Payments",
+		icon: <Wallet className="w-5 h-5" />,
+		path: PATH.PAYMENTS,
+		description: "Payments and income",
 	},
 ];
 

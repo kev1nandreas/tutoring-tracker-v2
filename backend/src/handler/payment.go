@@ -67,8 +67,17 @@ func (h *PaymentHandler) CreatePayment(c *gin.Context) {
 		return
 	}
 
-	item, err := h.usecase.Create(input)
+	tutorID, ok := h.tutorScope(c)
+	if !ok {
+		return
+	}
+
+	item, err := h.usecase.Create(input, tutorID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", err.Error()).Send(c)
+			return
+		}
 		response.NewErrorResponse(http.StatusInternalServerError, "Failed to create payment", err.Error()).Send(c)
 		return
 	}
