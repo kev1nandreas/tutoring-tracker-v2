@@ -218,6 +218,13 @@ definitions:
       name:
         type: string
     type: object
+  dto.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   dto.FormInfo:
     properties:
       open:
@@ -497,6 +504,17 @@ definitions:
         type: string
       total_bytes:
         type: integer
+    type: object
+  dto.ResetPasswordRequest:
+    properties:
+      new_password:
+        minLength: 8
+        type: string
+      token:
+        type: string
+    required:
+    - new_password
+    - token
     type: object
   dto.Roster:
     properties:
@@ -1215,6 +1233,57 @@ paths:
       summary: Get a short-lived link to open or download a file
       tags:
       - attachment
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Always answers 200, whether or not the email has an account
+      parameters:
+      - description: Email
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Request a password reset email
+      tags:
+      - user
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reset token and new password
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Invalid or expired link
+          schema:
+            type: string
+      summary: Set a new password with a reset token
+      tags:
+      - user
   /bundles/{id}/download:
     get:
       description: Opened by the browser from download_url, so it takes a signed token

@@ -12,6 +12,10 @@ type UserUsecase interface {
 	Login(req dto.LoginRequest) (*dto.LoginResponse, error)
 	// LoginWithGoogle signs in the owner of a verified Google email; a new email becomes a student.
 	LoginWithGoogle(ctx context.Context, idToken string) (*dto.LoginResponse, error)
+	// ForgotPassword emails a reset link when the email has an account. It never reveals whether it does.
+	ForgotPassword(email string)
+	// ResetPassword sets a new password using the token from the emailed link.
+	ResetPassword(req dto.ResetPasswordRequest) error
 	Me(username string) (*dto.MeResponse, error)
 	Register(req dto.RegisterRequest) (*entity.User, error)
 	RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error)

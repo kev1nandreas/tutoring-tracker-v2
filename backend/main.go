@@ -26,6 +26,7 @@ import (
 	submissionFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/submission/factory"
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
+	userUC "github.com/kev1nandreas/go-rest-api-template/src/modules/user/usecase"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/googleauth"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/incomesync"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/mailer"
@@ -107,6 +108,7 @@ func main() {
 	// Notifications: one usecase shared by the handler and the event notifier.
 	// Email copies are sent only when SMTP is configured (see SMTP_* in .env.example).
 	var mail notificationUC.Mailer
+	var userMail userUC.Mailer // same mailer, for password reset emails
 	if m := mailer.New(mailer.Config{
 		Host:     config.GetEnvString("SMTP_HOST", ""),
 		Port:     config.GetEnvInt("SMTP_PORT", 587),
@@ -116,6 +118,7 @@ func main() {
 		FromName: config.GetEnvString("SMTP_FROM_NAME", "Tutoring Tracker"),
 	}); m != nil {
 		mail = m
+		userMail = m
 	} else {
 		log.Println("SMTP not configured: notifications are in-app only")
 	}
@@ -148,7 +151,7 @@ func main() {
 	// Initialize module usecases and handlers via factories
 	handlers := &handler.Handlers{
 		Role:       handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
-		User:       handler.NewUserHandler(userFactory.NewUserUsecase(db, googleauth.New(config.GetEnvString("GOOGLE_CLIENT_ID", "")))),
+		User:       handler.NewUserHandler(userFactory.NewUserUsecase(db, googleauth.New(config.GetEnvString("GOOGLE_CLIENT_ID", "")), userMail, config.GetEnvString("FRONTEND_URL", "http://localhost:3000"))),
 		Tutorial:   handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage)),
 		Meeting:    handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db, storage)),
 		Attachment: handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier, storage)),

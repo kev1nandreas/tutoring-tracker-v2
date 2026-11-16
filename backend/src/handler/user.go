@@ -148,6 +148,56 @@ func (h *UserHandler) LoginHandler(c *gin.Context) {
 	response.NewSuccessResponse("Login successful", loginResp).Send(c)
 }
 
+// ForgotPasswordHandler godoc
+// @Summary Request a password reset email
+// @Description Always answers 200, whether or not the email has an account
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param input body dto.ForgotPasswordRequest true "Email"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Bad Request"
+// @Router /auth/forgot-password [post]
+func (h *UserHandler) ForgotPasswordHandler(c *gin.Context) {
+	var req dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Enter a valid email address", err.Error()).Send(c)
+		return
+	}
+
+	h.usecase.ForgotPassword(req.Email)
+
+	response.NewSuccessResponse("If that email has an account, a reset link is on its way", nil).Send(c)
+}
+
+// ResetPasswordHandler godoc
+// @Summary Set a new password with a reset token
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param input body dto.ResetPasswordRequest true "Reset token and new password"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Invalid or expired link"
+// @Router /auth/reset-password [post]
+func (h *UserHandler) ResetPasswordHandler(c *gin.Context) {
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Password must be at least 8 characters", err.Error()).Send(c)
+		return
+	}
+
+	if err := h.usecase.ResetPassword(req); err != nil {
+		if errors.Is(err, usecase.ErrInvalidResetToken) {
+			response.NewErrorResponse(http.StatusBadRequest, "Reset link is invalid or has expired", err.Error()).Send(c)
+			return
+		}
+		response.NewErrorResponse(http.StatusInternalServerError, "Could not reset password", err.Error()).Send(c)
+		return
+	}
+
+	response.NewSuccessResponse("Password updated", nil).Send(c)
+}
+
 // GoogleLoginHandler godoc
 // @Summary Authenticate with a Google ID token
 // @Description Verifies the Google ID token, then signs in the user with that email (a new email becomes a student) and returns a JWT

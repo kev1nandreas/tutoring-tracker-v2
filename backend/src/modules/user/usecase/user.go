@@ -3,7 +3,9 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
+	"net/url"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/repository"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/auth"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/googleauth"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/mailer"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -24,14 +27,83 @@ type GoogleVerifier interface {
 	Verify(ctx context.Context, idToken string) (*googleauth.Profile, error)
 }
 
-type userUsecase struct {
-	repo   repository.UserRepository
-	google GoogleVerifier
+// Mailer sends an email with an HTML and a plain-text version (implemented by mailer.Mailer).
+type Mailer interface {
+	SendHTML(to, subject, text, html string) error
 }
 
-// NewUserUsecase builds the usecase. google may be nil: Google login is then disabled.
-func NewUserUsecase(repo repository.UserRepository, google GoogleVerifier) UserUsecase {
-	return &userUsecase{repo: repo, google: google}
+type userUsecase struct {
+	repo        repository.UserRepository
+	google      GoogleVerifier
+	mailer      Mailer
+	frontendURL string
+}
+
+// NewUserUsecase builds the usecase. google and mailer may be nil: Google login and
+// password reset emails are then disabled. frontendURL is where reset links point.
+func NewUserUsecase(repo repository.UserRepository, google GoogleVerifier, mailer Mailer, frontendURL string) UserUsecase {
+	return &userUsecase{repo: repo, google: google, mailer: mailer, frontendURL: strings.TrimRight(frontendURL, "/")}
+}
+
+// ErrInvalidResetToken is returned for a bad, expired or already used reset link.
+var ErrInvalidResetToken = errors.New("reset link is invalid or has expired")
+
+func (u *userUsecase) ForgotPassword(email string) {
+	if u.mailer == nil {
+		log.Printf("forgot password: SMTP not configured, no email sent")
+		return
+	}
+	user, err := u.repo.FindByEmail(email)
+	if err != nil {
+		return // unknown email: say nothing, to not reveal which emails have accounts
+	}
+	token, err := auth.GenerateResetToken(user.ID.String(), user.Password)
+	if err != nil {
+		log.Printf("forgot password: token for user %s: %v", user.ID, err)
+		return
+	}
+
+	link := u.frontendURL + "/reset-password?reset_token=" + url.QueryEscape(token)
+	text, html := mailer.Email{
+		AppName:  "Tutoring Tracker",
+		Title:    "Reset your password",
+		Greeting: fmt.Sprintf("Hi %s,", user.Name),
+		Paragraphs: []string{
+			"We got a request to reset the password of your Tutoring Tracker account. Press the button below to choose a new one.",
+			fmt.Sprintf("The link works once and expires in %d minutes.", int(auth.ResetTokenTTL.Minutes())),
+		},
+		ButtonLabel: "Reset password",
+		ButtonURL:   link,
+		Footnote:    "If you did not ask for this, you can ignore this email. Your password stays the same.",
+	}.Render()
+
+	// in the background: a slow mail server must not reveal (by timing) whether the email exists
+	go func() {
+		if err := u.mailer.SendHTML(user.Email, "Reset your password", text, html); err != nil {
+			log.Printf("forgot password: email to user %s failed: %v", user.ID, err)
+		}
+	}()
+}
+
+func (u *userUsecase) ResetPassword(req dto.ResetPasswordRequest) error {
+	userID, fingerprint, err := auth.ParseResetToken(req.Token)
+	if err != nil {
+		return ErrInvalidResetToken
+	}
+	user, err := u.repo.FindByID(userID)
+	if err != nil || !auth.MatchesPassword(fingerprint, user.Password) {
+		return ErrInvalidResetToken
+	}
+
+	hashed, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		return errors.New("could not hash password")
+	}
+	user.Password = hashed
+	if err := u.repo.Update(user); err != nil {
+		return errors.New("could not save password")
+	}
+	return nil
 }
 
 // ErrGoogleDisabled is returned when Google login is not configured.

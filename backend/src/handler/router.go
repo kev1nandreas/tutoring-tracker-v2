@@ -67,6 +67,8 @@ func NewRouter(
 
 		v1.POST("/login", limit, h.User.LoginHandler)
 		v1.POST("/login/google", limit, h.User.GoogleLoginHandler)
+		v1.POST("/auth/forgot-password", limit, h.User.ForgotPasswordHandler)
+		v1.POST("/auth/reset-password", limit, h.User.ResetPasswordHandler)
 		v1.POST("/register", limit, h.User.RegisterHandler)
 		v1.GET("/me", factory.JWTAuth(), limit, h.User.MeHandler)
 

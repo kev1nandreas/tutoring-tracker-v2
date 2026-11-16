@@ -7,11 +7,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// NewUserUsecase builds the user usecase. google may be nil, which disables Google login.
-func NewUserUsecase(db *gorm.DB, google *googleauth.Verifier) usecase.UserUsecase {
+// NewUserUsecase builds the user usecase. google may be nil (no Google login); mailer may be nil (no reset emails).
+func NewUserUsecase(db *gorm.DB, google *googleauth.Verifier, mailer usecase.Mailer, frontendURL string) usecase.UserUsecase {
 	repo := repository.NewUserPostgresRepository(db)
 	if google == nil { // avoid a non-nil interface holding a nil pointer
-		return usecase.NewUserUsecase(repo, nil)
+		return usecase.NewUserUsecase(repo, nil, mailer, frontendURL)
 	}
-	return usecase.NewUserUsecase(repo, google)
+	return usecase.NewUserUsecase(repo, google, mailer, frontendURL)
 }

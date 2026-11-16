@@ -71,6 +71,16 @@ export default function LoginForm() {
 							leftIcon={Lock}
 							autoComplete="current-password"
 						/>
+						<div className="mt-2 text-right">
+							<PrimaryLink
+								href={PATH.FORGOT_PASSWORD}
+								size="small"
+								underline={false}
+								className="text-brand-600 hover:text-brand-700 font-semibold"
+							>
+								Forgot password?
+							</PrimaryLink>
+						</div>
 					</div>
 
 					<Button
