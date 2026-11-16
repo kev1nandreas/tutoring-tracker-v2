@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/usecase"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
@@ -22,8 +23,9 @@ func NewTutorialHandler(uc usecase.TutorialUsecase) *TutorialHandler {
 
 // FindTutorials godoc
 // @Summary List tutorials with pagination
-// @Description Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=<uuid>
+// @Description Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=<uuid>. When called with a tutor token, only that tutor's own tutorials are returned.
 // @Tags tutorial
+// @Security JwtAuth
 // @Produce json
 // @Param page query int false "Page" default(1)
 // @Param page_size query int false "Page size" default(10)
@@ -34,7 +36,18 @@ func NewTutorialHandler(uc usecase.TutorialUsecase) *TutorialHandler {
 func (h *TutorialHandler) FindTutorials(c *gin.Context) {
 	params := pagination.ParseParams(c)
 
-	items, meta, err := h.usecase.FindAll(params)
+	// a tutor only sees tutorials they created
+	var creatorID *uuid.UUID
+	if c.GetString("role") == "tutor" {
+		id, err := uuid.Parse(c.GetString("user_id"))
+		if err != nil {
+			response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "invalid token, please log in again").Send(c)
+			return
+		}
+		creatorID = &id
+	}
+
+	items, meta, err := h.usecase.FindAll(params, creatorID)
 	if err != nil {
 		response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve tutorials", err.Error()).Send(c)
 		return
@@ -52,16 +65,27 @@ func (h *TutorialHandler) FindTutorials(c *gin.Context) {
 // @Param input body dto.CreateTutorialRequest true "Create tutorial"
 // @Success 201 {object} entity.Tutorial
 // @Failure 400 {string} string "Bad Request"
+// @Failure 403 {string} string "Forbidden"
 // @Router /tutorials [post]
 func (h *TutorialHandler) CreateTutorial(c *gin.Context) {
 	var input dto.CreateTutorialRequest
+
+	if c.GetString("role") != "tutor" {
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor can create a tutorial").Send(c)
+		return
+	}
+	creatorID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "invalid token, please log in again").Send(c)
+		return
+	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", err.Error()).Send(c)
 		return
 	}
 
-	item, err := h.usecase.Create(input)
+	item, err := h.usecase.Create(creatorID, input)
 	if err != nil {
 		response.NewErrorResponse(http.StatusInternalServerError, "Failed to create tutorial", err.Error()).Send(c)
 		return
@@ -77,7 +101,9 @@ func (h *TutorialHandler) CreateTutorial(c *gin.Context) {
 
 // FindTutorial godoc
 // @Summary Get a tutorial by ID
+// @Description A tutor token can only read tutorials the tutor created.
 // @Tags tutorial
+// @Security JwtAuth
 // @Produce json
 // @Param id path string true "Tutorial ID"
 // @Success 200 {object} entity.Tutorial
@@ -87,6 +113,12 @@ func (h *TutorialHandler) FindTutorial(c *gin.Context) {
 	item, err := h.usecase.FindByID(c.Param("id"))
 	if err != nil {
 		h.notFoundOrError(c, err)
+		return
+	}
+
+	// a tutor cannot see tutorials created by someone else
+	if c.GetString("role") == "tutor" && (item.CreatedBy == nil || item.CreatedBy.String() != c.GetString("user_id")) {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "record not found").Send(c)
 		return
 	}
 

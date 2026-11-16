@@ -29,7 +29,7 @@ func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, errors.New("invalid username or password")
 	}
 
-	token, err := auth.GenerateToken(user.Username, user.Email, user.Role.Name)
+	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, user.Role.Name)
 	if err != nil {
 		return nil, errors.New("error generating token")
 	}

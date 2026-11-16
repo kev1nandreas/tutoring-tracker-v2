@@ -15,11 +15,24 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// Handlers groups every module handler wired into the router.
+type Handlers struct {
+	Role              *RoleHandler
+	User              *UserHandler
+	Tutorial          *TutorialHandler
+	Meeting           *MeetingHandler
+	Attachment        *AttachmentHandler
+	Payment           *PaymentHandler
+	PendingValidation *PendingValidationHandler
+	Submission        *SubmissionHandler
+	Notification      *NotificationHandler
+	Job               *JobHandler
+}
+
 func NewRouter(
 	logger *zap.Logger,
 	mongoCollection *mongo.Collection,
-	bookHandler *BookHandler,
-	userHandler *UserHandler,
+	h *Handlers,
 ) *gin.Engine {
 	isLogging := config.GetEnvBool("APP_MONGO_LOGGING", false)
 
@@ -43,15 +56,68 @@ func NewRouter(
 	docs.SwaggerInfo.BasePath = "/api/v1"
 	v1 := r.Group("/api/v1")
 	{
-		v1.GET("/", bookHandler.Healthcheck)
-		v1.GET("/books", factory.APIKeyAuth(), bookHandler.FindBooks)
-		v1.POST("/books", factory.APIKeyAuth(), factory.JWTAuth(), bookHandler.CreateBook)
-		v1.GET("/books/:id", factory.APIKeyAuth(), bookHandler.FindBook)
-		v1.PUT("/books/:id", factory.APIKeyAuth(), bookHandler.UpdateBook)
-		v1.DELETE("/books/:id", factory.APIKeyAuth(), bookHandler.DeleteBook)
+		v1.GET("/", Healthcheck)
 
-		v1.POST("/login", factory.APIKeyAuth(), userHandler.LoginHandler)
-		v1.POST("/register", factory.APIKeyAuth(), userHandler.RegisterHandler)
+		v1.POST("/login", h.User.LoginHandler)
+		v1.POST("/register", h.User.RegisterHandler)
+
+		// everything below requires a valid JWT
+		protected := v1.Group("")
+		protected.Use(factory.JWTAuth())
+		protected.POST("/register/tutor", h.User.RegisterTutorHandler)
+
+		protected.GET("/roles", h.Role.FindRoles)
+		protected.POST("/roles", h.Role.CreateRole)
+		protected.GET("/roles/:id", h.Role.FindRole)
+		protected.PUT("/roles/:id", h.Role.UpdateRole)
+		protected.DELETE("/roles/:id", h.Role.DeleteRole)
+
+		protected.GET("/users", h.User.FindUsers)
+		protected.GET("/users/:id", h.User.FindUser)
+		protected.PUT("/users/:id", h.User.UpdateUser)
+		protected.DELETE("/users/:id", h.User.DeleteUser)
+
+		protected.GET("/tutorials", h.Tutorial.FindTutorials)
+		protected.POST("/tutorials", h.Tutorial.CreateTutorial)
+		protected.GET("/tutorials/:id", h.Tutorial.FindTutorial)
+		protected.GET("/tutorials/:id/meetings", h.Meeting.FindMeetingsByTutorial)
+		protected.GET("/pending-validations", h.PendingValidation.FindPendingValidations)
+		protected.GET("/tutorials/:id/pending-validations", h.PendingValidation.FindPendingValidationsByTutorial)
+		protected.POST("/pending-validations/enroll", h.PendingValidation.Enroll)
+		protected.POST("/pending-validations/validate", h.PendingValidation.Validate)
+		protected.PUT("/tutorials/:id", h.Tutorial.UpdateTutorial)
+		protected.DELETE("/tutorials/:id", h.Tutorial.DeleteTutorial)
+
+		protected.GET("/meetings", h.Meeting.FindMeetings)
+		protected.POST("/meetings", h.Meeting.CreateMeeting)
+		protected.GET("/meetings/:id", h.Meeting.FindMeeting)
+		protected.PUT("/meetings/:id", h.Meeting.UpdateMeeting)
+		protected.DELETE("/meetings/:id", h.Meeting.DeleteMeeting)
+
+		protected.GET("/attachments", h.Attachment.FindAttachments)
+		protected.POST("/attachments", h.Attachment.CreateAttachment)
+		protected.GET("/attachments/:id", h.Attachment.FindAttachment)
+		protected.PUT("/attachments/:id", h.Attachment.UpdateAttachment)
+		protected.DELETE("/attachments/:id", h.Attachment.DeleteAttachment)
+
+		protected.GET("/payments", h.Payment.FindPayments)
+		protected.POST("/payments", h.Payment.CreatePayment)
+		protected.GET("/payments/:id", h.Payment.FindPayment)
+		protected.PUT("/payments/:id", h.Payment.UpdatePayment)
+		protected.DELETE("/payments/:id", h.Payment.DeletePayment)
+
+		protected.GET("/submissions", h.Submission.FindSubmissions)
+		protected.POST("/submissions", h.Submission.CreateSubmission)
+		protected.GET("/submissions/:id", h.Submission.FindSubmission)
+		protected.PUT("/submissions/:id", h.Submission.UpdateSubmission)
+		protected.DELETE("/submissions/:id", h.Submission.DeleteSubmission)
+
+		protected.GET("/users/:id/notifications", h.Notification.FindNotificationsByUser)
+		protected.GET("/notifications/:id", h.Notification.FindNotification)
+		protected.PATCH("/notifications/:id/read", h.Notification.MarkNotificationAsRead)
+
+		protected.GET("/jobs", h.Job.FindJobs)
+		protected.GET("/jobs/:id", h.Job.FindJob)
 	}
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 

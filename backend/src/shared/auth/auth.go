@@ -12,6 +12,7 @@ import (
 
 // Claims struct to be encoded to JWT
 type Claims struct {
+	UserID   string `json:"user_id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Role     string `json:"role"`
@@ -25,10 +26,11 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func GenerateToken(username, email, role string) (string, error) {
+func GenerateToken(userID, username, email, role string) (string, error) {
 	expirationTime := time.Now().Add(5 * time.Minute).Unix()
 
 	claims := &Claims{
+		UserID:   userID,
 		Username: username,
 		Email:    email,
 		Role:     role,

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/google/uuid"
+
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/repository"
@@ -19,16 +21,17 @@ func NewTutorialUsecase(repo repository.TutorialRepository) TutorialUsecase {
 	return &tutorialUsecase{repo: repo}
 }
 
-func (u *tutorialUsecase) FindAll(params pagination.Params) ([]entity.Tutorial, pagination.Meta, error) {
-	return u.repo.FindAll(params)
+func (u *tutorialUsecase) FindAll(params pagination.Params, creatorID *uuid.UUID) ([]entity.Tutorial, pagination.Meta, error) {
+	return u.repo.FindAll(params, creatorID)
 }
 
 func (u *tutorialUsecase) FindByID(id string) (*entity.Tutorial, error) {
 	return u.repo.FindByID(id)
 }
 
-func (u *tutorialUsecase) Create(req dto.CreateTutorialRequest) (*entity.Tutorial, error) {
+func (u *tutorialUsecase) Create(creatorID uuid.UUID, req dto.CreateTutorialRequest) (*entity.Tutorial, error) {
 	tutorial := &entity.Tutorial{
+		CreatedBy:      &creatorID,
 		Name:           req.Name,
 		DateStarted:    req.DateStarted.Time,
 		DateEnded:      req.DateEnded.Time,
