@@ -16,7 +16,7 @@ export default function Loading() {
 				/>
 			</div>
 
-			<p className="text-sm text-gray-500">Memuat...</p>
+			<p className="text-sm text-gray-500">Loading…</p>
 		</section>
 	);
 }
