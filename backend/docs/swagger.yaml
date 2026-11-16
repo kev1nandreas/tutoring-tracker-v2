@@ -276,6 +276,45 @@ definitions:
     required:
     - id_token
     type: object
+  dto.GoogleLoginResponse:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      needs_registration:
+        type: boolean
+      registration_token:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.MeResponse'
+    type: object
+  dto.GoogleRegisterRequest:
+    properties:
+      name:
+        maxLength: 100
+        type: string
+      phone:
+        maxLength: 12
+        type: string
+      registration_token:
+        type: string
+      school:
+        maxLength: 100
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    - phone
+    - registration_token
+    - school
+    - username
+    type: object
   dto.GradeSubmissionRequest:
     properties:
       feedback:
@@ -1544,7 +1583,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.LoginResponse'
+            $ref: '#/definitions/dto.GoogleLoginResponse'
         "400":
           description: Bad Request
           schema:
@@ -2795,6 +2834,41 @@ paths:
           schema:
             type: string
       summary: Register a new student
+      tags:
+      - user
+  /register/google:
+    post:
+      consumes:
+      - application/json
+      description: Creates the student account for the Google-verified email in the
+        registration token, then signs in
+      parameters:
+      - description: Registration details
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GoogleRegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Registration session expired
+          schema:
+            type: string
+        "409":
+          description: Email or username taken
+          schema:
+            type: string
+      summary: Finish a Google sign-up
       tags:
       - user
   /register/tutor:

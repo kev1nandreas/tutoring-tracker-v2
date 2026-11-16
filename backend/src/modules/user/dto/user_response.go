@@ -41,3 +41,14 @@ type LoginResponse struct {
 	Token string     `json:"token"`
 	User  MeResponse `json:"user"`
 }
+
+// GoogleLoginResponse is either a normal login (Token and User) or, for an email with
+// no account yet, NeedsRegistration with a short-lived token for the registration form.
+type GoogleLoginResponse struct {
+	NeedsRegistration bool        `json:"needs_registration"`
+	RegistrationToken string      `json:"registration_token,omitempty"`
+	Email             string      `json:"email,omitempty"`
+	Name              string      `json:"name,omitempty"`
+	Token             string      `json:"token,omitempty"`
+	User              *MeResponse `json:"user,omitempty"`
+}

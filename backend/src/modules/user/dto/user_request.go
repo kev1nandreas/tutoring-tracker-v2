@@ -57,3 +57,12 @@ type VerifyEmailRequest struct {
 type EmailNotificationsRequest struct {
 	Enabled *bool `json:"enabled" binding:"required"`
 }
+
+// GoogleRegisterRequest finishes a Google sign-up with what Google does not give.
+type GoogleRegisterRequest struct {
+	RegistrationToken string `json:"registration_token" binding:"required"`
+	Name              string `json:"name" binding:"required,max=100"`
+	School            string `json:"school" binding:"required,max=100"`
+	Phone             string `json:"phone" binding:"required,max=12,numeric"`
+	Username          string `json:"username" binding:"required,min=3,max=50"`
+}

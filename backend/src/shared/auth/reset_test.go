@@ -53,3 +53,22 @@ func TestEmailVerifyToken(t *testing.T) {
 		t.Fatal("verify token accepted as reset token")
 	}
 }
+
+func TestGoogleRegisterToken(t *testing.T) {
+	tok, err := GenerateGoogleRegisterToken("a@x.co", "Ann")
+	if err != nil {
+		t.Fatal(err)
+	}
+	email, name, err := ParseGoogleRegisterToken(tok)
+	if err != nil || email != "a@x.co" || name != "Ann" {
+		t.Fatalf("parse: %v %q %q", err, email, name)
+	}
+	login, _ := GenerateToken("u", "bob", "b@x.co", "student")
+	if _, _, err := ParseGoogleRegisterToken(login); err == nil {
+		t.Fatal("login token accepted as registration token")
+	}
+	reset, _ := GenerateResetToken("u", "h")
+	if _, _, err := ParseGoogleRegisterToken(reset); err == nil {
+		t.Fatal("reset token accepted as registration token")
+	}
+}

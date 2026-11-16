@@ -160,3 +160,45 @@ func ParseEmailVerifyToken(token string) (userID, fingerprint string, err error)
 func MatchesEmail(fingerprint, email string) bool {
 	return subtle.ConstantTimeCompare([]byte(fingerprint), []byte(emailFingerprint(email))) == 1
 }
+
+// GoogleRegisterTTL is how long a verified Google identity can be used to finish registering.
+const GoogleRegisterTTL = 15 * time.Minute
+
+func googleRegisterKey() []byte {
+	return append(append([]byte{}, JwtKey...), []byte("|google-register")...)
+}
+
+type googleRegisterClaims struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+	jwt.StandardClaims
+}
+
+// GenerateGoogleRegisterToken carries an email Google has verified, from the login
+// attempt to the registration form, so the form cannot be pointed at someone else's email.
+func GenerateGoogleRegisterToken(email, name string) (string, error) {
+	claims := &googleRegisterClaims{
+		Email: email,
+		Name:  name,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(GoogleRegisterTTL).Unix(),
+			Subject:   "google-register",
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(googleRegisterKey())
+}
+
+// ParseGoogleRegisterToken returns the verified email and name from a registration token.
+func ParseGoogleRegisterToken(token string) (email, name string, err error) {
+	claims := &googleRegisterClaims{}
+	parsed, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return googleRegisterKey(), nil
+	})
+	if err != nil || !parsed.Valid || claims.Subject != "google-register" || claims.Email == "" {
+		return "", "", errors.New("registration session is invalid or has expired")
+	}
+	return claims.Email, claims.Name, nil
+}

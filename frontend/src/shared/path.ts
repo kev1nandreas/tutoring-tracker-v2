@@ -18,6 +18,7 @@ export const PATH = {
 	TUTOR_NOTIFICATIONS: "/tutor/notifications",
 	LOGIN: "/login",
 	COMPLETE_PROFILE: "/complete-profile",
+	REGISTER_GOOGLE: "/register/google",
 	LOGIN_GOOGLE: "/login/google",
 	FEEDBACK: "/form/feedback",
 	REGISTER: "/register",

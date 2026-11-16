@@ -522,7 +522,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.LoginResponse"
+                            "$ref": "#/definitions/dto.GoogleLoginResponse"
                         }
                     },
                     "400": {
@@ -2420,6 +2420,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/register/google": {
+            "post": {
+                "description": "Creates the student account for the Google-verified email in the registration token, then signs in",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Finish a Google sign-up",
+                "parameters": [
+                    {
+                        "description": "Registration details",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GoogleRegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Registration session expired",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Email or username taken",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/register/tutor": {
             "post": {
                 "security": [
@@ -3942,6 +3994,61 @@ const docTemplate = `{
             "properties": {
                 "id_token": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.GoogleLoginResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "needs_registration": {
+                    "type": "boolean"
+                },
+                "registration_token": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.MeResponse"
+                }
+            }
+        },
+        "dto.GoogleRegisterRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "phone",
+                "registration_token",
+                "school",
+                "username"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 12
+                },
+                "registration_token": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
                 }
             }
         },

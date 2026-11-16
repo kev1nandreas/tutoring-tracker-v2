@@ -26,6 +26,14 @@ export default function GoogleCallback() {
 
 		(async () => {
 			const session = await getSession();
+			if (session?.registration) {
+				// first time with this Google account: finish it like a normal registration
+				const query = redirect
+					? `?redirect=${encodeURIComponent(redirect)}`
+					: "";
+				router.replace(`${PATH.REGISTER_GOOGLE}${query}`);
+				return;
+			}
 			if (!session?.appToken || !session.appUser) {
 				setError(session?.error || "Google sign-in did not complete.");
 				return;

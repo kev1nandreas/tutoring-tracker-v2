@@ -318,6 +318,40 @@ func (h *UserHandler) EmailNotificationsHandler(c *gin.Context) {
 	}
 }
 
+// GoogleRegisterHandler godoc
+// @Summary Finish a Google sign-up
+// @Description Creates the student account for the Google-verified email in the registration token, then signs in
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param input body dto.GoogleRegisterRequest true "Registration details"
+// @Success 201 {object} dto.LoginResponse
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Registration session expired"
+// @Failure 409 {string} string "Email or username taken"
+// @Router /register/google [post]
+func (h *UserHandler) GoogleRegisterHandler(c *gin.Context) {
+	var req dto.GoogleRegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Check your details: phone must be digits only (max 12) and username 3+ characters", err.Error()).Send(c)
+		return
+	}
+
+	resp, err := h.usecase.RegisterWithGoogle(req)
+	switch {
+	case err == nil:
+		response.Response{StatusCode: http.StatusCreated, Success: true, Message: "Registration successful", Data: resp}.Send(c)
+	case errors.Is(err, usecase.ErrRegistrationExpired):
+		response.NewErrorResponse(http.StatusUnauthorized, "Your Google sign-in expired. Please start again", err.Error()).Send(c)
+	case errors.Is(err, usecase.ErrEmailTaken):
+		response.NewErrorResponse(http.StatusConflict, "That email is already registered. Sign in instead", err.Error()).Send(c)
+	case errors.Is(err, usecase.ErrUsernameTaken):
+		response.NewErrorResponse(http.StatusConflict, "That username is already taken", err.Error()).Send(c)
+	default:
+		response.NewErrorResponse(http.StatusInternalServerError, "Could not register", err.Error()).Send(c)
+	}
+}
+
 // GoogleLoginHandler godoc
 // @Summary Authenticate with a Google ID token
 // @Description Verifies the Google ID token, then signs in the user with that email (a new email becomes a student) and returns a JWT
@@ -325,7 +359,7 @@ func (h *UserHandler) EmailNotificationsHandler(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param input body dto.GoogleLoginRequest true "Google ID token"
-// @Success 200 {object} dto.LoginResponse
+// @Success 200 {object} dto.GoogleLoginResponse
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 501 {string} string "Google login is not configured"

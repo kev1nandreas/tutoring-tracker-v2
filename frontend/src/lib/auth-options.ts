@@ -3,7 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import { ENV } from "@/configs/environment";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
 import type { MainResponse } from "@/types/api";
-import type { LoginResponse } from "@/types/login";
+import type { GoogleLoginResponse } from "@/types/login";
 
 /**
  * NextAuth only runs the Google OAuth step. Right after it, the Google ID token is
@@ -19,8 +19,8 @@ async function exchangeWithBackend(idToken: string) {
 	});
 	const body = (await res
 		.json()
-		.catch(() => null)) as MainResponse<LoginResponse> | null;
-	if (!res.ok || !body?.data?.token) {
+		.catch(() => null)) as MainResponse<GoogleLoginResponse> | null;
+	if (!res.ok || !body?.data) {
 		throw new Error(body?.message || "Google sign-in failed.");
 	}
 	return body.data;
@@ -33,18 +33,27 @@ export const authOptions: NextAuthOptions = {
 			clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
 		}),
 	],
-	session: { strategy: "jwt", maxAge: 5 * 60 },
+	session: { strategy: "jwt", maxAge: 15 * 60 },
 	pages: { signIn: "/login", error: "/login" },
 	callbacks: {
 		async jwt({ token, account }) {
 			if (account?.id_token) {
 				try {
-					const { token: appToken, user } = await exchangeWithBackend(
-						account.id_token,
-					);
-					token.appToken = appToken;
-					token.appUser = user;
+					const data = await exchangeWithBackend(account.id_token);
 					token.error = undefined;
+					if (data.needs_registration && data.registration_token) {
+						// no account for this email yet: the register form finishes it
+						token.registration = {
+							token: data.registration_token,
+							email: data.email ?? "",
+							name: data.name ?? "",
+						};
+					} else if (data.token && data.user) {
+						token.appToken = data.token;
+						token.appUser = data.user;
+					} else {
+						throw new Error("Google sign-in failed.");
+					}
 				} catch (e) {
 					token.error =
 						e instanceof Error ? e.message : "Google sign-in failed.";
@@ -55,6 +64,7 @@ export const authOptions: NextAuthOptions = {
 		async session({ session, token }) {
 			session.appToken = token.appToken;
 			session.appUser = token.appUser;
+			session.registration = token.registration;
 			session.error = token.error;
 			return session;
 		},

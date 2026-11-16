@@ -154,7 +154,7 @@ func (u *userUsecase) ResetPassword(req dto.ResetPasswordRequest) error {
 // ErrGoogleDisabled is returned when Google login is not configured.
 var ErrGoogleDisabled = errors.New("google login is not configured")
 
-func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto.LoginResponse, error) {
+func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto.GoogleLoginResponse, error) {
 	if u.google == nil {
 		return nil, ErrGoogleDisabled
 	}
@@ -168,11 +168,17 @@ func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("could not look up user")
 		}
-		// first time with this email: create a student; school and phone are filled in later
-		user, err = u.createGoogleStudent(profile)
+		// no account yet: nothing is created until the person gives their details
+		regToken, err := auth.GenerateGoogleRegisterToken(profile.Email, profile.Name)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("could not start registration")
 		}
+		return &dto.GoogleLoginResponse{
+			NeedsRegistration: true,
+			RegistrationToken: regToken,
+			Email:             profile.Email,
+			Name:              profile.Name,
+		}, nil
 	}
 
 	// Google proved this person controls the email
@@ -183,12 +189,20 @@ func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto
 		}
 	}
 
+	resp, err := u.signIn(user)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.GoogleLoginResponse{Token: resp.Token, User: &resp.User}, nil
+}
+
+// signIn records the login and issues the app token.
+func (u *userUsecase) signIn(user *entity.User) (*dto.LoginResponse, error) {
 	if user.Role.Name == roleStudent {
 		if err := u.repo.UpdateLastLogin(user.ID, time.Now()); err != nil {
 			log.Printf("failed to update last login for user %s: %v", user.ID, err)
 		}
 	}
-
 	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, user.Role.Name)
 	if err != nil {
 		return nil, errors.New("error generating token")
@@ -196,7 +210,26 @@ func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto
 	return &dto.LoginResponse{Token: token, User: *toMeResponse(user)}, nil
 }
 
-func (u *userUsecase) createGoogleStudent(p *googleauth.Profile) (*entity.User, error) {
+// ErrRegistrationExpired is returned for a bad or expired Google registration token.
+var ErrRegistrationExpired = errors.New("registration session is invalid or has expired")
+
+func (u *userUsecase) RegisterWithGoogle(req dto.GoogleRegisterRequest) (*dto.LoginResponse, error) {
+	email, _, err := auth.ParseGoogleRegisterToken(req.RegistrationToken)
+	if err != nil {
+		return nil, ErrRegistrationExpired
+	}
+
+	if taken, err := u.repo.ExistsByEmail(email); err != nil {
+		return nil, errors.New("could not check email")
+	} else if taken {
+		return nil, ErrEmailTaken
+	}
+	if _, err := u.repo.FindByUsername(req.Username); err == nil {
+		return nil, ErrUsernameTaken
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, errors.New("could not check username")
+	}
+
 	role, err := u.repo.FindRoleByName(roleStudent)
 	if err != nil {
 		return nil, errors.New("student role not found")
@@ -207,16 +240,14 @@ func (u *userUsecase) createGoogleStudent(p *googleauth.Profile) (*entity.User, 
 		return nil, errors.New("could not hash password")
 	}
 
-	name := p.Name
-	if name == "" {
-		name = strings.SplitN(p.Email, "@", 2)[0]
-	}
 	user := &entity.User{
 		RoleID:   role.ID,
 		Role:     *role,
-		Name:     name,
-		Email:    p.Email,
-		Username: googleUsername(p.Email),
+		Name:     req.Name,
+		School:   req.School,
+		Phone:    req.Phone,
+		Email:    email,
+		Username: req.Username,
 		Password: hashed,
 		// Google checked the email
 		EmailVerified:      true,
@@ -225,16 +256,7 @@ func (u *userUsecase) createGoogleStudent(p *googleauth.Profile) (*entity.User, 
 	if err := u.repo.Create(user); err != nil {
 		return nil, errors.New("could not save user")
 	}
-	return user, nil
-}
-
-// googleUsername is the email's local part plus a random suffix (usernames are unique, max 50).
-func googleUsername(email string) string {
-	local := strings.SplitN(email, "@", 2)[0]
-	if len(local) > 30 {
-		local = local[:30]
-	}
-	return local + "-" + uuid.NewString()[:8]
+	return u.signIn(user)
 }
 
 func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {

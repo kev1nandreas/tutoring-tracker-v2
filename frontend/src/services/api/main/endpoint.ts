@@ -74,6 +74,7 @@ export const MAIN_ENDPOINT = {
 	Auth: {
 		Login: "/v1/login",
 		Google: "/v1/login/google",
+		RegisterGoogle: "/v1/register/google",
 		VerifyEmail: "/v1/auth/verify-email",
 		Register: "/v1/register",
 		RegisterTutor: "/v1/register/tutor",
