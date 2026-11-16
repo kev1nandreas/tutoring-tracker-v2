@@ -9,8 +9,8 @@ type Tutorial struct {
 	ID             uuid.UUID `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	CustomID       string    `json:"custom_id" gorm:"size:6;not null;uniqueIndex"`
 	Name           string    `json:"name" gorm:"size:100;not null"`
-	DateStarted    time.Time `json:"date_started" gorm:"type:time;not null"`
-	DateEnded      time.Time `json:"date_ended" gorm:"type:time;not null"`
+	DateStarted    time.Time `json:"date_started" gorm:"type:date;not null"`
+	DateEnded      time.Time `json:"date_ended" gorm:"type:date;not null"`
 	MeetingDays    int       `json:"meeting_days" gorm:"not null"`
 	IsDone         bool      `json:"is_done" gorm:"not null;default:false"`
 	Description    string    `json:"description" gorm:"size:255"`

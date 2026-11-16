@@ -1,29 +1,27 @@
 package dto
 
-import (
-	"time"
-)
+import "github.com/kev1nandreas/go-rest-api-template/src/shared/datetime"
 
 type CreateTutorialRequest struct {
-	Name           string    `json:"name" binding:"required"`
-	DateStarted    time.Time `json:"date_started" binding:"required"`
-	DateEnded      time.Time `json:"date_ended" binding:"required"`
-	MeetingDays    int       `json:"meeting_days"`
-	IsDone         bool      `json:"is_done"`
-	Description    string    `json:"description"`
-	ShowDownload   bool      `json:"show_download"`
-	ShowAttendance bool      `json:"show_attendance"`
-	ShowFeedback   bool      `json:"show_feedback"`
+	Name           string        `json:"name" binding:"required"`
+	DateStarted    datetime.Date `json:"date_started" binding:"required" swaggertype:"string" format:"date"`
+	DateEnded      datetime.Date `json:"date_ended" binding:"required" swaggertype:"string" format:"date"`
+	MeetingDays    int           `json:"meeting_days"`
+	IsDone         bool          `json:"is_done"`
+	Description    string        `json:"description"`
+	ShowDownload   bool          `json:"show_download"`
+	ShowAttendance bool          `json:"show_attendance"`
+	ShowFeedback   bool          `json:"show_feedback"`
 }
 
 type UpdateTutorialRequest struct {
-	Name           *string    `json:"name"`
-	DateStarted    *time.Time `json:"date_started"`
-	DateEnded      *time.Time `json:"date_ended"`
-	MeetingDays    *int       `json:"meeting_days"`
-	IsDone         *bool      `json:"is_done"`
-	Description    *string    `json:"description"`
-	ShowDownload   *bool      `json:"show_download"`
-	ShowAttendance *bool      `json:"show_attendance"`
-	ShowFeedback   *bool      `json:"show_feedback"`
+	Name           *string        `json:"name"`
+	DateStarted    *datetime.Date `json:"date_started" swaggertype:"string" format:"date"`
+	DateEnded      *datetime.Date `json:"date_ended" swaggertype:"string" format:"date"`
+	MeetingDays    *int           `json:"meeting_days"`
+	IsDone         *bool          `json:"is_done"`
+	Description    *string        `json:"description"`
+	ShowDownload   *bool          `json:"show_download"`
+	ShowAttendance *bool          `json:"show_attendance"`
+	ShowFeedback   *bool          `json:"show_feedback"`
 }
