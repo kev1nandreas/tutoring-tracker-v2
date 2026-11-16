@@ -5,6 +5,7 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/scheduleimport"
 )
 
 type MeetingUsecase interface {
@@ -12,6 +13,9 @@ type MeetingUsecase interface {
 	FindByTutorialID(tutorialID string, params pagination.Params) ([]entity.Meeting, pagination.Meta, error)
 	FindByID(id string) (*entity.Meeting, error)
 	Create(req dto.CreateMeetingRequest) (*entity.Meeting, error)
+	// ImportSchedule creates one meeting per row, all or none. A row that clashes with an
+	// existing meeting (same date and start time) is returned as an error and nothing is created.
+	ImportSchedule(tutorialID uuid.UUID, rows []scheduleimport.Row) (int, []scheduleimport.RowError, error)
 	Update(id string, req dto.UpdateMeetingRequest) (*entity.Meeting, error)
 	Delete(id string) error
 	// IsAcceptedStudent: whether the user was accepted into the tutorial.

@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/repository"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/datetime"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/scheduleimport"
 )
 
 // FileCleaner removes the stored files of meetings that were deleted.
@@ -79,6 +81,45 @@ func (u *meetingUsecase) Create(req dto.CreateMeetingRequest) (*entity.Meeting, 
 	}
 
 	return meeting, nil
+}
+
+func (u *meetingUsecase) ImportSchedule(tutorialID uuid.UUID, rows []scheduleimport.Row) (int, []scheduleimport.RowError, error) {
+	existing, err := u.repo.AllOfTutorial(tutorialID.String())
+	if err != nil {
+		return 0, nil, err
+	}
+	taken := make(map[string]bool, len(existing))
+	for _, m := range existing {
+		taken[slotKey(m.Date, datetime.ClockOf(m.TimeStart, u.loc))] = true
+	}
+
+	var errs []scheduleimport.RowError
+	meetings := make([]entity.Meeting, 0, len(rows))
+	for _, r := range rows {
+		if taken[slotKey(r.Date, r.Start)] {
+			errs = append(errs, scheduleimport.RowError{Line: r.Line, Message: "a meeting already exists at this date and start time"})
+			continue
+		}
+		meetings = append(meetings, entity.Meeting{
+			TutorialID: tutorialID,
+			Title:      r.Title,
+			Date:       r.Date,
+			TimeStart:  r.Start.On(r.Date, u.loc),
+			TimeEnd:    r.End.On(r.Date, u.loc),
+		})
+	}
+	if len(errs) > 0 {
+		return 0, errs, nil
+	}
+
+	if err := u.repo.CreateMany(meetings); err != nil {
+		return 0, nil, err
+	}
+	return len(meetings), nil, nil
+}
+
+func slotKey(date time.Time, start datetime.Clock) string {
+	return date.Format("2006-01-02") + " " + fmt.Sprintf("%02d:%02d", start.Hour, start.Minute)
 }
 
 func (u *meetingUsecase) Update(id string, req dto.UpdateMeetingRequest) (*entity.Meeting, error) {

@@ -2,7 +2,10 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -10,6 +13,7 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/usecase"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/response"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/scheduleimport"
 	"gorm.io/gorm"
 )
 
@@ -160,6 +164,99 @@ func (h *MeetingHandler) CreateMeeting(c *gin.Context) {
 		Success:    true,
 		Message:    "Meeting created successfully",
 		Data:       item,
+	}.Send(c)
+}
+
+// maxImportBytes caps an uploaded schedule file.
+const maxImportBytes = 1 << 20
+
+// ScheduleTemplate godoc
+// @Summary Download the schedule import template (.xlsx)
+// @Description Columns: Date, Time range, Material (title)
+// @Tags meeting
+// @Security JwtAuth
+// @Produce application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+// @Success 200 {file} file
+// @Router /schedule-import/template [get]
+func (h *MeetingHandler) ScheduleTemplate(c *gin.Context) {
+	data, err := scheduleimport.Template(time.Now())
+	if err != nil {
+		response.NewErrorResponse(http.StatusInternalServerError, "Could not build the template", err.Error()).Send(c)
+		return
+	}
+	c.Header("Content-Disposition", `attachment; filename="schedule-template.xlsx"`)
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", data)
+}
+
+// ImportSchedule godoc
+// @Summary Import a tutorial's schedule from an Excel file
+// @Description Upload the filled template (field "file"). All rows are checked first: if any row is wrong nothing is created and the wrong rows are listed in data.errors (422).
+// @Tags meeting
+// @Security JwtAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Param file formData file true "The .xlsx file"
+// @Success 201 {object} map[string]int
+// @Failure 400 {string} string "Bad file"
+// @Failure 422 {string} string "Rows with problems"
+// @Router /tutorials/{id}/meetings/import [post]
+func (h *MeetingHandler) ImportSchedule(c *gin.Context) {
+	tutorialID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "invalid id").Send(c)
+		return
+	}
+	if !h.canManageTutorial(c, tutorialID.String()) {
+		return
+	}
+
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxImportBytes+4096)
+	file, err := c.FormFile("file")
+	if err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Choose an .xlsx file (max 1 MB)", err.Error()).Send(c)
+		return
+	}
+	if file.Size > maxImportBytes || !strings.HasSuffix(strings.ToLower(file.Filename), ".xlsx") {
+		response.NewErrorResponse(http.StatusBadRequest, "Upload an .xlsx file of at most 1 MB", "bad file").Send(c)
+		return
+	}
+	src, err := file.Open()
+	if err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Could not read the file", err.Error()).Send(c)
+		return
+	}
+	defer src.Close()
+
+	rows, rowErrs, err := scheduleimport.Parse(src)
+	if err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, err.Error(), err.Error()).Send(c)
+		return
+	}
+
+	if len(rowErrs) == 0 {
+		var created int
+		created, rowErrs, err = h.usecase.ImportSchedule(tutorialID, rows)
+		if err != nil {
+			response.NewErrorResponse(http.StatusInternalServerError, "Failed to import the schedule", err.Error()).Send(c)
+			return
+		}
+		if len(rowErrs) == 0 {
+			response.Response{
+				StatusCode: http.StatusCreated,
+				Success:    true,
+				Message:    fmt.Sprintf("%d meetings imported", created),
+				Data:       gin.H{"created": created},
+			}.Send(c)
+			return
+		}
+	}
+
+	response.Response{
+		StatusCode: http.StatusUnprocessableEntity,
+		Success:    false,
+		Message:    "Nothing was imported. Fix the rows below and upload again",
+		Data:       gin.H{"errors": rowErrs},
 	}.Send(c)
 }
 

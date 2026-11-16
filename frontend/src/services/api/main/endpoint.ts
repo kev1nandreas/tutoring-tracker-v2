@@ -10,6 +10,7 @@ export const MAIN_ENDPOINT = {
 		Detail: (id: string) => `/v1/tutorials/${id}`,
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
+		ImportSchedule: (id: string) => `/v1/tutorials/${id}/meetings/import`,
 	},
 	Student: {
 		List: "/v1/students",
@@ -60,6 +61,7 @@ export const MAIN_ENDPOINT = {
 	},
 	Meeting: {
 		Create: "/v1/meetings",
+		ImportTemplate: "/v1/schedule-import/template",
 		Detail: (id: string) => `/v1/meetings/${id}`,
 		Submissions: (id: string) => `/v1/meetings/${id}/submissions`,
 	},

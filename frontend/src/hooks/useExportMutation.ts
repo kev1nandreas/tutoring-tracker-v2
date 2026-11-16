@@ -25,7 +25,11 @@ function extensionFor(contentType: string) {
 	);
 }
 
-function saveFile(base64: string, contentType: string, filename: string) {
+export function saveFile(
+	base64: string,
+	contentType: string,
+	filename: string,
+) {
 	const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 	const url = URL.createObjectURL(new Blob([bytes], { type: contentType }));
 	const link = document.createElement("a");

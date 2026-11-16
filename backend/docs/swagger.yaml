@@ -3040,6 +3040,21 @@ paths:
       summary: Update a role by ID
       tags:
       - role
+  /schedule-import/template:
+    get:
+      description: 'Columns: Date, Time range, Material (title)'
+      produces:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+      security:
+      - JwtAuth: []
+      summary: Download the schedule import template (.xlsx)
+      tags:
+      - meeting
   /students:
     get:
       description: Tutors only. Users accepted into any tutorial the tutor created,
@@ -3402,6 +3417,46 @@ paths:
               $ref: '#/definitions/entity.Meeting'
             type: array
       summary: List meetings of a tutorial with pagination
+      tags:
+      - meeting
+  /tutorials/{id}/meetings/import:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 'Upload the filled template (field "file"). All rows are checked
+        first: if any row is wrong nothing is created and the wrong rows are listed
+        in data.errors (422).'
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: The .xlsx file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+        "400":
+          description: Bad file
+          schema:
+            type: string
+        "422":
+          description: Rows with problems
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Import a tutorial's schedule from an Excel file
       tags:
       - meeting
   /tutorials/{id}/pending-validations:

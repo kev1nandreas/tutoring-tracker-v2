@@ -2736,6 +2736,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/schedule-import/template": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Columns: Date, Time range, Material (title)",
+                "produces": [
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "Download the schedule import template (.xlsx)",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
         "/students": {
             "get": {
                 "security": [
@@ -3284,6 +3309,65 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/entity.Meeting"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials/{id}/meetings/import": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Upload the filled template (field \"file\"). All rows are checked first: if any row is wrong nothing is created and the wrong rows are listed in data.errors (422).",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "Import a tutorial's schedule from an Excel file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "The .xlsx file",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "422": {
+                        "description": "Rows with problems",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }

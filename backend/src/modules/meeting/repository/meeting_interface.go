@@ -15,6 +15,10 @@ type MeetingRepository interface {
 	IsAcceptedStudent(tutorialID string, userID uuid.UUID) (bool, error)
 	TutorialCreator(tutorialID string) (*uuid.UUID, error)
 	Create(meeting *entity.Meeting) error
+	// CreateMany inserts all meetings in one statement: all or none.
+	CreateMany(meetings []entity.Meeting) error
+	// AllOfTutorial returns every meeting of a tutorial, unpaged (for duplicate checks).
+	AllOfTutorial(tutorialID string) ([]entity.Meeting, error)
 	Update(meeting *entity.Meeting) error
 	Delete(meeting *entity.Meeting) error
 }

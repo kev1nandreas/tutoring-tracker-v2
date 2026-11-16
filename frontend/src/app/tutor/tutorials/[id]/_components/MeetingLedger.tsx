@@ -2,13 +2,14 @@
 
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { Plus } from "lucide-react";
+import { FileUp, Plus } from "lucide-react";
 import { Fragment, useState } from "react";
 import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import TodayLine from "@/components/dashboard/TodayLine";
 import { todayISO } from "@/lib/helper";
 import type { Meeting } from "@/types/meeting";
+import ImportScheduleDialog from "./ImportScheduleDialog";
 import MeetingDetailDrawer from "./MeetingDetailDrawer";
 import MeetingFormDialog from "./MeetingFormDialog";
 import MeetingRow from "./MeetingRow";
@@ -37,6 +38,7 @@ export default function MeetingLedger({
 }: Props) {
 	const [view, setView] = useState<View>("all");
 	const [isAddOpen, setIsAddOpen] = useState(false);
+	const [isImportOpen, setIsImportOpen] = useState(false);
 	const [editing, setEditing] = useState<Meeting | null>(null);
 	// keep the id, not the object, so the panel shows fresh data after an edit
 	const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -62,14 +64,24 @@ export default function MeetingLedger({
 	const todayAt = firstUpcoming === -1 ? visible.length : firstUpcoming;
 
 	const addButton = (
-		<Button
-			variant="brand"
-			size="sm"
-			leftIcon={Plus}
-			onClick={() => setIsAddOpen(true)}
-		>
-			Add meeting
-		</Button>
+		<div className="flex flex-wrap items-center gap-2">
+			<Button
+				variant="outline"
+				size="sm"
+				leftIcon={FileUp}
+				onClick={() => setIsImportOpen(true)}
+			>
+				Import from Excel
+			</Button>
+			<Button
+				variant="brand"
+				size="sm"
+				leftIcon={Plus}
+				onClick={() => setIsAddOpen(true)}
+			>
+				Add meeting
+			</Button>
+		</div>
 	);
 
 	return (
@@ -143,6 +155,11 @@ export default function MeetingLedger({
 				}}
 				tutorialId={tutorialId}
 				showAttendance={showAttendance}
+			/>
+			<ImportScheduleDialog
+				isOpen={isImportOpen}
+				onClose={() => setIsImportOpen(false)}
+				tutorialId={tutorialId}
 			/>
 			<MeetingFormDialog
 				isOpen={isAddOpen}

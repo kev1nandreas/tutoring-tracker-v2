@@ -70,6 +70,19 @@ func (r *meetingPostgresRepository) Create(meeting *entity.Meeting) error {
 	return r.db.Create(meeting).Error
 }
 
+func (r *meetingPostgresRepository) CreateMany(meetings []entity.Meeting) error {
+	if len(meetings) == 0 {
+		return nil
+	}
+	return r.db.Create(&meetings).Error
+}
+
+func (r *meetingPostgresRepository) AllOfTutorial(tutorialID string) ([]entity.Meeting, error) {
+	var items []entity.Meeting
+	err := r.db.Where("tutorial_id = ?", tutorialID).Find(&items).Error
+	return items, err
+}
+
 func (r *meetingPostgresRepository) Update(meeting *entity.Meeting) error {
 	return r.db.Save(meeting).Error
 }
