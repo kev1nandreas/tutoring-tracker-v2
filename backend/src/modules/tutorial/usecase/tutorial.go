@@ -1,8 +1,11 @@
 package usecase
 
 import (
+	"time"
+
 	"crypto/rand"
 	"errors"
+	"github.com/kev1nandreas/go-rest-api-template/config"
 	"math/big"
 
 	"github.com/google/uuid"
@@ -23,6 +26,20 @@ func NewTutorialUsecase(repo repository.TutorialRepository) TutorialUsecase {
 
 func (u *tutorialUsecase) FindAll(params pagination.Params, creatorID *uuid.UUID) ([]entity.Tutorial, pagination.Meta, error) {
 	return u.repo.FindAll(params, creatorID)
+}
+
+// ErrStudentsOnly is returned when a non-student asks for "my enrolled tutorials".
+var ErrStudentsOnly = errors.New("only students have enrolled tutorials")
+
+func (u *tutorialUsecase) FindEnrolled(userID uuid.UUID, role string, done *bool, params pagination.Params) ([]dto.EnrolledTutorial, pagination.Meta, error) {
+	if role != "student" {
+		return nil, pagination.Meta{}, ErrStudentsOnly
+	}
+	loc, err := time.LoadLocation(config.GetEnvString("APP_TIMEZONE", "Asia/Jakarta"))
+	if err != nil {
+		loc = time.UTC
+	}
+	return u.repo.FindEnrolled(userID, done, time.Now().In(loc).Format("2006-01-02"), params)
 }
 
 func (u *tutorialUsecase) FindByID(id string) (*entity.Tutorial, error) {

@@ -57,6 +57,49 @@ func (h *TutorialHandler) FindTutorials(c *gin.Context) {
 	response.NewPaginatedResponse("Tutorials retrieved successfully", items, meta).Send(c)
 }
 
+// FindMyTutorials godoc
+// @Summary List the tutorials I was accepted into
+// @Description Only students. Includes the tutor's name and meeting progress. Filter with ?status=active|done.
+// @Tags tutorial
+// @Security JwtAuth
+// @Produce json
+// @Param page query int false "Page" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Param status query string false "active or done"
+// @Success 200 {array} dto.EnrolledTutorial
+// @Failure 403 {string} string "Only students"
+// @Router /me/tutorials [get]
+func (h *TutorialHandler) FindMyTutorials(c *gin.Context) {
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "invalid token, please log in again").Send(c)
+		return
+	}
+
+	params := pagination.ParseParams(c)
+	var done *bool
+	switch params.Filters["status"] {
+	case "active":
+		v := false
+		done = &v
+	case "done":
+		v := true
+		done = &v
+	}
+
+	items, meta, err := h.usecase.FindEnrolled(userID, c.GetString("role"), done, params)
+	if err != nil {
+		if errors.Is(err, usecase.ErrStudentsOnly) {
+			response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
+			return
+		}
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve tutorials", err.Error()).Send(c)
+		return
+	}
+
+	response.NewPaginatedResponse("Tutorials retrieved successfully", items, meta).Send(c)
+}
+
 // CreateTutorial godoc
 // @Summary Create a tutorial
 // @Tags tutorial

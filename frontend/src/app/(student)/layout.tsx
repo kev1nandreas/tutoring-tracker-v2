@@ -12,6 +12,7 @@ import { PATH } from "@/shared/path";
 
 const NAV = [
 	{ label: "Home", href: PATH.STUDENT_HOME },
+	{ label: "My tutorials", href: PATH.STUDENT_TUTORIALS },
 	{ label: "Join a class", href: PATH.ENROLL },
 ];
 

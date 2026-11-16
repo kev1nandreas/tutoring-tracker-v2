@@ -5,6 +5,7 @@ export const PATH = {
 	HOME: "/",
 	STUDENT_HOME: "/",
 	ENROLL: "/enroll",
+	STUDENT_TUTORIALS: "/tutorials",
 	DASHBOARD: "/tutor",
 	TUTORIALS: "/tutor/tutorials",
 	PENDING_VALIDATION: "/tutor/pending-validation",

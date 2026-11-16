@@ -8,6 +8,9 @@ export const MAIN_ENDPOINT = {
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
 	},
+	Me: {
+		Tutorials: "/v1/me/tutorials",
+	},
 	Enrollment: {
 		List: "/v1/pending-validations",
 		Enroll: "/v1/pending-validations/enroll",

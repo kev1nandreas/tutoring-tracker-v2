@@ -82,6 +82,7 @@ func NewRouter(
 		protected.PUT("/users/:id", h.User.UpdateUser)
 		protected.DELETE("/users/:id", h.User.DeleteUser)
 
+		protected.GET("/me/tutorials", h.Tutorial.FindMyTutorials)
 		protected.GET("/tutorials", h.Tutorial.FindTutorials)
 		protected.POST("/tutorials", h.Tutorial.CreateTutorial)
 		protected.GET("/tutorials/:id", h.Tutorial.FindTutorial)

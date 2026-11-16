@@ -313,6 +313,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/tutorials": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only students. Includes the tutor's name and meeting progress. Filter with ?status=active|done.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "List the tutorials I was accepted into",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "active or done",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.EnrolledTutorial"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Only students",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/meetings": {
             "get": {
                 "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
@@ -2510,6 +2566,44 @@ const docTemplate = `{
             ],
             "properties": {
                 "tutorial_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.EnrolledTutorial": {
+            "type": "object",
+            "properties": {
+                "custom_id": {
+                    "type": "string"
+                },
+                "date_ended": {
+                    "type": "string"
+                },
+                "date_started": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "done_meetings": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "next_meeting_date": {
+                    "type": "string"
+                },
+                "total_meetings": {
+                    "type": "integer"
+                },
+                "tutor_name": {
                     "type": "string"
                 }
             }

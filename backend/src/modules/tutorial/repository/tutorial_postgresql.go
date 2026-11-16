@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/google/uuid"
+	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"gorm.io/gorm"
@@ -74,4 +75,45 @@ func (r *tutorialPostgresRepository) ExistsByCustomID(customID string) (bool, er
 	var count int64
 	err := r.db.Model(&entity.Tutorial{}).Where("custom_id = ?", customID).Count(&count).Error
 	return count > 0, err
+}
+
+func (r *tutorialPostgresRepository) FindEnrolled(userID uuid.UUID, done *bool, today string, params pagination.Params) ([]dto.EnrolledTutorial, pagination.Meta, error) {
+	// accepted students only (pending_validations.is_validated = 1)
+	where := "pv.user_id = ? AND pv.is_validated = 1"
+	args := []interface{}{userID}
+	if done != nil {
+		where += " AND t.is_done = ?"
+		args = append(args, *done)
+	}
+
+	var total int64
+	if err := r.db.Raw("SELECT COUNT(*) FROM tutorials t JOIN pending_validations pv ON pv.tutorial_id = t.id WHERE "+where, args...).
+		Scan(&total).Error; err != nil {
+		return nil, pagination.Meta{}, err
+	}
+
+	items := []dto.EnrolledTutorial{}
+	queryArgs := append([]interface{}{today}, args...)
+	queryArgs = append(queryArgs, params.PageSize, params.GetOffset())
+	err := r.db.Raw(`
+		SELECT t.id::text AS id, t.custom_id, t.name, COALESCE(t.description, '') AS description,
+		       COALESCE(u.name, '') AS tutor_name,
+		       to_char(t.date_started, 'YYYY-MM-DD') AS date_started,
+		       to_char(t.date_ended, 'YYYY-MM-DD') AS date_ended,
+		       t.is_done,
+		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id) AS total_meetings,
+		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id AND m.is_done) AS done_meetings,
+		       COALESCE((SELECT to_char(MIN(m.date), 'YYYY-MM-DD') FROM meetings m
+		         WHERE m.tutorial_id = t.id AND m.is_done = false AND m.date >= ?::date), '') AS next_meeting_date
+		FROM tutorials t
+		JOIN pending_validations pv ON pv.tutorial_id = t.id
+		LEFT JOIN users u ON u.id = t.created_by
+		WHERE `+where+`
+		ORDER BY t.is_done, t.date_started DESC, t.name
+		LIMIT ? OFFSET ?`, queryArgs...).Scan(&items).Error
+	if err != nil {
+		return nil, pagination.Meta{}, err
+	}
+
+	return items, params.BuildMeta(total), nil
 }

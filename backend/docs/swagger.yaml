@@ -124,6 +124,31 @@ definitions:
     required:
     - tutorial_code
     type: object
+  dto.EnrolledTutorial:
+    properties:
+      custom_id:
+        type: string
+      date_ended:
+        type: string
+      date_started:
+        type: string
+      description:
+        type: string
+      done_meetings:
+        type: integer
+      id:
+        type: string
+      is_done:
+        type: boolean
+      name:
+        type: string
+      next_meeting_date:
+        type: string
+      total_meetings:
+        type: integer
+      tutor_name:
+        type: string
+    type: object
   dto.EnrollmentTutorial:
     properties:
       custom_id:
@@ -945,6 +970,43 @@ paths:
       summary: Get the current user
       tags:
       - user
+  /me/tutorials:
+    get:
+      description: Only students. Includes the tutor's name and meeting progress.
+        Filter with ?status=active|done.
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: active or done
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.EnrolledTutorial'
+            type: array
+        "403":
+          description: Only students
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List the tutorials I was accepted into
+      tags:
+      - tutorial
   /meetings:
     get:
       description: Paginated. Non-text columns (ids, flags, numbers, dates) can be

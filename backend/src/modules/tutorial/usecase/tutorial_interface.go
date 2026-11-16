@@ -9,6 +9,8 @@ import (
 
 type TutorialUsecase interface {
 	FindAll(params pagination.Params, creatorID *uuid.UUID) ([]entity.Tutorial, pagination.Meta, error)
+	// FindEnrolled lists the tutorials a student was accepted into (students only).
+	FindEnrolled(userID uuid.UUID, role string, done *bool, params pagination.Params) ([]dto.EnrolledTutorial, pagination.Meta, error)
 	FindByID(id string) (*entity.Tutorial, error)
 	Create(creatorID uuid.UUID, req dto.CreateTutorialRequest) (*entity.Tutorial, error)
 	Update(id string, req dto.UpdateTutorialRequest) (*entity.Tutorial, error)
