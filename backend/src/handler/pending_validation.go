@@ -136,6 +136,28 @@ func (h *PendingValidationHandler) FindPendingValidations(c *gin.Context) {
 	response.NewPaginatedResponse("Pending validations retrieved successfully", items, meta).Send(c)
 }
 
+// CountPendingValidations godoc
+// @Summary Count my still-pending enrollment requests
+// @Description Only tutors. Across all tutorials the caller created.
+// @Tags pending-validation
+// @Security JwtAuth
+// @Produce json
+// @Success 200 {object} map[string]int64
+// @Failure 403 {string} string "Only tutors"
+// @Router /pending-validations/count [get]
+func (h *PendingValidationHandler) CountPendingValidations(c *gin.Context) {
+	callerID, role, ok := h.caller(c)
+	if !ok {
+		return
+	}
+	total, err := h.usecase.CountPending(callerID, role)
+	if err != nil {
+		h.fail(c, err, "Failed to count pending validations")
+		return
+	}
+	response.NewSuccessResponse("Pending count retrieved", gin.H{"count": total}).Send(c)
+}
+
 // FindPendingValidationsByTutorial godoc
 // @Summary List enrollment requests of a tutorial
 // @Description Only the tutor who created the tutorial. Filter with ?is_validated=0|1|2 (0 pending, 1 accepted, 2 declined).

@@ -119,6 +119,7 @@ func NewRouter(
 		protected.POST("/tutorials/:id/meetings/import", h.Meeting.ImportSchedule)
 		protected.GET("/schedule-import/template", h.Meeting.ScheduleTemplate)
 		protected.GET("/pending-validations", h.PendingValidation.FindPendingValidations)
+		protected.GET("/pending-validations/count", h.PendingValidation.CountPendingValidations)
 		protected.GET("/tutorials/:id/pending-validations", h.PendingValidation.FindPendingValidationsByTutorial)
 		protected.GET("/pending-validations/mine", h.PendingValidation.FindMyEnrollments)
 		protected.POST("/pending-validations/enroll", h.PendingValidation.Enroll)

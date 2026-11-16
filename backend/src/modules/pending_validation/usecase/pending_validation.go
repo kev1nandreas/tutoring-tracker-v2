@@ -30,6 +30,9 @@ var (
 // TypeEnrollment is the notification type used when a tutor decides on an enrollment request.
 const TypeEnrollment = "enrollment"
 
+// TypeEnrollmentRequest is the notification type used when a student asks to join a tutorial.
+const TypeEnrollmentRequest = "enrollment"
+
 // Sender delivers one notification (in-app, plus an email copy) to many users
 // (implemented by the notification usecase).
 type Sender interface {
@@ -75,6 +78,7 @@ func (u *pendingValidationUsecase) Enroll(callerID uuid.UUID, role string, req d
 		if err := u.repo.Update(existing); err != nil {
 			return nil, err
 		}
+		u.notifyTutor(tutorial, callerID)
 		return existing, nil
 	case !errors.Is(err, gorm.ErrRecordNotFound):
 		return nil, err
@@ -88,7 +92,31 @@ func (u *pendingValidationUsecase) Enroll(callerID uuid.UUID, role string, req d
 	if err := u.repo.Create(pv); err != nil {
 		return nil, err
 	}
+	u.notifyTutor(tutorial, callerID)
 	return pv, nil
+}
+
+// notifyTutor tells the tutorial's creator that a student asked to join. Best effort:
+// a failure is logged and never fails the enrollment.
+func (u *pendingValidationUsecase) notifyTutor(tutorial *tutorialEntity.Tutorial, studentID uuid.UUID) {
+	if u.sender == nil || tutorial.CreatedBy == nil {
+		return
+	}
+	name, err := u.repo.FindUserName(studentID)
+	if err != nil || name == "" {
+		name = "A student"
+	}
+	body := fmt.Sprintf("%s asked to join \"%s\" (code %s). Review the request in Pending validation.", name, tutorial.Name, tutorial.CustomID)
+	if err := u.sender.NotifyUsers([]uuid.UUID{*tutorial.CreatedBy}, TypeEnrollmentRequest, "New enrollment request", body); err != nil {
+		log.Printf("pending validation: failed to notify tutor of tutorial %s: %v", tutorial.ID, err)
+	}
+}
+
+func (u *pendingValidationUsecase) CountPending(callerID uuid.UUID, role string) (int64, error) {
+	if role != roleTutor {
+		return 0, ErrForbidden
+	}
+	return u.repo.CountPendingByCreator(callerID)
 }
 
 // requireOwner returns ErrForbidden unless the caller is a tutor who created the tutorial.

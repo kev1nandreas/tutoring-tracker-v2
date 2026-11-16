@@ -77,6 +77,21 @@ func (r *pendingValidationPostgresRepository) FindByTutorialID(tutorialID uuid.U
 	}
 }
 
+func (r *pendingValidationPostgresRepository) CountPendingByCreator(creatorID uuid.UUID) (int64, error) {
+	var total int64
+	err := r.db.Model(&entity.PendingValidation{}).
+		Joins("JOIN tutorials t ON t.id = pending_validations.tutorial_id").
+		Where("t.created_by = ? AND pending_validations.is_validated = ?", creatorID, entity.StatusPending).
+		Count(&total).Error
+	return total, err
+}
+
+func (r *pendingValidationPostgresRepository) FindUserName(userID uuid.UUID) (string, error) {
+	var name string
+	err := r.db.Table("users").Where("id = ?", userID).Pluck("name", &name).Error
+	return name, err
+}
+
 func (r *pendingValidationPostgresRepository) Create(pv *entity.PendingValidation) error {
 	return r.db.Create(pv).Error
 }

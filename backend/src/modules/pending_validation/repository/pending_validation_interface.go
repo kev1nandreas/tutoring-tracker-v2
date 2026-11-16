@@ -20,6 +20,10 @@ type PendingValidationRepository interface {
 	FindGroupedByCreator(creatorID uuid.UUID, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error)
 	// FindByUser lists the user's own enrollment requests with their tutorial, newest change first.
 	FindByUser(userID uuid.UUID, params pagination.Params) ([]dto.MyEnrollment, pagination.Meta, error)
+	// CountPendingByCreator counts the still-pending requests across all tutorials created by creatorID.
+	CountPendingByCreator(creatorID uuid.UUID) (int64, error)
+	// FindUserName returns the display name of a user.
+	FindUserName(userID uuid.UUID) (string, error)
 	Create(pv *entity.PendingValidation) error
 	Update(pv *entity.PendingValidation) error
 	// SetStatusForPending moves still-pending requests of the given students to status

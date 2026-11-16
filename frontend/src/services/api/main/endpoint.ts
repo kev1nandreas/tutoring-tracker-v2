@@ -56,6 +56,7 @@ export const MAIN_ENDPOINT = {
 		List: "/v1/pending-validations",
 		Enroll: "/v1/pending-validations/enroll",
 		Mine: "/v1/pending-validations/mine",
+		Count: "/v1/pending-validations/count",
 		Validate: "/v1/pending-validations/validate",
 	},
 	Submission: {

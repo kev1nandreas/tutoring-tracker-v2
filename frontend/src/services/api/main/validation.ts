@@ -1,7 +1,7 @@
 import { ApiError } from "@/lib/errors";
 import { get } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
-import type { PaginatedMainResponse } from "@/types/api";
+import type { MainResponse, PaginatedMainResponse } from "@/types/api";
 import {
 	STUDENT_STATUS_CODE,
 	type StudentStatus,
@@ -46,4 +46,20 @@ export async function fetchValidationGroups({
 		);
 	}
 	return { groups: response.data ?? [], meta: response.meta };
+}
+
+/** Number of enrollment requests still waiting for my decision (all my tutorials). */
+export async function fetchPendingCount() {
+	const { OK, Kind, StatusCode } = await get<MainResponse<{ count: number }>>(
+		MAIN_ENDPOINT.Enrollment.Count,
+	);
+	const response = Kind as MainResponse<{ count: number }>;
+
+	if (!OK) {
+		throw new ApiError(
+			response?.error || response?.message || "Failed to load pending count.",
+			StatusCode,
+		);
+	}
+	return response.data?.count ?? 0;
 }

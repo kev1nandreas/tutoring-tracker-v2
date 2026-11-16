@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import useAuthStore from "@/app/stores/useAuthStore";
 import NextImage from "@/components/NextImage";
 import { useSidebar } from "@/context/SidebarContext";
+import { usePendingCount } from "@/hooks/usePendingCount";
 import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
 
@@ -26,6 +27,8 @@ type NavItem = {
 	icon: React.ReactNode;
 	path?: string;
 	description?: string;
+	/** Shows the pending-request count as a badge. */
+	badge?: "pending";
 	/** Active only on this exact path (a parent route such as /tutor). */
 	exact?: boolean;
 	subItems?: { name: string; path: string; description?: string }[];
@@ -57,6 +60,7 @@ const NAV_ITEMS: NavItem[] = [
 		icon: <UserCheck className="w-5 h-5" />,
 		path: PATH.PENDING_VALIDATION,
 		description: "Students waiting for approval",
+		badge: "pending",
 	},
 	{
 		name: "Payments",
@@ -79,6 +83,7 @@ const AppSidebar: React.FC = () => {
 	const pathname = usePathname();
 
 	const navItems = NAV_ITEMS;
+	const { data: pendingCount = 0 } = usePendingCount();
 
 	const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);
 	const [subMenuHeight, setSubMenuHeight] = useState<Record<number, number>>(
@@ -211,6 +216,18 @@ const AppSidebar: React.FC = () => {
 											{nav.icon}
 											{showLabel && (
 												<span className="whitespace-nowrap">{nav.name}</span>
+											)}
+											{nav.badge === "pending" && pendingCount > 0 && (
+												<span
+													className={clsxm(
+														"flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-semibold text-white",
+														showLabel
+															? "ml-auto"
+															: "absolute right-1 top-1 h-4 min-w-4 px-1 text-[10px]",
+													)}
+												>
+													{pendingCount > 99 ? "99+" : pendingCount}
+												</span>
 											)}
 										</Link>
 									)

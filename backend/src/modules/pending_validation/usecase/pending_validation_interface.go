@@ -15,6 +15,8 @@ type PendingValidationUsecase interface {
 	// FindGrouped lists requests of every tutorial the caller created, grouped by tutorial.
 	// status (optional) keeps only requests in that state; search matches student name, username or school.
 	FindGrouped(callerID uuid.UUID, role string, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error)
+	// CountPending returns how many requests of the caller's tutorials still wait for a decision.
+	CountPending(callerID uuid.UUID, role string) (int64, error)
 	// FindByTutorial lists requests of a tutorial; only its creator may call it.
 	FindByTutorial(callerID uuid.UUID, role, tutorialID string, params pagination.Params) ([]dto.PendingStudent, pagination.Meta, error)
 	// Validate accepts or declines many students at once; only the tutorial's creator may call it.
