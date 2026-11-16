@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"strconv"
+	"time"
+	_ "time/tzdata" // zone database inside the binary; the slim Docker image has none
 
 	"github.com/joho/godotenv"
 	"github.com/kev1nandreas/go-rest-api-template/config"
@@ -62,6 +64,14 @@ import (
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found or error loading .env file")
+	}
+
+	// Times from Postgres come back in time.Local. Pin it to the app zone so JSON carries the
+	// same offset the meeting times were saved with (a UTC server would show 19:00 as 12:00).
+	if loc, err := time.LoadLocation(config.GetEnvString("APP_TIMEZONE", "Asia/Jakarta")); err == nil {
+		time.Local = loc
+	} else {
+		log.Printf("invalid APP_TIMEZONE, keeping %s: %v", time.Local, err)
 	}
 
 	appPort := config.GetEnvInt("APP_PORT", 8082)
