@@ -15,22 +15,18 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8001",
+    "host": "localhost:8082",
     "basePath": "/api/v1",
     "paths": {
         "/": {
             "get": {
-                "description": "do ping",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "example"
+                    "health"
                 ],
-                "summary": "ping example",
+                "summary": "Health check",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -41,215 +37,25 @@
                 }
             }
         },
-        "/books": {
-            "get": {
+        "/attachments/{id}": {
+            "delete": {
                 "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get a list of all books with optional pagination",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Get all books with pagination",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Offset for pagination",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Limit for pagination",
-                        "name": "limit",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully retrieved list of books",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Book"
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    },
                     {
                         "JwtAuth": []
                     }
                 ],
-                "description": "Create a new book with the given input data",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Only the user who created the attachment.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "books"
+                    "attachment"
                 ],
-                "summary": "Create a new book",
-                "parameters": [
-                    {
-                        "description": "Create book object",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.CreateBook"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Successfully created book",
-                        "schema": {
-                            "$ref": "#/definitions/models.Book"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/books/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get details of a book by its ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Find a book by ID",
+                "summary": "Delete an attachment",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Book ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully retrieved book",
-                        "schema": {
-                            "$ref": "#/definitions/models.Book"
-                        }
-                    },
-                    "404": {
-                        "description": "Book not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update the book details for the given ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Update a book by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Book ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update book object",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.UpdateBook"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully updated book",
-                        "schema": {
-                            "$ref": "#/definitions/models.Book"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "book not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete the book with the given ID",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "books"
-                ],
-                "summary": "Delete a book by ID",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Book ID",
+                        "description": "Attachment ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -257,13 +63,104 @@
                 ],
                 "responses": {
                     "204": {
-                        "description": "Successfully deleted book",
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Not the creator",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
-                        "description": "book not found",
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs": {
+            "get": {
+                "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "job"
+                ],
+                "summary": "List jobs with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Job"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/jobs/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "job"
+                ],
+                "summary": "Get a job by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Job ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Job"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
                         "schema": {
                             "type": "string"
                         }
@@ -273,11 +170,6 @@
         },
         "/login": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
                 "description": "Authenticates a user using username and password, returns a JWT token if successful",
                 "consumes": [
                     "application/json"
@@ -296,7 +188,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.LoginUser"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
@@ -318,9 +210,918 @@
                         "schema": {
                             "type": "string"
                         }
+                    }
+                }
+            }
+        },
+        "/meetings": {
+            "get": {
+                "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "List meetings with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Meeting"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "Create a meeting",
+                "parameters": [
+                    {
+                        "description": "Create meeting",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateMeetingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Meeting"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "Get a meeting by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Meeting"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "Update a meeting by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update meeting",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateMeetingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Meeting"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "Delete a meeting by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}/attachments": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attachment"
+                ],
+                "summary": "List attachments of a meeting with pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Attachment"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Up to 50 per request, saved all or nothing. The creator is taken from the JWT.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "attachment"
+                ],
+                "summary": "Add one or many attachments to a meeting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Attachments",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateAttachmentsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Attachment"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/meetings/{id}/submissions": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Includes the submitting user (id, name, username, school). A student only sees their own submissions; other roles see all.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "List submissions of a meeting with pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.SubmissionResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "The submitting user is taken from the JWT.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Add a submission to a meeting",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meeting ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create submission",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateSubmissionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubmissionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Meeting not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notification"
+                ],
+                "summary": "Get a notification by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Notification"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/{id}/read": {
+            "patch": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notification"
+                ],
+                "summary": "Mark a notification as read",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notification ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Notification"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments": {
+            "get": {
+                "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e\nA tutor only gets payments of tutorials they created.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "List payments with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.PaymentResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Create a payment",
+                "parameters": [
+                    {
+                        "description": "Create payment",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreatePaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaymentResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/payments/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Get a payment by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaymentResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Update a payment by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update payment",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdatePaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PaymentResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payment"
+                ],
+                "summary": "Delete a payment by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Payment ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/pending-validations": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only tutors. Covers only tutorials the caller created. Paginated over tutorials. Filter with ?is_validated=0|1|2 (0 pending, 1 accepted, 2 declined).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "List enrollment requests of all my tutorials, grouped by tutorial",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "0 pending, 1 accepted, 2 declined",
+                        "name": "is_validated",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.TutorialPendingGroup"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Only tutors",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/pending-validations/enroll": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "A student submits the tutorial code and waits as pending until the tutor validates.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "Enroll in a tutorial with its code",
+                "parameters": [
+                    {
+                        "description": "Tutorial code",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.EnrollRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entity.PendingValidation"
+                        }
+                    },
+                    "403": {
+                        "description": "Only students",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Tutorial not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Already enrolled or pending",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/pending-validations/validate": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only the tutor who created the tutorial. Only students still pending are changed; others are returned in \"skipped\".",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "Accept or decline students in bulk",
+                "parameters": [
+                    {
+                        "description": "Tutorial code, student user ids and action (accept or decline)",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidateResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Not your tutorial",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Tutorial not found",
                         "schema": {
                             "type": "string"
                         }
@@ -330,12 +1131,7 @@
         },
         "/register": {
             "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Registers a new user with the given username and password",
+                "description": "Registers a new user. The role is always student.",
                 "consumes": [
                     "application/json"
                 ],
@@ -345,7 +1141,7 @@
                 "tags": [
                     "user"
                 ],
-                "summary": "Register a new user",
+                "summary": "Register a new student",
                 "parameters": [
                     {
                         "description": "User registration object",
@@ -353,12 +1149,12 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.LoginUser"
+                            "$ref": "#/definitions/dto.RegisterRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "Successfully registered",
                         "schema": {
                             "type": "string"
@@ -378,45 +1174,1097 @@
                     }
                 }
             }
+        },
+        "/register/tutor": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Registers a new tutor. Only an authenticated tutor may call this.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Register a new tutor",
+                "parameters": [
+                    {
+                        "description": "Tutor registration object",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Successfully registered",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/roles": {
+            "get": {
+                "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role"
+                ],
+                "summary": "List roles with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Role"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role"
+                ],
+                "summary": "Create a role",
+                "parameters": [
+                    {
+                        "description": "Create role",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Role"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/roles/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role"
+                ],
+                "summary": "Get a role by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Role"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role"
+                ],
+                "summary": "Update a role by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update role",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Role"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "role"
+                ],
+                "summary": "Delete a role by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Role ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/submissions/{id}": {
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only the user who made the submission.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "submission"
+                ],
+                "summary": "Delete a submission by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Submission ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Not the owner",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e. When called with a tutor token, only that tutor's own tutorials are returned.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "List tutorials with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Tutorial"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "Create a tutorial",
+                "parameters": [
+                    {
+                        "description": "Create tutorial",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateTutorialRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Tutorial"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "A tutor token can only read tutorials the tutor created.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "Get a tutorial by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Tutorial"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "Update a tutorial by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update tutorial",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateTutorialRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.Tutorial"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "Delete a tutorial by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials/{id}/meetings": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "List meetings of a tutorial with pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Meeting"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials/{id}/pending-validations": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only the tutor who created the tutorial. Filter with ?is_validated=0|1|2 (0 pending, 1 accepted, 2 declined).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "List enrollment requests of a tutorial",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "0 pending, 1 accepted, 2 declined",
+                        "name": "is_validated",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.PendingStudent"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not your tutorial",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "List users with pagination",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.User"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get a user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Update a user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update user",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entity.User"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Delete a user by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}/notifications": {
+            "get": {
+                "description": "Paginated, newest first by default. Filter with ?is_read=true|false",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notification"
+                ],
+                "summary": "List notifications of a user with pagination",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Filter by read state",
+                        "name": "is_read",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entity.Notification"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "models.Book": {
-            "type": "object",
-            "properties": {
-                "author": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.CreateBook": {
+        "dto.AttachmentInput": {
             "type": "object",
             "required": [
-                "author",
-                "title"
+                "link",
+                "name",
+                "type"
             ],
             "properties": {
-                "author": {
+                "link": {
                     "type": "string"
                 },
-                "title": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
                     "type": "string"
                 }
             }
         },
-        "models.LoginUser": {
+        "dto.CreateAttachmentsRequest": {
+            "type": "object",
+            "required": [
+                "attachments"
+            ],
+            "properties": {
+                "attachments": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.AttachmentInput"
+                    }
+                }
+            }
+        },
+        "dto.CreateMeetingRequest": {
+            "type": "object",
+            "required": [
+                "date",
+                "time_end",
+                "time_start",
+                "title",
+                "tutorial_id",
+                "youtube_link"
+            ],
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "has_homework": {
+                    "type": "boolean"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "marks": {
+                    "type": "string"
+                },
+                "text_homework": {
+                    "type": "string"
+                },
+                "time_end": {
+                    "type": "string"
+                },
+                "time_start": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "youtube_link": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreatePaymentRequest": {
+            "type": "object",
+            "required": [
+                "tutorial_id",
+                "user_id"
+            ],
+            "properties": {
+                "is_paid": {
+                    "type": "boolean"
+                },
+                "nominal": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "payment_date": {
+                    "type": "integer"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateRoleRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateSubmissionRequest": {
+            "type": "object",
+            "required": [
+                "files"
+            ],
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateTutorialRequest": {
+            "type": "object",
+            "required": [
+                "date_ended",
+                "date_started",
+                "name"
+            ],
+            "properties": {
+                "date_ended": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "date_started": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "meeting_days": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "show_attendance": {
+                    "type": "boolean"
+                },
+                "show_download": {
+                    "type": "boolean"
+                },
+                "show_feedback": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.EnrollRequest": {
+            "type": "object",
+            "required": [
+                "tutorial_code"
+            ],
+            "properties": {
+                "tutorial_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.LoginRequest": {
             "type": "object",
             "required": [
                 "password",
@@ -431,24 +2279,608 @@
                 }
             }
         },
-        "models.UpdateBook": {
+        "dto.PaymentResponse": {
             "type": "object",
             "properties": {
-                "author": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_paid": {
+                    "type": "boolean"
+                },
+                "nominal": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "payment_date": {
+                    "type": "integer"
+                },
+                "tutorial": {
+                    "$ref": "#/definitions/dto.PaymentTutorial"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PaymentTutorial": {
+            "type": "object",
+            "properties": {
+                "date_ended": {
+                    "type": "string"
+                },
+                "date_started": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PendingStudent": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password",
+                "phone",
+                "school",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SubmissionResponse": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "files": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "meeting_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.SubmissionUser"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SubmissionUser": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.TutorialPendingGroup": {
+            "type": "object",
+            "properties": {
+                "pending_validations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PendingStudent"
+                    }
+                },
+                "tutorial": {
+                    "$ref": "#/definitions/dto.TutorialSummary"
+                }
+            }
+        },
+        "dto.TutorialSummary": {
+            "type": "object",
+            "properties": {
+                "custom_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateMeetingRequest": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "has_homework": {
+                    "type": "boolean"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "marks": {
+                    "type": "string"
+                },
+                "text_homework": {
+                    "type": "string"
+                },
+                "time_end": {
+                    "type": "string"
+                },
+                "time_start": {
                     "type": "string"
                 },
                 "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "youtube_link": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdatePaymentRequest": {
+            "type": "object",
+            "properties": {
+                "is_paid": {
+                    "type": "boolean"
+                },
+                "nominal": {
+                    "type": "integer"
+                },
+                "note": {
+                    "type": "string"
+                },
+                "payment_date": {
+                    "type": "integer"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateRoleRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateTutorialRequest": {
+            "type": "object",
+            "properties": {
+                "date_ended": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "date_started": {
+                    "type": "string",
+                    "format": "date"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "meeting_days": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "show_attendance": {
+                    "type": "boolean"
+                },
+                "show_download": {
+                    "type": "boolean"
+                },
+                "show_feedback": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role_id": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ValidateRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "tutorial_code",
+                "user_ids"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": [
+                        "accept",
+                        "decline"
+                    ]
+                },
+                "tutorial_code": {
+                    "type": "string"
+                },
+                "user_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "dto.ValidateResponse": {
+            "type": "object",
+            "properties": {
+                "skipped": {
+                    "description": "Skipped are ids that had no pending request for this tutorial.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updated": {
+                    "description": "Updated are the students whose status changed.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "entity.Attachment": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "meeting_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Job": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_success": {
+                    "type": "boolean"
+                },
+                "messages": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Meeting": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "has_homework": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "marks": {
+                    "type": "string"
+                },
+                "text_homework": {
+                    "type": "string"
+                },
+                "time_end": {
+                    "type": "string"
+                },
+                "time_start": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "youtube_link": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Notification": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "header": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_read": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.PendingValidation": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_validated": {
+                    "description": "0 pending, 1 accepted, 2 declined",
+                    "type": "integer"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/entity.User"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Role": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.Tutorial": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "custom_id": {
+                    "type": "string"
+                },
+                "date_ended": {
+                    "type": "string"
+                },
+                "date_started": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "meeting_days": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "show_attendance": {
+                    "type": "boolean"
+                },
+                "show_download": {
+                    "type": "boolean"
+                },
+                "show_feedback": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "entity.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/entity.Role"
+                },
+                "role_id": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
                     "type": "string"
                 }
             }
         }
     },
     "securityDefinitions": {
-        "ApiKeyAuth": {
-            "type": "apiKey",
-            "name": "X-API-Key",
-            "in": "header"
-        },
         "JwtAuth": {
             "type": "apiKey",
             "name": "Authorization",

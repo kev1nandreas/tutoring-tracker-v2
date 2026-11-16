@@ -9,11 +9,15 @@ import (
 func RunAllSeeders(db *gorm.DB) error {
 	log.Println("Starting database seeding...")
 
-	if err := SeedUsers(db, 10); err != nil {
+	if err := SeedRoles(db); err != nil {
 		return err
 	}
 
-	if err := SeedBooks(db, 20); err != nil {
+	if err := SeedTutor(db); err != nil {
+		return err
+	}
+
+	if err := SeedUsers(db, 10); err != nil {
 		return err
 	}
 
@@ -24,11 +28,11 @@ func RunAllSeeders(db *gorm.DB) error {
 func ClearAllData(db *gorm.DB) error {
 	log.Println("Clearing all seeded data...")
 
-	if err := ClearBooks(db); err != nil {
+	if err := ClearUsers(db); err != nil {
 		return err
 	}
 
-	if err := ClearUsers(db); err != nil {
+	if err := ClearRoles(db); err != nil {
 		return err
 	}
 

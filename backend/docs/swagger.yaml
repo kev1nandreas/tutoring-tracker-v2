@@ -1,29 +1,128 @@
 basePath: /api/v1
 definitions:
-  models.Book:
+  dto.AttachmentInput:
     properties:
-      author:
+      link:
         type: string
-      created_at:
+      name:
         type: string
-      id:
-        type: integer
-      title:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  models.CreateBook:
-    properties:
-      author:
-        type: string
-      title:
+      type:
         type: string
     required:
-    - author
-    - title
+    - link
+    - name
+    - type
     type: object
-  models.LoginUser:
+  dto.CreateAttachmentsRequest:
+    properties:
+      attachments:
+        items:
+          $ref: '#/definitions/dto.AttachmentInput'
+        maxItems: 50
+        minItems: 1
+        type: array
+    required:
+    - attachments
+    type: object
+  dto.CreateMeetingRequest:
+    properties:
+      date:
+        type: string
+      has_homework:
+        type: boolean
+      is_done:
+        type: boolean
+      marks:
+        type: string
+      text_homework:
+        type: string
+      time_end:
+        type: string
+      time_start:
+        type: string
+      title:
+        type: string
+      tutorial_id:
+        type: string
+      youtube_link:
+        type: string
+    required:
+    - date
+    - time_end
+    - time_start
+    - title
+    - tutorial_id
+    - youtube_link
+    type: object
+  dto.CreatePaymentRequest:
+    properties:
+      is_paid:
+        type: boolean
+      nominal:
+        type: integer
+      note:
+        type: string
+      payment_date:
+        type: integer
+      tutorial_id:
+        type: string
+      user_id:
+        type: string
+    required:
+    - tutorial_id
+    - user_id
+    type: object
+  dto.CreateRoleRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  dto.CreateSubmissionRequest:
+    properties:
+      answer:
+        type: string
+      files:
+        type: string
+    required:
+    - files
+    type: object
+  dto.CreateTutorialRequest:
+    properties:
+      date_ended:
+        format: date
+        type: string
+      date_started:
+        format: date
+        type: string
+      description:
+        type: string
+      is_done:
+        type: boolean
+      meeting_days:
+        type: integer
+      name:
+        type: string
+      show_attendance:
+        type: boolean
+      show_download:
+        type: boolean
+      show_feedback:
+        type: boolean
+    required:
+    - date_ended
+    - date_started
+    - name
+    type: object
+  dto.EnrollRequest:
+    properties:
+      tutorial_code:
+        type: string
+    required:
+    - tutorial_code
+    type: object
+  dto.LoginRequest:
     properties:
       password:
         type: string
@@ -33,17 +132,407 @@ definitions:
     - password
     - username
     type: object
-  models.UpdateBook:
+  dto.PaymentResponse:
     properties:
-      author:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_paid:
+        type: boolean
+      nominal:
+        type: integer
+      note:
+        type: string
+      payment_date:
+        type: integer
+      tutorial:
+        $ref: '#/definitions/dto.PaymentTutorial'
+      tutorial_id:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.PaymentTutorial:
+    properties:
+      date_ended:
+        type: string
+      date_started:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.PendingStudent:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      school:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      school:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phone
+    - school
+    - username
+    type: object
+  dto.SubmissionResponse:
+    properties:
+      answer:
+        type: string
+      created_at:
+        type: string
+      files:
+        type: string
+      id:
+        type: string
+      meeting_id:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/dto.SubmissionUser'
+      user_id:
+        type: string
+    type: object
+  dto.SubmissionUser:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      school:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.TutorialPendingGroup:
+    properties:
+      pending_validations:
+        items:
+          $ref: '#/definitions/dto.PendingStudent'
+        type: array
+      tutorial:
+        $ref: '#/definitions/dto.TutorialSummary'
+    type: object
+  dto.TutorialSummary:
+    properties:
+      custom_id:
+        type: string
+      name:
+        type: string
+    type: object
+  dto.UpdateMeetingRequest:
+    properties:
+      date:
+        type: string
+      has_homework:
+        type: boolean
+      is_done:
+        type: boolean
+      marks:
+        type: string
+      text_homework:
+        type: string
+      time_end:
+        type: string
+      time_start:
         type: string
       title:
+        type: string
+      tutorial_id:
+        type: string
+      youtube_link:
+        type: string
+    type: object
+  dto.UpdatePaymentRequest:
+    properties:
+      is_paid:
+        type: boolean
+      nominal:
+        type: integer
+      note:
+        type: string
+      payment_date:
+        type: integer
+      tutorial_id:
+        type: string
+      user_id:
+        type: string
+    type: object
+  dto.UpdateRoleRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  dto.UpdateTutorialRequest:
+    properties:
+      date_ended:
+        format: date
+        type: string
+      date_started:
+        format: date
+        type: string
+      description:
+        type: string
+      is_done:
+        type: boolean
+      meeting_days:
+        type: integer
+      name:
+        type: string
+      show_attendance:
+        type: boolean
+      show_download:
+        type: boolean
+      show_feedback:
+        type: boolean
+    type: object
+  dto.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role_id:
+        type: string
+      school:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.ValidateRequest:
+    properties:
+      action:
+        enum:
+        - accept
+        - decline
+        type: string
+      tutorial_code:
+        type: string
+      user_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - action
+    - tutorial_code
+    - user_ids
+    type: object
+  dto.ValidateResponse:
+    properties:
+      skipped:
+        description: Skipped are ids that had no pending request for this tutorial.
+        items:
+          type: string
+        type: array
+      updated:
+        description: Updated are the students whose status changed.
+        items:
+          type: string
+        type: array
+    type: object
+  entity.Attachment:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      link:
+        type: string
+      meeting_id:
+        type: string
+      name:
+        type: string
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entity.Job:
+    properties:
+      created_at:
+        type: string
+      end_time:
+        type: integer
+      id:
+        type: string
+      is_success:
+        type: boolean
+      messages:
+        type: string
+      start_time:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entity.Meeting:
+    properties:
+      created_at:
+        type: string
+      date:
+        type: string
+      has_homework:
+        type: boolean
+      id:
+        type: string
+      is_done:
+        type: boolean
+      marks:
+        type: string
+      text_homework:
+        type: string
+      time_end:
+        type: string
+      time_start:
+        type: string
+      title:
+        type: string
+      tutorial_id:
+        type: string
+      updated_at:
+        type: string
+      youtube_link:
+        type: string
+    type: object
+  entity.Notification:
+    properties:
+      body:
+        type: string
+      created_at:
+        type: string
+      header:
+        type: string
+      id:
+        type: string
+      is_read:
+        type: boolean
+      type:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  entity.PendingValidation:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      is_validated:
+        description: 0 pending, 1 accepted, 2 declined
+        type: integer
+      tutorial_id:
+        type: string
+      updated_at:
+        type: string
+      user:
+        $ref: '#/definitions/entity.User'
+      user_id:
+        type: string
+    type: object
+  entity.Role:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  entity.Tutorial:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      custom_id:
+        type: string
+      date_ended:
+        type: string
+      date_started:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      is_done:
+        type: boolean
+      meeting_days:
+        type: integer
+      name:
+        type: string
+      show_attendance:
+        type: boolean
+      show_download:
+        type: boolean
+      show_feedback:
+        type: boolean
+      updated_at:
+        type: string
+    type: object
+  entity.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        $ref: '#/definitions/entity.Role'
+      role_id:
+        type: string
+      school:
+        type: string
+      updated_at:
+        type: string
+      username:
         type: string
     type: object
 externalDocs:
   description: OpenAPI
   url: https://swagger.io/resources/open-api/
-host: localhost:8001
+host: localhost:8082
 info:
   contact:
     email: support@swagger.io
@@ -59,9 +548,6 @@ info:
 paths:
   /:
     get:
-      consumes:
-      - application/json
-      description: do ping
       produces:
       - application/json
       responses:
@@ -69,74 +555,14 @@ paths:
           description: OK
           schema:
             type: string
-      summary: ping example
+      summary: Health check
       tags:
-      - example
-  /books:
-    get:
-      description: Get a list of all books with optional pagination
-      parameters:
-      - default: 0
-        description: Offset for pagination
-        in: query
-        name: offset
-        type: integer
-      - default: 10
-        description: Limit for pagination
-        in: query
-        name: limit
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully retrieved list of books
-          schema:
-            items:
-              $ref: '#/definitions/models.Book'
-            type: array
-      security:
-      - ApiKeyAuth: []
-      summary: Get all books with pagination
-      tags:
-      - books
-    post:
-      consumes:
-      - application/json
-      description: Create a new book with the given input data
-      parameters:
-      - description: Create book object
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/models.CreateBook'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Successfully created book
-          schema:
-            $ref: '#/definitions/models.Book'
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "401":
-          description: Unauthorized
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      - JwtAuth: []
-      summary: Create a new book
-      tags:
-      - books
-  /books/{id}:
+      - health
+  /attachments/{id}:
     delete:
-      description: Delete the book with the given ID
+      description: Only the user who created the attachment.
       parameters:
-      - description: Book ID
+      - description: Attachment ID
         in: path
         name: id
         required: true
@@ -145,22 +571,61 @@ paths:
       - application/json
       responses:
         "204":
-          description: Successfully deleted book
+          description: Deleted
+          schema:
+            type: string
+        "403":
+          description: Not the creator
           schema:
             type: string
         "404":
-          description: book not found
+          description: Not found
           schema:
             type: string
       security:
-      - ApiKeyAuth: []
-      summary: Delete a book by ID
+      - JwtAuth: []
+      summary: Delete an attachment
       tags:
-      - books
+      - attachment
+  /jobs:
     get:
-      description: Get details of a book by its ID
+      description: Paginated. Non-text columns (ids, flags, numbers, dates) can be
+        used as exact filters, e.g. ?role_id=<uuid>
       parameters:
-      - description: Book ID
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Job'
+            type: array
+      summary: List jobs with pagination
+      tags:
+      - job
+  /jobs/{id}:
+    get:
+      parameters:
+      - description: Job ID
         in: path
         name: id
         required: true
@@ -169,54 +634,16 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successfully retrieved book
+          description: OK
           schema:
-            $ref: '#/definitions/models.Book'
+            $ref: '#/definitions/entity.Job'
         "404":
-          description: Book not found
+          description: Not found
           schema:
             type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Find a book by ID
+      summary: Get a job by ID
       tags:
-      - books
-    put:
-      consumes:
-      - application/json
-      description: Update the book details for the given ID
-      parameters:
-      - description: Book ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Update book object
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/models.UpdateBook'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully updated book
-          schema:
-            $ref: '#/definitions/models.Book'
-        "400":
-          description: Bad Request
-          schema:
-            type: string
-        "404":
-          description: book not found
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Update a book by ID
-      tags:
-      - books
+      - job
   /login:
     post:
       consumes:
@@ -229,7 +656,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/models.LoginUser'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
@@ -245,31 +672,619 @@ paths:
           description: Unauthorized
           schema:
             type: string
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      security:
-      - ApiKeyAuth: []
       summary: Authenticate a user
       tags:
       - user
+  /meetings:
+    get:
+      description: Paginated. Non-text columns (ids, flags, numbers, dates) can be
+        used as exact filters, e.g. ?role_id=<uuid>
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Meeting'
+            type: array
+      summary: List meetings with pagination
+      tags:
+      - meeting
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create meeting
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateMeetingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.Meeting'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Create a meeting
+      tags:
+      - meeting
+  /meetings/{id}:
+    delete:
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Deleted
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a meeting by ID
+      tags:
+      - meeting
+    get:
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Meeting'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Get a meeting by ID
+      tags:
+      - meeting
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update meeting
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMeetingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Meeting'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Update a meeting by ID
+      tags:
+      - meeting
+  /meetings/{id}/attachments:
+    get:
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Attachment'
+            type: array
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List attachments of a meeting with pagination
+      tags:
+      - attachment
+    post:
+      consumes:
+      - application/json
+      description: Up to 50 per request, saved all or nothing. The creator is taken
+        from the JWT.
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Attachments
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateAttachmentsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/entity.Attachment'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Add one or many attachments to a meeting
+      tags:
+      - attachment
+  /meetings/{id}/submissions:
+    get:
+      description: Includes the submitting user (id, name, username, school). A student
+        only sees their own submissions; other roles see all.
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.SubmissionResponse'
+            type: array
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List submissions of a meeting with pagination
+      tags:
+      - submission
+    post:
+      consumes:
+      - application/json
+      description: The submitting user is taken from the JWT.
+      parameters:
+      - description: Meeting ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Create submission
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.SubmissionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Meeting not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Add a submission to a meeting
+      tags:
+      - submission
+  /notifications/{id}:
+    get:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Notification'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Get a notification by ID
+      tags:
+      - notification
+  /notifications/{id}/read:
+    patch:
+      parameters:
+      - description: Notification ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Notification'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Mark a notification as read
+      tags:
+      - notification
+  /payments:
+    get:
+      description: |-
+        Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=<uuid>
+        A tutor only gets payments of tutorials they created.
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PaymentResponse'
+            type: array
+      summary: List payments with pagination
+      tags:
+      - payment
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create payment
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Create a payment
+      tags:
+      - payment
+  /payments/{id}:
+    delete:
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Deleted
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a payment by ID
+      tags:
+      - payment
+    get:
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Get a payment by ID
+      tags:
+      - payment
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update payment
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PaymentResponse'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Update a payment by ID
+      tags:
+      - payment
+  /pending-validations:
+    get:
+      description: Only tutors. Covers only tutorials the caller created. Paginated
+        over tutorials. Filter with ?is_validated=0|1|2 (0 pending, 1 accepted, 2
+        declined).
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: 0 pending, 1 accepted, 2 declined
+        in: query
+        name: is_validated
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.TutorialPendingGroup'
+            type: array
+        "403":
+          description: Only tutors
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List enrollment requests of all my tutorials, grouped by tutorial
+      tags:
+      - pending-validation
+  /pending-validations/enroll:
+    post:
+      consumes:
+      - application/json
+      description: A student submits the tutorial code and waits as pending until
+        the tutor validates.
+      parameters:
+      - description: Tutorial code
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.EnrollRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.PendingValidation'
+        "403":
+          description: Only students
+          schema:
+            type: string
+        "404":
+          description: Tutorial not found
+          schema:
+            type: string
+        "409":
+          description: Already enrolled or pending
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Enroll in a tutorial with its code
+      tags:
+      - pending-validation
+  /pending-validations/validate:
+    post:
+      consumes:
+      - application/json
+      description: Only the tutor who created the tutorial. Only students still pending
+        are changed; others are returned in "skipped".
+      parameters:
+      - description: Tutorial code, student user ids and action (accept or decline)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ValidateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ValidateResponse'
+        "403":
+          description: Not your tutorial
+          schema:
+            type: string
+        "404":
+          description: Tutorial not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Accept or decline students in bulk
+      tags:
+      - pending-validation
   /register:
     post:
       consumes:
       - application/json
-      description: Registers a new user with the given username and password
+      description: Registers a new user. The role is always student.
       parameters:
       - description: User registration object
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/models.LoginUser'
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: Successfully registered
           schema:
             type: string
@@ -281,16 +1296,597 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      security:
-      - ApiKeyAuth: []
-      summary: Register a new user
+      summary: Register a new student
       tags:
       - user
+  /register/tutor:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new tutor. Only an authenticated tutor may call this.
+      parameters:
+      - description: Tutor registration object
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully registered
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Register a new tutor
+      tags:
+      - user
+  /roles:
+    get:
+      description: Paginated. Non-text columns (ids, flags, numbers, dates) can be
+        used as exact filters, e.g. ?role_id=<uuid>
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Role'
+            type: array
+      summary: List roles with pagination
+      tags:
+      - role
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create role
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.Role'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Create a role
+      tags:
+      - role
+  /roles/{id}:
+    delete:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Deleted
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a role by ID
+      tags:
+      - role
+    get:
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Role'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Get a role by ID
+      tags:
+      - role
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update role
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Role'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Update a role by ID
+      tags:
+      - role
+  /submissions/{id}:
+    delete:
+      description: Only the user who made the submission.
+      parameters:
+      - description: Submission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Deleted
+          schema:
+            type: string
+        "403":
+          description: Not the owner
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a submission by ID
+      tags:
+      - submission
+  /tutorials:
+    get:
+      description: Paginated. Non-text columns (ids, flags, numbers, dates) can be
+        used as exact filters, e.g. ?role_id=<uuid>. When called with a tutor token,
+        only that tutor's own tutorials are returned.
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Tutorial'
+            type: array
+      security:
+      - JwtAuth: []
+      summary: List tutorials with pagination
+      tags:
+      - tutorial
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Create tutorial
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateTutorialRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entity.Tutorial'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Create a tutorial
+      tags:
+      - tutorial
+  /tutorials/{id}:
+    delete:
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Deleted
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a tutorial by ID
+      tags:
+      - tutorial
+    get:
+      description: A tutor token can only read tutorials the tutor created.
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Tutorial'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Get a tutorial by ID
+      tags:
+      - tutorial
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update tutorial
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateTutorialRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.Tutorial'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Update a tutorial by ID
+      tags:
+      - tutorial
+  /tutorials/{id}/meetings:
+    get:
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Meeting'
+            type: array
+      summary: List meetings of a tutorial with pagination
+      tags:
+      - meeting
+  /tutorials/{id}/pending-validations:
+    get:
+      description: Only the tutor who created the tutorial. Filter with ?is_validated=0|1|2
+        (0 pending, 1 accepted, 2 declined).
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      - description: 0 pending, 1 accepted, 2 declined
+        in: query
+        name: is_validated
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PendingStudent'
+            type: array
+        "403":
+          description: Not your tutorial
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List enrollment requests of a tutorial
+      tags:
+      - pending-validation
+  /users:
+    get:
+      description: Paginated. Non-text columns (ids, flags, numbers, dates) can be
+        used as exact filters, e.g. ?role_id=<uuid>
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.User'
+            type: array
+      summary: List users with pagination
+      tags:
+      - user
+  /users/{id}:
+    delete:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Deleted
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a user by ID
+      tags:
+      - user
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.User'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: Get a user by ID
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update user
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entity.User'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Update a user by ID
+      tags:
+      - user
+  /users/{id}/notifications:
+    get:
+      description: Paginated, newest first by default. Filter with ?is_read=true|false
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      - description: Filter by read state
+        in: query
+        name: is_read
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entity.Notification'
+            type: array
+      summary: List notifications of a user with pagination
+      tags:
+      - notification
 securityDefinitions:
-  ApiKeyAuth:
-    in: header
-    name: X-API-Key
-    type: apiKey
   JwtAuth:
     in: header
     name: Authorization
