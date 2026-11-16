@@ -18,6 +18,7 @@ import (
 	jobFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/job/factory"
 	meetingFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/factory"
 	notificationFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/notification/factory"
+	notificationUC "github.com/kev1nandreas/go-rest-api-template/src/modules/notification/usecase"
 	paymentFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/payment/factory"
 	pendingValidationFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/pending_validation/factory"
 	roleFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/role/factory"
@@ -26,6 +27,7 @@ import (
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/incomesync"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/mailer"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/notifier"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -102,7 +104,21 @@ func main() {
 	defer logger.Sync()
 
 	// Notifications: one usecase shared by the handler and the event notifier.
-	notificationUsecase := notificationFactory.NewNotificationUsecase(notificationCollection)
+	// Email copies are sent only when SMTP is configured (see SMTP_* in .env.example).
+	var mail notificationUC.Mailer
+	if m := mailer.New(mailer.Config{
+		Host:     config.GetEnvString("SMTP_HOST", ""),
+		Port:     config.GetEnvInt("SMTP_PORT", 587),
+		Username: config.GetEnvString("SMTP_USERNAME", ""),
+		Password: config.GetEnvString("SMTP_PASSWORD", ""),
+		From:     config.GetEnvString("SMTP_FROM", ""),
+		FromName: config.GetEnvString("SMTP_FROM_NAME", "Tutoring Tracker"),
+	}); m != nil {
+		mail = m
+	} else {
+		log.Println("SMTP not configured: notifications are in-app only")
+	}
+	notificationUsecase := notificationFactory.NewNotificationUsecase(notificationCollection, db, mail)
 	if _, err := rabbitmq.DeclareQueue(notifier.QueueMaterial); err != nil {
 		log.Fatalf("failed to declare queue %s: %v", notifier.QueueMaterial, err)
 	}

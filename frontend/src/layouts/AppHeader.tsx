@@ -7,6 +7,7 @@ import type React from "react";
 import { useState } from "react";
 import useAuthStore from "@/app/stores/useAuthStore";
 import IconButton from "@/components/button/IconButton";
+import NotificationBell from "@/components/notification/NotificationBell";
 import { useSidebar } from "@/context/SidebarContext";
 import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
@@ -47,7 +48,8 @@ const AppHeader: React.FC = () => {
 			/>
 			<div className="hidden lg:block" />
 
-			<div className="flex items-center sm:gap-4">
+			<div className="flex items-center gap-2 sm:gap-4">
+				<NotificationBell />
 				<button
 					type="button"
 					onClick={(e) => setAnchorEl(e.currentTarget)}

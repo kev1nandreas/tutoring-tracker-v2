@@ -64,6 +64,10 @@ export const MAIN_ENDPOINT = {
 		Tutor: "/v1/dashboard/tutor",
 		Student: "/v1/dashboard/student",
 	},
+	Notification: {
+		ByUser: (userId: string) => `/v1/users/${userId}/notifications`,
+		Read: (id: string) => `/v1/notifications/${id}/read`,
+	},
 	Auth: {
 		Login: "/v1/login",
 		Register: "/v1/register",

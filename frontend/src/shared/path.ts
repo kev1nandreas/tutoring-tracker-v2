@@ -11,6 +11,8 @@ export const PATH = {
 	PENDING_VALIDATION: "/tutor/pending-validation",
 	STUDENTS: "/tutor/students",
 	PAYMENTS: "/tutor/payments",
+	NOTIFICATIONS: "/notifications",
+	TUTOR_NOTIFICATIONS: "/tutor/notifications",
 	LOGIN: "/login",
 	FEEDBACK: "/form/feedback",
 	REGISTER: "/register",
@@ -37,3 +39,7 @@ export const attendancePath = (tutorialId: string, meetingId: string) =>
 /** Landing page for a role after login. */
 export const homeForRole = (role?: Role): string =>
 	role === "student" ? PATH.STUDENT_HOME : PATH.DASHBOARD;
+
+/** The notifications page of a role. */
+export const notificationsPath = (role?: Role): string =>
+	role === "student" ? PATH.NOTIFICATIONS : PATH.TUTOR_NOTIFICATIONS;

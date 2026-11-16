@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import useAuthStore from "@/app/stores/useAuthStore";
 import Button from "@/components/button/Button";
 import withAuth from "@/components/hoc/withAuth";
+import NotificationBell from "@/components/notification/NotificationBell";
 import Typography from "@/components/Typography";
 import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
@@ -59,6 +60,7 @@ function StudentLayout({ children }: { children: React.ReactNode }) {
 					</nav>
 				</div>
 				<div className="flex items-center gap-3">
+					<NotificationBell />
 					<Typography className="text-sm text-gray-600">
 						{user?.name}
 					</Typography>
