@@ -60,7 +60,7 @@ func (u *feedbackUsecase) Info(code string) (*dto.FormInfo, error) {
 		}
 		return nil, err
 	}
-	return &dto.FormInfo{TutorialName: t.Name, TutorName: t.TutorName, Open: t.IsDone && t.ShowFeedback}, nil
+	return &dto.FormInfo{TutorialName: t.Name, TutorName: t.TutorName, Open: t.ShowFeedback}, nil
 }
 
 func (u *feedbackUsecase) Submit(code string, req dto.SubmitRequest) error {
@@ -74,7 +74,7 @@ func (u *feedbackUsecase) Submit(code string, req dto.SubmitRequest) error {
 		}
 		return err
 	}
-	if !t.IsDone || !t.ShowFeedback {
+	if !t.ShowFeedback {
 		return ErrClosed
 	}
 	f := &entity.Feedback{
@@ -108,7 +108,7 @@ func (u *feedbackUsecase) Status(tutorialID string, userID uuid.UUID, role strin
 		return nil, err
 	}
 	out := &dto.Status{Code: t.CustomID}
-	if role != "student" || !t.IsDone || !t.ShowFeedback {
+	if role != "student" || !t.ShowFeedback {
 		return out, nil
 	}
 	ok, err := u.repo.IsAcceptedStudent(tid, userID)

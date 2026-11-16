@@ -76,7 +76,7 @@ export default function FeedbackView({ tutorialId }: { tutorialId: string }) {
 					count={s?.count}
 					isLoading={q.isLoading}
 					isEmpty={s?.count === 0}
-					emptyText="No feedback yet. Students are asked once the class is marked done."
+					emptyText="No feedback yet. Students are asked as soon as the feedback switch is on."
 				>
 					<ul className="divide-y divide-gray-100">
 						{s?.items.map((f) => (

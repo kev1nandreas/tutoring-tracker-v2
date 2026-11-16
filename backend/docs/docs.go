@@ -2015,7 +2015,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "No login needed. Only works once the tutorial is done and its feedback switch is on. The email is only hashed to stop a second submission; answers are stored without it. A second submission with the same email returns 409.",
+                "description": "No login needed. Only works while the tutorial's feedback switch is on. The email is only hashed to stop a second submission; answers are stored without it. A second submission with the same email returns 409.",
                 "consumes": [
                     "application/json"
                 ],

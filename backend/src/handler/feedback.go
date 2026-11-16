@@ -54,7 +54,7 @@ func (h *FeedbackHandler) FormInfo(c *gin.Context) {
 
 // Submit godoc
 // @Summary Public feedback form: send feedback
-// @Description No login needed. Only works once the tutorial is done and its feedback switch is on. The email is only hashed to stop a second submission; answers are stored without it. A second submission with the same email returns 409.
+// @Description No login needed. Only works while the tutorial's feedback switch is on. The email is only hashed to stop a second submission; answers are stored without it. A second submission with the same email returns 409.
 // @Tags feedback
 // @Accept json
 // @Produce json
@@ -100,7 +100,7 @@ func (h *FeedbackHandler) Status(c *gin.Context) {
 	response.NewSuccessResponse("Feedback status retrieved", out).Send(c)
 }
 
-// Gate blocks a student's access to a finished tutorial until they sent its feedback.
+// Gate blocks a student's access to a tutorial with feedback on until they sent its feedback.
 func (h *FeedbackHandler) Gate() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetString("role") != "student" {

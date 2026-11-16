@@ -64,7 +64,7 @@ const T = {
 		notFound: "Form not found",
 		notFoundHint: "Check the link, or ask your tutor for the class code.",
 		closed: "Feedback is not open yet",
-		closedHint: "takes feedback once the class is done.",
+		closedHint: "takes feedback only while its feedback switch is on.",
 		thanks: "Thank you!",
 		thanksHint: "Your feedback was sent anonymously.",
 		cont: "Continue to your class",

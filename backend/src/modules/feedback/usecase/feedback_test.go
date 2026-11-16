@@ -71,20 +71,21 @@ func TestSubmitOnceAndAnonymous(t *testing.T) {
 	}
 }
 
-func TestClosedUntilDoneAndSwitchOn(t *testing.T) {
+func TestClosedWhileSwitchOff(t *testing.T) {
 	repo := &fakeRepo{info: repository.TutorialInfo{ID: uuid.New(), IsDone: true, ShowFeedback: false}}
 	uc := NewFeedbackUsecase(repo)
 	if err := uc.Submit("ABC123", req("a@b.co")); !errors.Is(err, ErrClosed) {
 		t.Fatalf("switch off: %v", err)
 	}
+	// switch on: open even though the class is not done yet
 	repo.info.ShowFeedback, repo.info.IsDone = true, false
-	if err := uc.Submit("ABC123", req("a@b.co")); !errors.Is(err, ErrClosed) {
-		t.Fatalf("not done: %v", err)
+	if err := uc.Submit("ABC123", req("a@b.co")); err != nil {
+		t.Fatalf("switch on, not done: %v", err)
 	}
 }
 
 func TestStatusBlocksStudentUntilSubmitted(t *testing.T) {
-	repo := &fakeRepo{accepted: true, info: repository.TutorialInfo{ID: uuid.New(), CustomID: "ABC123", IsDone: true, ShowFeedback: true}}
+	repo := &fakeRepo{accepted: true, info: repository.TutorialInfo{ID: uuid.New(), CustomID: "ABC123", IsDone: false, ShowFeedback: true}}
 	uc := NewFeedbackUsecase(repo)
 	student := uuid.New()
 

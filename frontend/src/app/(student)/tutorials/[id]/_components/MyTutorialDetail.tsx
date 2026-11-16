@@ -32,7 +32,7 @@ function BackLink() {
 
 export default function MyTutorialDetail({ id }: { id: string }) {
 	const router = useRouter();
-	// a finished class with feedback on stays locked until the student sent the form
+	// a class with feedback on stays locked until the student sent the form
 	const gate = useQuery({
 		queryKey: ["my-tutorial", id, "feedback-status"],
 		queryFn: () => fetchFeedbackStatus(id),
