@@ -41,7 +41,7 @@ export default function MeetingRow({
 	const needsUpdate = isPast && !meeting.is_done;
 
 	return (
-		<li className="group relative flex items-center gap-4 py-3">
+		<li className="group relative flex items-center gap-3 py-3 sm:gap-4">
 			<div
 				aria-hidden
 				className={clsxm(
@@ -78,6 +78,21 @@ export default function MeetingRow({
 							timeOf(meeting.time_end),
 						)}
 					</span>
+					{meeting.is_done && (
+						<span className="flex items-center gap-1 text-green-700 sm:hidden">
+							<Check size={12} aria-hidden /> Done
+						</span>
+					)}
+					{!meeting.is_done && isNext && (
+						<span className="rounded-full bg-[#ffe36e] px-2 py-0.5 text-brand-950 sm:hidden">
+							Next
+						</span>
+					)}
+					{needsUpdate && (
+						<span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700 sm:hidden">
+							Not marked done
+						</span>
+					)}
 					{meeting.has_homework && (
 						<span className="flex items-center gap-1 text-brand-700">
 							<NotebookPen size={12} aria-hidden /> Homework
@@ -96,7 +111,7 @@ export default function MeetingRow({
 				</div>
 			</div>
 
-			<div className="shrink-0 text-xs font-medium">
+			<div className="hidden shrink-0 text-xs font-medium sm:block">
 				{meeting.is_done ? (
 					<span className="flex items-center gap-1 text-green-700">
 						<Check size={14} aria-hidden /> Done

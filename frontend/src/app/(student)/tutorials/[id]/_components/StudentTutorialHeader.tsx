@@ -58,7 +58,7 @@ export default function StudentTutorialHeader({ tutorial, meetings }: Props) {
 				<Typography
 					as="h1"
 					weight="bold"
-					className="mt-3 max-w-2xl text-3xl leading-tight text-brand-950"
+					className="mt-3 max-w-2xl text-2xl leading-tight break-words text-brand-950 sm:text-3xl"
 				>
 					{tutorial.name}
 				</Typography>

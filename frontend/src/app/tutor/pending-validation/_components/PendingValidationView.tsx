@@ -218,6 +218,8 @@ export default function PendingValidationView() {
 			>
 				<div className="flex flex-wrap items-end justify-between gap-3 border-gray-200 border-b">
 					<Tabs
+						variant="scrollable"
+						scrollButtons={false}
 						value={status}
 						onChange={(_, next: StudentStatus) => changeStatus(next)}
 						aria-label="Filter requests by status"

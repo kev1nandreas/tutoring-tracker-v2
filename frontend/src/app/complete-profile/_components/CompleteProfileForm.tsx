@@ -32,7 +32,7 @@ export default function CompleteProfileForm() {
 		mutation.mutate(data);
 
 	return (
-		<div className="w-full max-w-[520px] rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+		<div className="w-full max-w-[520px] rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
 			<Typography as="h1" className="text-2xl" weight="bold">
 				Finish your account
 			</Typography>

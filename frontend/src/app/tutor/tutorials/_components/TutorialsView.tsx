@@ -62,6 +62,8 @@ export default function TutorialsView() {
 			}
 		>
 			<Tabs
+				variant="scrollable"
+				scrollButtons={false}
 				value={status}
 				onChange={(_, next: TutorialStatus) => changeStatus(next)}
 				aria-label="Filter tutorials by status"

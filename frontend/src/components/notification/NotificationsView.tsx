@@ -60,7 +60,9 @@ function Row({
 						/>
 					)}
 				</p>
-				<p className="mt-0.5 text-sm text-gray-600">{item.body}</p>
+				<p className="mt-0.5 line-clamp-3 text-sm break-words text-gray-600">
+					{item.body}
+				</p>
 				<p className="mt-1 text-xs text-gray-400">
 					{formatRelativeTime(item.created_at)}
 				</p>
@@ -106,6 +108,8 @@ export default function NotificationsView() {
 			isLoading={isLoading}
 		>
 			<Tabs
+				variant="scrollable"
+				scrollButtons={false}
 				value={filter}
 				onChange={(_, next: NotificationFilter) => {
 					setFilter(next);

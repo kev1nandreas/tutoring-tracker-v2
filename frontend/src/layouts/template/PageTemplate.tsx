@@ -24,12 +24,12 @@ export default function PageTemplate({
 
 			{(title || action) && (
 				<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-					<div>
+					<div className="min-w-0">
 						{title && (
 							<Typography
 								as="h1"
 								weight="semibold"
-								className="text-2xl text-gray-900"
+								className="text-2xl break-words text-gray-900"
 							>
 								{title}
 							</Typography>

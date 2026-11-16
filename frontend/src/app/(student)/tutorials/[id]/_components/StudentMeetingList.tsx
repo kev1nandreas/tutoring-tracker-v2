@@ -65,6 +65,8 @@ export default function StudentMeetingList({
 				emptyText={EMPTY.all}
 			>
 				<Tabs
+					variant="scrollable"
+					scrollButtons={false}
 					value={view}
 					onChange={(_, next: View) => setView(next)}
 					aria-label="Filter meetings"

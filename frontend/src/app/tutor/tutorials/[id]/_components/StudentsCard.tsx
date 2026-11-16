@@ -104,6 +104,8 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 			isLoading={accepted.isLoading && tab === "accepted"}
 		>
 			<Tabs
+				variant="scrollable"
+				scrollButtons={false}
 				value={tab}
 				onChange={(_, next: StudentStatus) => setTab(next)}
 				aria-label="Filter students by status"

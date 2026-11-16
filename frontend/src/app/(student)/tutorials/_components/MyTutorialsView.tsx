@@ -58,6 +58,8 @@ export default function MyTutorialsView() {
 			</div>
 
 			<Tabs
+				variant="scrollable"
+				scrollButtons={false}
 				value={status}
 				onChange={(_, next: EnrolledFilter) => {
 					setStatus(next);

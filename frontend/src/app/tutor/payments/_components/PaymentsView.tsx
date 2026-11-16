@@ -131,6 +131,8 @@ export default function PaymentsView() {
 			}
 		>
 			<Tabs
+				variant="scrollable"
+				scrollButtons={false}
 				value={filter}
 				onChange={(_, value: PaymentFilter) => {
 					setFilter(value);

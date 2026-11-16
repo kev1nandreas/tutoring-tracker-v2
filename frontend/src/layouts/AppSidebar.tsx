@@ -277,14 +277,20 @@ const AppSidebar: React.FC = () => {
 				</div>
 			</div>
 
-			<NextImage
-				src="/logo/logo-white.svg"
-				alt=""
-				width={600}
-				height={600}
-				serverStaticImg
-				className="pointer-events-none absolute -bottom-12 -left-14 w-96 select-none opacity-10 -rotate-12"
-			/>
+			{/* clipped to the sidebar; the toggle button sits on the edge, so the aside itself cannot clip */}
+			<div
+				aria-hidden
+				className="pointer-events-none absolute inset-0 overflow-hidden"
+			>
+				<NextImage
+					src="/logo/logo-white.svg"
+					alt=""
+					width={600}
+					height={600}
+					serverStaticImg
+					className="absolute -bottom-12 -left-14 w-96 max-w-none select-none opacity-10 -rotate-12"
+				/>
+			</div>
 		</aside>
 	);
 };

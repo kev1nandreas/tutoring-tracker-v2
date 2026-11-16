@@ -98,6 +98,8 @@ export default function MeetingLedger({
 				emptyAction={addButton}
 			>
 				<Tabs
+					variant="scrollable"
+					scrollButtons={false}
 					value={view}
 					onChange={(_, next: View) => setView(next)}
 					aria-label="Filter meetings"

@@ -12,17 +12,20 @@ interface BreadCrumbsProps {
 
 export default function BreadCrumbs({ breadcrumbs }: BreadCrumbsProps) {
 	return (
-		<ol className="flex items-center whitespace-nowrap text-sm">
+		<ol className="flex min-w-0 items-center text-sm">
 			{breadcrumbs.map((breadcrumb, index) => {
 				const isLast = index === breadcrumbs.length - 1;
 
 				return (
-					<li key={breadcrumb.redirect} className="inline-flex items-center">
+					<li
+						key={breadcrumb.redirect}
+						className={`inline-flex items-center ${isLast ? "min-w-0" : "shrink-0"}`}
+					>
 						{breadcrumb.isClickable ? (
 							<Link
 								className={
 									isLast
-										? "flex items-center text-primary-active font-medium hover:text-primary-hover"
+										? "flex min-w-0 items-center truncate text-primary-active font-medium hover:text-primary-hover"
 										: "flex items-center text-gray-500 hover:text-primary-hover focus:outline-none focus:text-primary-focus"
 								}
 								href={breadcrumb.redirect}
@@ -33,7 +36,7 @@ export default function BreadCrumbs({ breadcrumbs }: BreadCrumbsProps) {
 							<span
 								className={
 									isLast
-										? "flex items-center text-primary-active font-medium"
+										? "flex min-w-0 items-center truncate text-primary-active font-medium"
 										: "flex items-center text-gray-500"
 								}
 							>
