@@ -76,14 +76,11 @@ export default function TBody<T extends RowData & Linkable>({
 					<td
 						key={cell.id}
 						className={clsxm(
-							"whitespace-nowrap px-3 py-3 text-sm text-gray-700",
+							"px-3 py-3 text-sm text-gray-700",
 							cell.column.columnDef.meta?.align === "left"
-								? "pl-4 text-left"
-								: "text-center",
+								? "min-w-48 whitespace-normal break-words pl-4 text-left"
+								: "whitespace-nowrap text-center",
 						)}
-						style={{
-							maxWidth: cell.column.getSize(),
-						}}
 					>
 						{flexRender(cell.column.columnDef.cell, cell.getContext())}
 					</td>

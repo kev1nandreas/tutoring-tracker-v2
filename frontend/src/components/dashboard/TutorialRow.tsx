@@ -29,7 +29,7 @@ export default function TutorialRow({
 					>
 						{tutorial.name}
 					</Typography>
-					<Typography className="text-xs text-gray-500">
+					<Typography className="break-words text-xs text-gray-500">
 						{tutorial.custom_id}
 						{meta ? ` · ${meta}` : ""}
 					</Typography>

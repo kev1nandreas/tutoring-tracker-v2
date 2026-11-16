@@ -259,7 +259,7 @@ export default function Table<T extends object>({
 					tableClassName,
 				)}
 			>
-				<table className="w-full min-w-max">
+				<table className="w-full">
 					<THead
 						table={table}
 						omitSort={omitSort}

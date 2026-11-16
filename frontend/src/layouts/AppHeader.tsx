@@ -33,9 +33,8 @@ const AppHeader: React.FC = () => {
 		<header
 			className={clsxm(
 				"sticky top-0 z-99 flex w-full items-center justify-between px-4 py-3 lg:px-8",
-				isMobileOpen
-					? "border-b border-gray-200 bg-white shadow-sm"
-					: "bg-transparent",
+				"border-b border-gray-200 bg-white",
+				isMobileOpen && "shadow-sm",
 			)}
 		>
 			<IconButton

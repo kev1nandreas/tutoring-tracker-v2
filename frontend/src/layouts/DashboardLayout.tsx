@@ -24,12 +24,12 @@ function DashboardLayout({ children, className }: LayoutProps) {
 			<Backdrop />
 			<div
 				className={clsxm(
-					"flex-1 min-h-screen transition-all duration-300 ease-in-out",
+					"min-w-0 flex-1 min-h-screen transition-all duration-300 ease-in-out",
 					mainContentMargin,
 				)}
 			>
 				<AppHeader />
-				<div className={clsxm("mx-auto px-4 md:px-6", className)}>
+				<div className={clsxm("mx-auto min-w-0 px-4 md:px-6", className)}>
 					{children}
 				</div>
 			</div>

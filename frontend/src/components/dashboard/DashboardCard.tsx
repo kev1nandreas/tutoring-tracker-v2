@@ -33,7 +33,7 @@ export default function DashboardCard({
 	return (
 		<section
 			className={clsxm(
-				"flex flex-col rounded-xl border border-gray-200 bg-white",
+				"flex min-w-0 flex-col rounded-xl border border-gray-200 bg-white",
 				className,
 			)}
 		>
