@@ -1,17 +1,17 @@
 "use client";
 
-import InputAdornment from "@mui/material/InputAdornment";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import TextField from "@mui/material/TextField";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import * as React from "react";
 import Button from "@/components/button/Button";
 import DashboardError from "@/components/dashboard/DashboardError";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
+import SearchField from "@/components/form/SearchField";
 import Table from "@/components/table/Table";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useServerSort } from "@/hooks/useServerSort";
 import PageTemplate from "@/layouts/template/PageTemplate";
 import clsxm from "@/lib/clsxm";
 import { validationQuestion } from "@/lib/enrollmentMessages";
@@ -28,6 +28,8 @@ import { useValidationGroups } from "../_hooks/useValidationGroups";
 import StudentsSubTable from "./StudentsSubTable";
 
 const PAGE_SIZE = 10;
+
+const SORT_COLUMNS = { tutorial: "name", count: "count" };
 
 const TABS: { value: StudentStatus; label: string }[] = [
 	{ value: "pending", label: "Pending" },
@@ -98,12 +100,18 @@ export default function PendingValidationView() {
 	const search = useDebouncedValue(searchInput.trim(), 300);
 	const canAct = status === "pending";
 
+	const { sorting, handleSortingChange, sort, order } = useServerSort(
+		SORT_COLUMNS,
+		() => setPage(1),
+	);
 	const { data, isLoading, isError, error, refetch, isPlaceholderData } =
 		useValidationGroups({
 			status,
 			page,
 			pageSize: PAGE_SIZE,
 			search,
+			sort,
+			order,
 		});
 	const groups = data?.groups ?? [];
 	const meta = data?.meta;
@@ -162,6 +170,7 @@ export default function PendingValidationView() {
 			},
 			{
 				id: "tutorial",
+				accessorFn: (g) => g.tutorial.name,
 				header: "Tutorial",
 				meta: { align: "left" },
 				cell: ({ row }) => (
@@ -177,6 +186,7 @@ export default function PendingValidationView() {
 			},
 			{
 				id: "count",
+				accessorFn: (g) => g.pending_validations.length,
 				header: "Students",
 				cell: ({ row }) => (
 					<span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
@@ -238,37 +248,12 @@ export default function PendingValidationView() {
 							<Tab key={t.value} value={t.value} label={t.label} />
 						))}
 					</Tabs>
-					<TextField
+					<SearchField
 						value={searchInput}
-						onChange={(e) => changeSearch(e.target.value)}
+						onChange={changeSearch}
 						placeholder="Name, username or school"
-						size="small"
-						type="search"
-						sx={{ width: { xs: "100%", sm: 320 }, mb: 1 }}
-						slotProps={{
-							htmlInput: {
-								"aria-label": "Search students by name, username or school",
-							},
-							input: {
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search size={16} aria-hidden />
-									</InputAdornment>
-								),
-								endAdornment: searchInput ? (
-									<InputAdornment position="end">
-										<button
-											type="button"
-											onClick={() => changeSearch("")}
-											aria-label="Clear search"
-											className="rounded p-0.5 text-gray-400 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-brand-600"
-										>
-											<X size={16} aria-hidden />
-										</button>
-									</InputAdornment>
-								) : undefined,
-							},
-						}}
+						aria-label={"Search students by name, username or school"}
+						className="mb-1 w-full sm:w-80"
 					/>
 				</div>
 
@@ -321,7 +306,9 @@ export default function PendingValidationView() {
 							data={groups}
 							columns={columns}
 							isLoading={isLoading}
-							omitSort
+							manualSorting
+							sorting={sorting}
+							onSortingChange={handleSortingChange}
 							withPaginationControl
 							manualPagination
 							pagination={{ page, size: PAGE_SIZE }}

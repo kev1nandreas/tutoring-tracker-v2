@@ -9,6 +9,7 @@ import Button from "@/components/button/Button";
 import DashboardError from "@/components/dashboard/DashboardError";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import Table from "@/components/table/Table";
+import { useServerSort } from "@/hooks/useServerSort";
 import PageTemplate from "@/layouts/template/PageTemplate";
 import clsxm from "@/lib/clsxm";
 import { formatCurrency, formatDate } from "@/lib/helper";
@@ -19,6 +20,12 @@ import { usePayments } from "../_hooks/usePayments";
 import PaymentFormDialog from "./PaymentFormDialog";
 
 const PAGE_SIZE = 10;
+
+const SORT_COLUMNS = {
+	nominal: "nominal",
+	date: "payment_date",
+	status: "is_paid",
+};
 
 const FILTERS: { value: PaymentFilter; label: string }[] = [
 	{ value: "all", label: "All" },
@@ -33,8 +40,12 @@ export default function PaymentsView() {
 	const [editing, setEditing] = React.useState<Payment | undefined>();
 	const [deleting, setDeleting] = React.useState<Payment | undefined>();
 
+	const { sorting, handleSortingChange, sort, order } = useServerSort(
+		SORT_COLUMNS,
+		() => setPage(1),
+	);
 	const { data, isLoading, isError, error, refetch, isPlaceholderData } =
-		usePayments({ page, pageSize: PAGE_SIZE, filter });
+		usePayments({ page, pageSize: PAGE_SIZE, filter, sort, order });
 	const remove = useDeletePaymentMutation({
 		onSuccess: () => setDeleting(undefined),
 	});
@@ -43,6 +54,7 @@ export default function PaymentsView() {
 		() => [
 			{
 				id: "tutorial",
+				enableSorting: false,
 				header: "Tutorial",
 				meta: { align: "left" },
 				cell: ({ row }) => (
@@ -53,12 +65,14 @@ export default function PaymentsView() {
 			},
 			{
 				id: "nominal",
+				accessorFn: (p) => p.nominal,
 				header: "Amount",
 				meta: { align: "left" },
 				cell: ({ row }) => formatCurrency(row.original.nominal),
 			},
 			{
 				id: "date",
+				accessorFn: (p) => p.payment_date,
 				header: "Date",
 				meta: { align: "left" },
 				cell: ({ row }) =>
@@ -70,6 +84,7 @@ export default function PaymentsView() {
 			},
 			{
 				id: "status",
+				accessorFn: (p) => p.is_paid,
 				header: "Status",
 				cell: ({ row }) => (
 					<span
@@ -86,6 +101,7 @@ export default function PaymentsView() {
 			},
 			{
 				id: "actions",
+				enableSorting: false,
 				header: "",
 				cell: ({ row }) => (
 					<div className="flex justify-end gap-1">
@@ -157,7 +173,9 @@ export default function PaymentsView() {
 						data={data?.items ?? []}
 						columns={columns}
 						isLoading={isLoading}
-						omitSort
+						manualSorting
+						sorting={sorting}
+						onSortingChange={handleSortingChange}
 						withPaginationControl
 						manualPagination
 						pagination={{ page, size: PAGE_SIZE }}

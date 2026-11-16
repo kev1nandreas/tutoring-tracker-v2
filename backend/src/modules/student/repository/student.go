@@ -26,6 +26,29 @@ var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
 
 const searchCond = `(u.name ILIKE ? ESCAPE '\' OR u.username ILIKE ? ESCAPE '\' OR u.email ILIKE ? ESCAPE '\' OR u.school ILIKE ? ESCAPE '\')`
 
+// studentSortColumns maps the ?sort= value to its ORDER BY expression.
+var studentSortColumns = map[string]string{
+	"name":           "u.name",
+	"email":          "u.email",
+	"school":         "u.school",
+	"last_login_at":  "u.last_login_at",
+	"tutorial_count": "tutorial_count",
+}
+
+// studentOrderBy builds a safe ORDER BY; unknown columns fall back to name.
+func studentOrderBy(params pagination.Params) string {
+	expr, ok := studentSortColumns[params.Sort]
+	if !ok {
+		return "u.name ASC, u.id ASC"
+	}
+	dir := "ASC"
+	if params.Order == "desc" {
+		dir = "DESC"
+	}
+	// never-logged-in students go last either way
+	return expr + " " + dir + " NULLS LAST, u.name ASC, u.id ASC"
+}
+
 func (r *studentPostgresRepository) List(tutorID uuid.UUID, search string, params pagination.Params) ([]dto.StudentRow, pagination.Meta, error) {
 	where := "t.created_by = ? AND pv.is_validated = 1"
 	args := []interface{}{tutorID}
@@ -47,7 +70,7 @@ func (r *studentPostgresRepository) List(tutorID uuid.UUID, search string, param
 	rows := []dto.StudentRow{}
 	q := `SELECT u.id::text AS id, u.name, u.username, u.email, u.school, u.phone, u.last_login_at,
 		COUNT(DISTINCT pv.tutorial_id) AS tutorial_count ` + from + `
-		GROUP BY u.id ORDER BY u.name ASC, u.id ASC LIMIT ? OFFSET ?`
+		GROUP BY u.id ORDER BY ` + studentOrderBy(params) + ` LIMIT ? OFFSET ?`
 	if err := r.db.Raw(q, append(args, params.PageSize, params.GetOffset())...).Scan(&rows).Error; err != nil {
 		return nil, pagination.Meta{}, err
 	}

@@ -9,16 +9,26 @@ export type StudentListParams = {
 	pageSize: number;
 	/** Matches name, username, email or school. */
 	search?: string;
+	/** API column to sort by; defaults to name. */
+	sort?: string;
+	order?: "asc" | "desc";
 };
 
 export async function fetchStudents({
 	page,
 	pageSize,
 	search,
+	sort,
+	order,
 }: StudentListParams) {
 	const { OK, Kind, StatusCode } = await get<PaginatedMainResponse<StudentRow>>(
 		MAIN_ENDPOINT.Student.List,
-		{ page, page_size: pageSize, ...(search ? { q: search } : {}) },
+		{
+			page,
+			page_size: pageSize,
+			...(search ? { q: search } : {}),
+			...(sort ? { sort, order: order ?? "asc" } : {}),
+		},
 	);
 	const r = Kind as PaginatedMainResponse<StudentRow>;
 	if (!OK) {

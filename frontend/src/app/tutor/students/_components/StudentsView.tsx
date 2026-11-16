@@ -1,13 +1,12 @@
 "use client";
 
-import InputAdornment from "@mui/material/InputAdornment";
-import TextField from "@mui/material/TextField";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Search, X } from "lucide-react";
 import * as React from "react";
 import DashboardError from "@/components/dashboard/DashboardError";
+import SearchField from "@/components/form/SearchField";
 import Table from "@/components/table/Table";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useServerSort } from "@/hooks/useServerSort";
 import PageTemplate from "@/layouts/template/PageTemplate";
 import clsxm from "@/lib/clsxm";
 import { formatRelativeTime, getInitials } from "@/lib/helper";
@@ -18,14 +17,26 @@ import StudentDrawer from "./StudentDrawer";
 
 const PAGE_SIZE = 10;
 
+const SORT_COLUMNS = {
+	name: "name",
+	email: "email",
+	school: "school",
+	last_login: "last_login_at",
+	tutorials: "tutorial_count",
+};
+
 export default function StudentsView() {
 	const [page, setPage] = React.useState(1);
 	const [searchInput, setSearchInput] = React.useState("");
 	const [selected, setSelected] = React.useState<string | null>(null);
 	const search = useDebouncedValue(searchInput.trim(), 300);
 
+	const { sorting, handleSortingChange, sort, order } = useServerSort(
+		SORT_COLUMNS,
+		() => setPage(1),
+	);
 	const { data, isLoading, isError, error, refetch, isPlaceholderData } =
-		useStudents({ page, pageSize: PAGE_SIZE, search });
+		useStudents({ page, pageSize: PAGE_SIZE, search, sort, order });
 
 	const changeSearch = (value: string) => {
 		setSearchInput(value);
@@ -36,6 +47,7 @@ export default function StudentsView() {
 		() => [
 			{
 				id: "name",
+				accessorFn: (s) => s.name,
 				header: "Student",
 				meta: { align: "left" },
 				cell: ({ row }) => (
@@ -63,18 +75,21 @@ export default function StudentsView() {
 			},
 			{
 				id: "email",
+				accessorFn: (s) => s.email,
 				header: "Email",
 				meta: { align: "left" },
 				cell: ({ row }) => row.original.email,
 			},
 			{
 				id: "school",
+				accessorFn: (s) => s.school,
 				header: "School",
 				meta: { align: "left" },
 				cell: ({ row }) => row.original.school || "–",
 			},
 			{
 				id: "last_login",
+				accessorFn: (s) => s.last_login_at,
 				header: "Last login",
 				meta: { align: "left" },
 				cell: ({ row }) =>
@@ -84,6 +99,7 @@ export default function StudentsView() {
 			},
 			{
 				id: "tutorials",
+				accessorFn: (s) => s.tutorial_count,
 				header: "Tutorials",
 				cell: ({ row }) => (
 					<span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
@@ -105,35 +121,12 @@ export default function StudentsView() {
 			]}
 		>
 			<div className="flex justify-end">
-				<TextField
+				<SearchField
 					value={searchInput}
-					onChange={(e) => changeSearch(e.target.value)}
+					onChange={changeSearch}
 					placeholder="Name, username, email or school"
-					size="small"
-					type="search"
-					sx={{ width: { xs: "100%", sm: 340 } }}
-					slotProps={{
-						htmlInput: { "aria-label": "Search students" },
-						input: {
-							startAdornment: (
-								<InputAdornment position="start">
-									<Search size={16} aria-hidden />
-								</InputAdornment>
-							),
-							endAdornment: searchInput ? (
-								<InputAdornment position="end">
-									<button
-										type="button"
-										onClick={() => changeSearch("")}
-										aria-label="Clear search"
-										className="rounded p-0.5 text-gray-400 hover:text-gray-700 focus-visible:outline-2 focus-visible:outline-brand-600"
-									>
-										<X size={16} aria-hidden />
-									</button>
-								</InputAdornment>
-							) : undefined,
-						},
-					}}
+					aria-label={"Search students"}
+					className="w-full sm:w-85"
 				/>
 			</div>
 
@@ -149,7 +142,9 @@ export default function StudentsView() {
 						data={data?.items ?? []}
 						columns={columns}
 						isLoading={isLoading}
-						omitSort
+						manualSorting
+						sorting={sorting}
+						onSortingChange={handleSortingChange}
 						withPaginationControl
 						manualPagination
 						pagination={{ page, size: PAGE_SIZE }}

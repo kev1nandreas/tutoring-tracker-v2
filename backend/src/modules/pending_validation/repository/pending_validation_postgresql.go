@@ -130,6 +130,28 @@ func (r *pendingValidationPostgresRepository) RemoveAccepted(tutorialID, userID 
 	return removed, err
 }
 
+// groupSortColumns maps the ?sort= value to its ORDER BY expression.
+var groupSortColumns = map[string]string{
+	"name":       "tutorials.name",
+	"custom_id":  "tutorials.custom_id",
+	"created_at": "tutorials.created_at",
+}
+
+func groupOrderBy(params pagination.Params, countExpr string) string {
+	expr, ok := groupSortColumns[params.Sort]
+	if params.Sort == "count" {
+		expr, ok = countExpr, true
+	}
+	if !ok {
+		return "tutorials.created_at DESC"
+	}
+	dir := "ASC"
+	if params.Order == "desc" {
+		dir = "DESC"
+	}
+	return expr + " " + dir + ", tutorials.id ASC"
+}
+
 func (r *pendingValidationPostgresRepository) FindGroupedByCreator(creatorID uuid.UUID, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error) {
 	// a tutorial is listed when it has at least one request matching status and search
 	exists := "EXISTS (SELECT 1 FROM pending_validations pv JOIN users u ON u.id = pv.user_id WHERE pv.tutorial_id = tutorials.id"
@@ -156,7 +178,27 @@ func (r *pendingValidationPostgresRepository) FindGroupedByCreator(creatorID uui
 	}
 
 	var tutorials []tutorialEntity.Tutorial
-	if err := base().Order("created_at DESC").Limit(params.PageSize).Offset(params.GetOffset()).Find(&tutorials).Error; err != nil {
+	// "count" sorts by how many requests match the current status and search
+	countExpr := "(SELECT COUNT(*) FROM pending_validations pv JOIN users u ON u.id = pv.user_id WHERE pv.tutorial_id = tutorials.id"
+	countArgs := []interface{}{}
+	if status != nil {
+		countExpr += " AND pv.is_validated = ?"
+		countArgs = append(countArgs, *status)
+	}
+	if pattern != "" {
+		countExpr += " AND " + searchCondition
+		countArgs = append(countArgs, pattern, pattern, pattern)
+	}
+	countExpr += ")"
+	orderBy := groupOrderBy(params, countExpr)
+
+	q0 := base()
+	if params.Sort == "count" {
+		q0 = q0.Order(clause.OrderBy{Expression: clause.Expr{SQL: orderBy, Vars: countArgs}})
+	} else {
+		q0 = q0.Order(orderBy)
+	}
+	if err := q0.Limit(params.PageSize).Offset(params.GetOffset()).Find(&tutorials).Error; err != nil {
 		return nil, pagination.Meta{}, err
 	}
 

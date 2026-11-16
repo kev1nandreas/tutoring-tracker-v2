@@ -14,6 +14,9 @@ export type ValidationGroupParams = {
 	pageSize: number;
 	/** Matches student name, username or school. */
 	search?: string;
+	/** API column to sort by; defaults to newest tutorial first. */
+	sort?: string;
+	order?: "asc" | "desc";
 };
 
 /** Enrollment requests of all my tutorials, grouped by tutorial (paginated over tutorials). */
@@ -22,6 +25,8 @@ export async function fetchValidationGroups({
 	page,
 	pageSize,
 	search,
+	sort,
+	order,
 }: ValidationGroupParams) {
 	const { OK, Kind, StatusCode } = await get<
 		PaginatedMainResponse<ValidationGroup>
@@ -30,6 +35,7 @@ export async function fetchValidationGroups({
 		page,
 		page_size: pageSize,
 		...(search ? { q: search } : {}),
+		...(sort ? { sort, order: order ?? "asc" } : {}),
 	});
 	const response = Kind as PaginatedMainResponse<ValidationGroup>;
 

@@ -8,18 +8,23 @@ export type PaymentListParams = {
 	page: number;
 	pageSize: number;
 	filter: PaymentFilter;
+	/** API column to sort by; defaults to newest payment first. */
+	sort?: string;
+	order?: "asc" | "desc";
 };
 
 export async function fetchPayments({
 	page,
 	pageSize,
 	filter,
+	sort = "payment_date",
+	order = "desc",
 }: PaymentListParams) {
 	const params: Record<string, unknown> = {
 		page,
 		page_size: pageSize,
-		sort: "payment_date",
-		order: "desc",
+		sort,
+		order,
 	};
 	if (filter !== "all") params.is_paid = filter === "paid";
 
