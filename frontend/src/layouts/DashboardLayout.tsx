@@ -29,7 +29,7 @@ function DashboardLayout({ children, className }: LayoutProps) {
 				)}
 			>
 				<AppHeader />
-				<div className={clsxm("mx-auto min-w-0 px-4 md:px-6", className)}>
+				<div className={clsxm("mx-auto min-w-0 px-4 pt-6 md:px-6", className)}>
 					{children}
 				</div>
 			</div>

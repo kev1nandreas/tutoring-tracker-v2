@@ -128,9 +128,9 @@ const AppSidebar: React.FC = () => {
 		<aside
 			className={clsxm(
 				"fixed flex flex-col bg-linear-to-b from-brand-700 via-brand-800 to-brand-950 p-5 text-white transition-all duration-300 ease-in-out z-999 lg:translate-x-0",
-				isMobileOpen ? "h-[calc(100vh-67px)]" : "h-screen",
+				isMobileOpen ? "h-[calc(100vh-3.25rem)]" : "h-screen",
 				isExpanded || isMobileOpen || isHovered ? "w-70" : "w-22.5",
-				isMobileOpen ? "translate-x-0 mt-16.75" : "-translate-x-full",
+				isMobileOpen ? "translate-x-0 mt-13" : "-translate-x-full",
 			)}
 			onMouseEnter={() => !isExpanded && setIsHovered(true)}
 			onMouseLeave={() => setIsHovered(false)}

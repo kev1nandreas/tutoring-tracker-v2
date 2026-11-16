@@ -32,7 +32,7 @@ const AppHeader: React.FC = () => {
 	return (
 		<header
 			className={clsxm(
-				"sticky top-0 z-99 flex w-full items-center justify-between px-4 py-3 lg:px-8",
+				"sticky top-0 z-99 flex w-full items-center justify-between px-4 h-13 lg:px-8",
 				"border-b border-gray-200 bg-white",
 				isMobileOpen && "shadow-sm",
 			)}
@@ -52,9 +52,9 @@ const AppHeader: React.FC = () => {
 				<button
 					type="button"
 					onClick={(e) => setAnchorEl(e.currentTarget)}
-					className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-gray-100 cursor-pointer"
+					className="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-100 cursor-pointer"
 				>
-					<span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">
+					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white">
 						{initial}
 					</span>
 					<ChevronDown
