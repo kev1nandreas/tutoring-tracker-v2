@@ -8,6 +8,7 @@ import (
 
 type UserUsecase interface {
 	Login(req dto.LoginRequest) (*dto.LoginResponse, error)
+	Me(username string) (*dto.MeResponse, error)
 	Register(req dto.RegisterRequest) (*entity.User, error)
 	RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error)
 	FindAll(params pagination.Params) ([]entity.User, pagination.Meta, error)

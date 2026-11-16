@@ -214,3 +214,26 @@ func (h *UserHandler) RegisterTutorHandler(c *gin.Context) {
 		Message:    "Tutor registration successful",
 	}.Send(c)
 }
+
+// MeHandler godoc
+// @Summary Get the current user
+// @Description Returns the authenticated user's id, profile and role
+// @Tags user
+// @Security JwtAuth
+// @Produce json
+// @Success 200 {object} dto.MeResponse
+// @Failure 401 {string} string "Unauthorized"
+// @Router /me [get]
+func (h *UserHandler) MeHandler(c *gin.Context) {
+	me, err := h.usecase.Me(c.GetString("username"))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "User no longer exists").Send(c)
+			return
+		}
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve profile", err.Error()).Send(c)
+		return
+	}
+
+	response.NewSuccessResponse("Profile retrieved successfully", me).Send(c)
+}

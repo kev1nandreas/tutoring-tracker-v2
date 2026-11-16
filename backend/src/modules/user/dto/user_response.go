@@ -21,3 +21,13 @@ type UserResponse struct {
 type LoginResponse struct {
 	Token string `json:"token"`
 }
+
+// MeResponse is the authenticated user's profile.
+type MeResponse struct {
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Username string    `json:"username"`
+	Email    string    `json:"email"`
+	RoleID   uuid.UUID `json:"role_id"`
+	Role     string    `json:"role"`
+}

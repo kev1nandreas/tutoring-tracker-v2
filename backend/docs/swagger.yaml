@@ -132,6 +132,21 @@ definitions:
     - password
     - username
     type: object
+  dto.MeResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+      role_id:
+        type: string
+      username:
+        type: string
+    type: object
   dto.PaymentResponse:
     properties:
       created_at:
@@ -675,6 +690,25 @@ paths:
           schema:
             type: string
       summary: Authenticate a user
+      tags:
+      - user
+  /me:
+    get:
+      description: Returns the authenticated user's id, profile and role
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MeResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Get the current user
       tags:
       - user
   /meetings:

@@ -54,6 +54,22 @@ const (
 // ErrForbidden is returned when the caller is not allowed to perform the action.
 var ErrForbidden = errors.New("only a tutor can register a tutor")
 
+// Me returns the profile (id and role included) of the user from the token.
+func (u *userUsecase) Me(username string) (*dto.MeResponse, error) {
+	user, err := u.repo.FindByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	return &dto.MeResponse{
+		ID:       user.ID,
+		Name:     user.Name,
+		Username: user.Username,
+		Email:    user.Email,
+		RoleID:   user.RoleID,
+		Role:     user.Role.Name,
+	}, nil
+}
+
 // Register creates a public account; the role is always student.
 func (u *userUsecase) Register(req dto.RegisterRequest) (*entity.User, error) {
 	return u.createWithRole(roleStudent, req)

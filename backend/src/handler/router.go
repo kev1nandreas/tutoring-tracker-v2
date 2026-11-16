@@ -60,6 +60,7 @@ func NewRouter(
 
 		v1.POST("/login", h.User.LoginHandler)
 		v1.POST("/register", h.User.RegisterHandler)
+		v1.GET("/me", factory.JWTAuth(), h.User.MeHandler)
 
 		// everything below requires a valid JWT
 		protected := v1.Group("")
