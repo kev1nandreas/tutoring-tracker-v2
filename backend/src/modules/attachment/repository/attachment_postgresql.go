@@ -27,12 +27,11 @@ func NewAttachmentPostgresRepository(db *gorm.DB) AttachmentRepository {
 
 func (r *attachmentPostgresRepository) MeetingAccess(meetingID uuid.UUID) (*MeetingAccess, error) {
 	var row struct {
-		TutorialID   uuid.UUID
-		CreatedBy    *uuid.UUID
-		ShowDownload bool
+		TutorialID uuid.UUID
+		CreatedBy  *uuid.UUID
 	}
 	res := r.db.Table("meetings").
-		Select("tutorials.id AS tutorial_id, tutorials.created_by AS created_by, tutorials.show_download AS show_download").
+		Select("tutorials.id AS tutorial_id, tutorials.created_by AS created_by").
 		Joins("JOIN tutorials ON tutorials.id = meetings.tutorial_id").
 		Where("meetings.id = ?", meetingID).
 		Limit(1).Scan(&row)
@@ -42,7 +41,7 @@ func (r *attachmentPostgresRepository) MeetingAccess(meetingID uuid.UUID) (*Meet
 	if res.RowsAffected == 0 {
 		return nil, gorm.ErrRecordNotFound
 	}
-	return &MeetingAccess{TutorialID: row.TutorialID, CreatedBy: row.CreatedBy, ShowDownload: row.ShowDownload}, nil
+	return &MeetingAccess{TutorialID: row.TutorialID, CreatedBy: row.CreatedBy}, nil
 }
 
 func (r *attachmentPostgresRepository) IsAcceptedStudent(tutorialID, userID uuid.UUID) (bool, error) {

@@ -6,7 +6,12 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import * as React from "react";
-import { FormProvider, type SubmitHandler, useForm } from "react-hook-form";
+import {
+	FormProvider,
+	type SubmitHandler,
+	useForm,
+	useWatch,
+} from "react-hook-form";
 import Button from "@/components/button/Button";
 import Input from "@/components/form/Input";
 import LabelText from "@/components/form/LabelText";
@@ -36,6 +41,8 @@ const EMPTY: CreateTutorialRequest = {
 	show_download: false,
 	show_attendance: false,
 	show_feedback: false,
+	bundle_include_recordings: false,
+	bundle_include_homework: true,
 };
 
 const toFormValues = (t: Tutorial): CreateTutorialRequest => ({
@@ -47,6 +54,8 @@ const toFormValues = (t: Tutorial): CreateTutorialRequest => ({
 	show_download: t.show_download,
 	show_attendance: t.show_attendance,
 	show_feedback: t.show_feedback,
+	bundle_include_recordings: t.bundle_include_recordings,
+	bundle_include_homework: t.bundle_include_homework,
 });
 
 /** Add or edit a tutorial; the same fields either way. */
@@ -63,7 +72,8 @@ export default function TutorialFormDialog({
 	});
 
 	// Start from the current values each time the dialog opens.
-	const { reset } = methods;
+	const { reset, control } = methods;
+	const showDownload = useWatch({ control, name: "show_download" });
 	React.useEffect(() => {
 		if (isOpen) reset(tutorial ? toFormValues(tutorial) : EMPTY);
 	}, [isOpen, tutorial, reset]);
@@ -145,9 +155,26 @@ export default function TutorialFormDialog({
 							</legend>
 							<SwitchInput
 								id="show_download"
-								label="Downloads"
-								helperText="Students can download meeting attachments."
+								label="Download everything"
+								helperText="Students can download all files of this class, with a summary PDF, as one zip."
 							/>
+							{showDownload && (
+								<div className="ml-14 flex flex-col gap-1 border-l-2 border-gray-100 pl-4">
+									<p className="text-xs font-medium text-gray-500">
+										The summary PDF includes
+									</p>
+									<SwitchInput
+										id="bundle_include_homework"
+										label="Homework"
+										helperText="Instructions, plus the student's own submission, grade and feedback."
+									/>
+									<SwitchInput
+										id="bundle_include_recordings"
+										label="Recording links"
+										helperText="The YouTube link of each meeting. Students can then open it on YouTube."
+									/>
+								</div>
+							)}
 							<SwitchInput
 								id="show_attendance"
 								label="Attendance"

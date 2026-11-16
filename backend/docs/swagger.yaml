@@ -114,6 +114,12 @@ definitions:
     type: object
   dto.CreateTutorialRequest:
     properties:
+      bundle_include_homework:
+        type: boolean
+      bundle_include_recordings:
+        description: Download package contents; omitted means recordings off, homework
+          on.
+        type: boolean
       date_ended:
         format: date
         type: string
@@ -164,6 +170,10 @@ definitions:
     type: object
   dto.EnrolledTutorial:
     properties:
+      can_download:
+        description: 'CanDownload: the tutor turned on "download everything" for this
+          class.'
+        type: boolean
       custom_id:
         type: string
       date_ended:
@@ -405,6 +415,26 @@ definitions:
     - school
     - username
     type: object
+  dto.RequestResponse:
+    properties:
+      download_url:
+        description: DownloadURL is a short-lived link, present only while status
+          is ready.
+        type: string
+      error:
+        type: string
+      expires_at:
+        type: string
+      file_count:
+        type: integer
+      id:
+        type: string
+      status:
+        description: Status is queued, preparing, ready, failed or expired.
+        type: string
+      total_bytes:
+        type: integer
+    type: object
   dto.StudentDashboard:
     properties:
       enrolled_tutorials:
@@ -589,6 +619,10 @@ definitions:
     type: object
   dto.UpdateTutorialRequest:
     properties:
+      bundle_include_homework:
+        type: boolean
+      bundle_include_recordings:
+        type: boolean
       date_ended:
         format: date
         type: string
@@ -785,6 +819,13 @@ definitions:
     type: object
   entity.Tutorial:
     properties:
+      bundle_include_homework:
+        type: boolean
+      bundle_include_recordings:
+        description: |-
+          What the "download everything" package contains besides the files (needs show_download):
+          the YouTube recording links, and the homework instructions with the student's own result.
+        type: boolean
       created_at:
         type: string
       created_by:
@@ -919,7 +960,7 @@ paths:
           schema:
             $ref: '#/definitions/dto.DownloadResponse'
         "403":
-          description: Files not shared
+          description: Forbidden
           schema:
             type: string
         "404":
@@ -931,6 +972,36 @@ paths:
       summary: Get a short-lived link to open or download a file
       tags:
       - attachment
+  /bundles/{id}/download:
+    get:
+      description: Opened by the browser from download_url, so it takes a signed token
+        instead of a login. The zip is built while it is sent, straight from storage;
+        nothing is saved on the server.
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Token from download_url
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/zip
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "403":
+          description: Invalid or expired link
+          schema:
+            type: string
+      summary: Download the zip
+      tags:
+      - bundle
   /dashboard/student:
     get:
       description: Pending homework, upcoming tutorials and enrolled active tutorials.
@@ -1078,6 +1149,32 @@ paths:
       summary: Get the current user
       tags:
       - user
+  /me/bundles/{id}:
+    get:
+      description: Status is queued, preparing, ready, failed or expired. When ready,
+        download_url is a short-lived link (10 minutes) that is renewed on every call.
+      parameters:
+      - description: Request ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RequestResponse'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Check a download request
+      tags:
+      - bundle
   /me/tutorials:
     get:
       description: Only students. Includes the tutor's name and meeting progress.
@@ -1145,6 +1242,44 @@ paths:
       summary: Get one tutorial I was accepted into
       tags:
       - tutorial
+  /me/tutorials/{id}/bundle:
+    post:
+      description: Students accepted into the tutorial, and only when the tutor turned
+        on downloads (show_download). The package (a summary PDF plus a folder of
+        files per meeting, zipped) is checked by a background job and the student
+        is notified when it is ready; poll GET /me/bundles/{id}. The zip is never
+        stored. An unfinished or still-valid request is returned instead of a new
+        one (200 instead of 202).
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RequestResponse'
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/dto.RequestResponse'
+        "403":
+          description: Not a student, or downloads are off
+          schema:
+            type: string
+        "404":
+          description: Tutorial not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Ask to download everything of a class
+      tags:
+      - bundle
   /me/tutorials/{id}/meetings:
     get:
       description: Only students accepted into the tutorial (others get 404). The
@@ -1346,8 +1481,8 @@ paths:
   /meetings/{id}/attachments:
     get:
       description: 'A tutor sees files of their own tutorials. A student sees them
-        only when accepted into the tutorial and the tutor shares files (show_download).
-        Types: ppt, picture, book, video, other. The storage key is never returned.'
+        when accepted into the tutorial. Types: ppt, picture, book, video, other.
+        The storage key is never returned.'
       parameters:
       - description: Meeting ID
         in: path
@@ -1382,7 +1517,7 @@ paths:
               $ref: '#/definitions/dto.AttachmentResponse'
             type: array
         "403":
-          description: Files not shared
+          description: Forbidden
           schema:
             type: string
         "404":

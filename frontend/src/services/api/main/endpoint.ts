@@ -17,6 +17,10 @@ export const MAIN_ENDPOINT = {
 		Download: (id: string) => `/v1/attachments/${id}/download`,
 		Detail: (id: string) => `/v1/attachments/${id}`,
 	},
+	Bundle: {
+		Request: (tutorialId: string) => `/v1/me/tutorials/${tutorialId}/bundle`,
+		Status: (id: string) => `/v1/me/bundles/${id}`,
+	},
 	Me: {
 		Tutorials: "/v1/me/tutorials",
 		Tutorial: (id: string) => `/v1/me/tutorials/${id}`,

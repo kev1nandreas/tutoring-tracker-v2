@@ -7,6 +7,7 @@ import (
 
 	"github.com/kev1nandreas/go-rest-api-template/config"
 	attachmentEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/entity"
+	bundleEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/entity"
 	jobEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/job/entity"
 	meetingEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/entity"
 	paymentEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/payment/entity"
@@ -81,6 +82,7 @@ func Migrate(db *gorm.DB) error {
 		&pendingValidationEntity.PendingValidation{},
 		&submissionEntity.Submission{},
 		&jobEntity.Job{},
+		&bundleEntity.Request{},
 	); err != nil {
 		return err
 	}
@@ -100,6 +102,7 @@ var cascadeFKs = []cascadeFK{
 	{"submissions", "meeting_id", "meetings"},
 	{"pending_validations", "tutorial_id", "tutorials"},
 	{"tutorial_students", "tutorial_id", "tutorials"},
+	{"bundle_requests", "tutorial_id", "tutorials"},
 }
 
 // ensureCascadeDeletes makes every cascadeFK exist with ON DELETE CASCADE. It is safe to

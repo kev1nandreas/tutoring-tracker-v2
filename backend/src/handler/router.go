@@ -28,6 +28,7 @@ type Handlers struct {
 	Notification      *NotificationHandler
 	Job               *JobHandler
 	Dashboard         *DashboardHandler
+	Bundle            *BundleHandler
 }
 
 func NewRouter(
@@ -65,6 +66,9 @@ func NewRouter(
 		v1.POST("/register", limit, h.User.RegisterHandler)
 		v1.GET("/me", factory.JWTAuth(), limit, h.User.MeHandler)
 
+		// opened by the browser from a signed link, so it takes a token instead of a login
+		v1.GET("/bundles/:id/download", limit, h.Bundle.DownloadBundle)
+
 		// everything below requires a valid JWT
 		protected := v1.Group("")
 		protected.Use(factory.JWTAuth(), limit)
@@ -86,6 +90,8 @@ func NewRouter(
 
 		protected.GET("/me/tutorials", h.Tutorial.FindMyTutorials)
 		protected.GET("/me/tutorials/:id", h.Tutorial.FindMyTutorial)
+		protected.POST("/me/tutorials/:id/bundle", h.Bundle.RequestBundle)
+		protected.GET("/me/bundles/:id", h.Bundle.BundleStatus)
 		protected.GET("/me/tutorials/:id/meetings", h.Meeting.FindMyTutorialMeetings)
 		protected.GET("/tutorials", h.Tutorial.FindTutorials)
 		protected.POST("/tutorials", h.Tutorial.CreateTutorial)

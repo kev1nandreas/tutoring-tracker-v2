@@ -10,6 +10,8 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/factory"
 	"github.com/kev1nandreas/go-rest-api-template/src/handler"
 	attachmentFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/factory"
+	bundleFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/factory"
+	bundleUsecase "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/usecase"
 	dashboardFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/dashboard/factory"
 	jobFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/job/factory"
 	meetingFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/factory"
@@ -111,6 +113,17 @@ func main() {
 		}
 	}()
 
+	// Download packages: a queue job checks each request, and the student is notified.
+	if _, err := rabbitmq.DeclareQueue(bundleUsecase.QueueBundle); err != nil {
+		log.Fatalf("failed to declare queue %s: %v", bundleUsecase.QueueBundle, err)
+	}
+	bundleService := bundleFactory.NewBundleUsecase(db, storage, rabbitmq, notificationUsecase)
+	go func() {
+		if err := bundleUsecase.NewWorker(bundleService, rabbitmq).Run(workerCtx); err != nil {
+			log.Printf("bundle worker stopped: %v", err)
+		}
+	}()
+
 	// Initialize module usecases and handlers via factories
 	handlers := &handler.Handlers{
 		Role:              handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
@@ -124,6 +137,7 @@ func main() {
 		Notification:      handler.NewNotificationHandler(notificationUsecase),
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),
 		Dashboard:         handler.NewDashboardHandler(dashboardFactory.NewDashboardUsecase(db)),
+		Bundle:            handler.NewBundleHandler(bundleService),
 	}
 
 	// Setup router

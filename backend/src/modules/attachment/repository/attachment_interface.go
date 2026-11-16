@@ -11,8 +11,6 @@ type MeetingAccess struct {
 	TutorialID uuid.UUID
 	// CreatedBy is the tutor who owns the tutorial (nil when unset).
 	CreatedBy *uuid.UUID
-	// ShowDownload is the tutorial's switch for sharing files with students.
-	ShowDownload bool
 }
 
 type AttachmentRepository interface {

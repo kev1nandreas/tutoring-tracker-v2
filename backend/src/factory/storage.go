@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"io"
 	"log"
 
 	"context"
@@ -146,4 +147,13 @@ func (s *Storage) RemoveMeetingFiles(ctx context.Context, meetingIDs []uuid.UUID
 			log.Printf("storage: could not remove %q under %s: %v", rerr.ObjectName, prefix, rerr.Err)
 		}
 	}
+}
+
+// GetObject opens a stored file for streaming. Close it when done.
+func (s *Storage) GetObject(ctx context.Context, objectKey string) (io.ReadCloser, error) {
+	obj, err := s.client.GetObject(ctx, s.bucket, objectKey, minio.GetObjectOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
 }

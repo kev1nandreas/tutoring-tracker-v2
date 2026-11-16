@@ -81,6 +81,9 @@ func (u *tutorialUsecase) Create(creatorID uuid.UUID, req dto.CreateTutorialRequ
 		ShowDownload:   req.ShowDownload,
 		ShowAttendance: req.ShowAttendance,
 		ShowFeedback:   req.ShowFeedback,
+
+		BundleIncludeRecordings: req.BundleIncludeRecordings != nil && *req.BundleIncludeRecordings,
+		BundleIncludeHomework:   req.BundleIncludeHomework == nil || *req.BundleIncludeHomework,
 	}
 
 	customID, err := u.generateCustomID()
@@ -128,6 +131,12 @@ func (u *tutorialUsecase) Update(id string, req dto.UpdateTutorialRequest) (*ent
 	}
 	if req.ShowFeedback != nil {
 		tutorial.ShowFeedback = *req.ShowFeedback
+	}
+	if req.BundleIncludeRecordings != nil {
+		tutorial.BundleIncludeRecordings = *req.BundleIncludeRecordings
+	}
+	if req.BundleIncludeHomework != nil {
+		tutorial.BundleIncludeHomework = *req.BundleIncludeHomework
 	}
 
 	if err := u.repo.Update(tutorial); err != nil {

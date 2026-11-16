@@ -104,7 +104,8 @@ func (r *tutorialPostgresRepository) FindEnrolled(userID uuid.UUID, done *bool, 
 		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id) AS total_meetings,
 		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id AND m.is_done) AS done_meetings,
 		       COALESCE((SELECT to_char(MIN(m.date), 'YYYY-MM-DD') FROM meetings m
-		         WHERE m.tutorial_id = t.id AND m.is_done = false AND m.date >= ?::date), '') AS next_meeting_date
+		         WHERE m.tutorial_id = t.id AND m.is_done = false AND m.date >= ?::date), '') AS next_meeting_date,
+		       t.show_download AS can_download
 		FROM tutorials t
 		JOIN pending_validations pv ON pv.tutorial_id = t.id
 		LEFT JOIN users u ON u.id = t.created_by
@@ -129,7 +130,8 @@ func (r *tutorialPostgresRepository) FindEnrolledByID(userID, tutorialID uuid.UU
 		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id) AS total_meetings,
 		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id AND m.is_done) AS done_meetings,
 		       COALESCE((SELECT to_char(MIN(m.date), 'YYYY-MM-DD') FROM meetings m
-		         WHERE m.tutorial_id = t.id AND m.is_done = false AND m.date >= ?::date), '') AS next_meeting_date
+		         WHERE m.tutorial_id = t.id AND m.is_done = false AND m.date >= ?::date), '') AS next_meeting_date,
+		       t.show_download AS can_download
 		FROM tutorials t
 		JOIN pending_validations pv ON pv.tutorial_id = t.id
 		LEFT JOIN users u ON u.id = t.created_by

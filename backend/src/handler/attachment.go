@@ -22,7 +22,7 @@ func NewAttachmentHandler(uc usecase.AttachmentUsecase) *AttachmentHandler {
 
 // FindAttachmentsByMeeting godoc
 // @Summary List the files of a meeting
-// @Description A tutor sees files of their own tutorials. A student sees them only when accepted into the tutorial and the tutor shares files (show_download). Types: ppt, picture, book, video, other. The storage key is never returned.
+// @Description A tutor sees files of their own tutorials. A student sees them when accepted into the tutorial. Types: ppt, picture, book, video, other. The storage key is never returned.
 // @Tags attachment
 // @Security JwtAuth
 // @Produce json
@@ -32,7 +32,7 @@ func NewAttachmentHandler(uc usecase.AttachmentUsecase) *AttachmentHandler {
 // @Param sort query string false "Sort column"
 // @Param order query string false "asc or desc"
 // @Success 200 {array} dto.AttachmentResponse
-// @Failure 403 {string} string "Files not shared"
+// @Failure 403 {string} string "Forbidden"
 // @Failure 404 {string} string "Meeting not found"
 // @Router /meetings/{id}/attachments [get]
 func (h *AttachmentHandler) FindAttachmentsByMeeting(c *gin.Context) {
@@ -131,7 +131,7 @@ func (h *AttachmentHandler) CompleteUploads(c *gin.Context) {
 // @Param id path string true "Attachment ID"
 // @Param inline query bool false "Show in the browser when possible"
 // @Success 200 {object} dto.DownloadResponse
-// @Failure 403 {string} string "Files not shared"
+// @Failure 403 {string} string "Forbidden"
 // @Failure 404 {string} string "Not found"
 // @Router /attachments/{id}/download [get]
 func (h *AttachmentHandler) DownloadAttachment(c *gin.Context) {
@@ -192,7 +192,7 @@ func (h *AttachmentHandler) fail(c *gin.Context, err error, msg string) {
 	switch {
 	case errors.Is(err, usecase.ErrMeetingNotFound), errors.Is(err, usecase.ErrAttachmentNotFound):
 		response.NewErrorResponse(http.StatusNotFound, "Not found", err.Error()).Send(c)
-	case errors.Is(err, usecase.ErrForbidden), errors.Is(err, usecase.ErrFilesNotShared):
+	case errors.Is(err, usecase.ErrForbidden):
 		response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
 	case errors.Is(err, usecase.ErrBadRequest):
 		response.NewErrorResponse(http.StatusBadRequest, "Bad Request", err.Error()).Send(c)

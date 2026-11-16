@@ -18,6 +18,10 @@ type Tutorial struct {
 	ShowDownload   bool       `json:"show_download" gorm:"not null;default:false"`
 	ShowAttendance bool       `json:"show_attendance" gorm:"not null;default:false"`
 	ShowFeedback   bool       `json:"show_feedback" gorm:"not null;default:false"`
-	CreatedAt      time.Time  `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt      time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
+	// What the "download everything" package contains besides the files (needs show_download):
+	// the YouTube recording links, and the homework instructions with the student's own result.
+	BundleIncludeRecordings bool      `json:"bundle_include_recordings" gorm:"not null;default:false"`
+	BundleIncludeHomework   bool      `json:"bundle_include_homework" gorm:"not null;default:true"`
+	CreatedAt               time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt               time.Time `json:"updated_at" gorm:"autoUpdateTime"`
 }

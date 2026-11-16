@@ -20,7 +20,6 @@ var (
 	ErrMeetingNotFound    = errors.New("meeting not found")
 	ErrAttachmentNotFound = errors.New("attachment not found")
 	ErrForbidden          = errors.New("you are not allowed to do this")
-	ErrFilesNotShared     = errors.New("your tutor has not shared files for this class")
 	ErrBadRequest         = errors.New("bad request")
 )
 
@@ -86,9 +85,6 @@ func (u *attachmentUsecase) access(meetingID string, callerID uuid.UUID, role st
 		}
 		if !ok {
 			return uuid.Nil, ErrMeetingNotFound
-		}
-		if !a.ShowDownload {
-			return uuid.Nil, ErrFilesNotShared
 		}
 		return id, nil
 	default:

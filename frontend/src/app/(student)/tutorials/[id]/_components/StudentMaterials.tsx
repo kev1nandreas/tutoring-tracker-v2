@@ -4,7 +4,6 @@ import { Download } from "lucide-react";
 import AttachmentIcon from "@/components/attachments/AttachmentIcon";
 import { useAttachmentOpener } from "@/components/attachments/useAttachmentOpener";
 import { useMeetingAttachments } from "@/hooks/useMeetingAttachments";
-import { ApiError } from "@/lib/errors";
 import { formatBytes } from "@/lib/helper";
 import { ATTACHMENT_LABEL } from "@/types/attachment";
 
@@ -16,13 +15,9 @@ export default function StudentMaterials({ meetingId }: { meetingId: string }) {
 	if (isLoading) return <p className="text-sm text-gray-400">Loading…</p>;
 
 	if (isError) {
-		// 403: the tutor chose not to share files for this class
-		const notShared = error instanceof ApiError && error.status === 403;
 		return (
 			<p className="text-sm text-gray-400">
-				{notShared
-					? "Your tutor has not shared files for this class."
-					: "Could not load the files."}
+				{error.message || "Could not load the files."}
 			</p>
 		);
 	}

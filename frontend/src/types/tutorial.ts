@@ -13,6 +13,9 @@ export type Tutorial = {
 	show_download: boolean;
 	show_attendance: boolean;
 	show_feedback: boolean;
+	/** "Download everything" package: put the YouTube links / the homework in its summary PDF. */
+	bundle_include_recordings: boolean;
+	bundle_include_homework: boolean;
 	created_at: string;
 	updated_at: string;
 };
@@ -27,6 +30,8 @@ export const createTutorialSchema = z
 		show_download: z.boolean(),
 		show_attendance: z.boolean(),
 		show_feedback: z.boolean(),
+		bundle_include_recordings: z.boolean(),
+		bundle_include_homework: z.boolean(),
 	})
 	.refine(
 		(d) => !d.date_started || !d.date_ended || d.date_ended >= d.date_started,

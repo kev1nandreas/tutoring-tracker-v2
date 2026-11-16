@@ -20,8 +20,8 @@ const ACCESS: {
 }[] = [
 	{
 		key: "show_download",
-		label: "Downloads",
-		hint: "Meeting attachments",
+		label: "Download everything",
+		hint: "Everything as one zip",
 		icon: Download,
 	},
 	{
@@ -37,6 +37,15 @@ const ACCESS: {
 		icon: MessageSquareText,
 	},
 ];
+
+/** What the "download everything" package holds, as the tutor configured it. */
+function packageHint(t: Tutorial) {
+	const extras = [
+		t.bundle_include_homework && "homework",
+		t.bundle_include_recordings && "recording links",
+	].filter(Boolean);
+	return `Zip with summary PDF${extras.length ? `, incl. ${extras.join(" and ")}` : ""}`;
+}
 
 function Row({ label, value }: { label: string; value: string }) {
 	return (
@@ -89,7 +98,11 @@ export default function TutorialInfoCard({ tutorial }: { tutorial: Tutorial }) {
 									>
 										{label}
 									</p>
-									<p className="text-xs text-gray-500">{hint}</p>
+									<p className="text-xs text-gray-500">
+										{key === "show_download" && on
+											? packageHint(tutorial)
+											: hint}
+									</p>
 								</div>
 								{on ? (
 									<span className="flex items-center gap-1 text-xs font-medium text-green-700">

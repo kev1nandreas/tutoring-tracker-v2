@@ -12,6 +12,8 @@ export type EnrolledTutorial = {
 	done_meetings: number;
 	/** Empty when nothing is scheduled. */
 	next_meeting_date: string;
+	/** The tutor turned on "download everything" for this class. */
+	can_download: boolean;
 };
 
 export type EnrolledFilter = "all" | "active" | "done";

@@ -121,13 +121,55 @@
                         }
                     },
                     "403": {
-                        "description": "Files not shared",
+                        "description": "Forbidden",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
                         "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/bundles/{id}/download": {
+            "get": {
+                "description": "Opened by the browser from download_url, so it takes a signed token instead of a login. The zip is built while it is sent, straight from storage; nothing is saved on the server.",
+                "produces": [
+                    "application/zip"
+                ],
+                "tags": [
+                    "bundle"
+                ],
+                "summary": "Download the zip",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token from download_url",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid or expired link",
                         "schema": {
                             "type": "string"
                         }
@@ -359,6 +401,46 @@
                 }
             }
         },
+        "/me/bundles/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Status is queued, preparing, ready, failed or expired. When ready, download_url is a short-lived link (10 minutes) that is renewed on every call.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bundle"
+                ],
+                "summary": "Check a download request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Request ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/me/tutorials": {
             "get": {
                 "security": [
@@ -454,6 +536,58 @@
                     },
                     "404": {
                         "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tutorials/{id}/bundle": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Students accepted into the tutorial, and only when the tutor turned on downloads (show_download). The package (a summary PDF plus a folder of files per meeting, zipped) is checked by a background job and the student is notified when it is ready; poll GET /me/bundles/{id}. The zip is never stored. An unfinished or still-valid request is returned instead of a new one (200 instead of 202).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bundle"
+                ],
+                "summary": "Ask to download everything of a class",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestResponse"
+                        }
+                    },
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Not a student, or downloads are off",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Tutorial not found",
                         "schema": {
                             "type": "string"
                         }
@@ -765,7 +899,7 @@
                         "JwtAuth": []
                     }
                 ],
-                "description": "A tutor sees files of their own tutorials. A student sees them only when accepted into the tutorial and the tutor shares files (show_download). Types: ppt, picture, book, video, other. The storage key is never returned.",
+                "description": "A tutor sees files of their own tutorials. A student sees them when accepted into the tutorial. Types: ppt, picture, book, video, other. The storage key is never returned.",
                 "produces": [
                     "application/json"
                 ],
@@ -819,7 +953,7 @@
                         }
                     },
                     "403": {
-                        "description": "Files not shared",
+                        "description": "Forbidden",
                         "schema": {
                             "type": "string"
                         }
@@ -2799,6 +2933,13 @@
                 "name"
             ],
             "properties": {
+                "bundle_include_homework": {
+                    "type": "boolean"
+                },
+                "bundle_include_recordings": {
+                    "description": "Download package contents; omitted means recordings off, homework on.",
+                    "type": "boolean"
+                },
                 "date_ended": {
                     "type": "string",
                     "format": "date"
@@ -2868,6 +3009,10 @@
         "dto.EnrolledTutorial": {
             "type": "object",
             "properties": {
+                "can_download": {
+                    "description": "CanDownload: the tutor turned on \"download everything\" for this class.",
+                    "type": "boolean"
+                },
                 "custom_id": {
                     "type": "string"
                 },
@@ -3227,6 +3372,34 @@
                 }
             }
         },
+        "dto.RequestResponse": {
+            "type": "object",
+            "properties": {
+                "download_url": {
+                    "description": "DownloadURL is a short-lived link, present only while status is ready.",
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "file_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is queued, preparing, ready, failed or expired.",
+                    "type": "string"
+                },
+                "total_bytes": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.StudentDashboard": {
             "type": "object",
             "properties": {
@@ -3501,6 +3674,12 @@
         "dto.UpdateTutorialRequest": {
             "type": "object",
             "properties": {
+                "bundle_include_homework": {
+                    "type": "boolean"
+                },
+                "bundle_include_recordings": {
+                    "type": "boolean"
+                },
                 "date_ended": {
                     "type": "string",
                     "format": "date"
@@ -3794,6 +3973,13 @@
         "entity.Tutorial": {
             "type": "object",
             "properties": {
+                "bundle_include_homework": {
+                    "type": "boolean"
+                },
+                "bundle_include_recordings": {
+                    "description": "What the \"download everything\" package contains besides the files (needs show_download):\nthe YouTube recording links, and the homework instructions with the student's own result.",
+                    "type": "boolean"
+                },
                 "created_at": {
                     "type": "string"
                 },

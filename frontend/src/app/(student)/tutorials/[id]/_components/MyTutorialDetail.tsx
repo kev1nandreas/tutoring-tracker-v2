@@ -10,6 +10,7 @@ import {
 	useMyTutorial,
 	useMyTutorialMeetings,
 } from "../_hooks/useMyTutorialDetail";
+import DownloadPackageCard from "./DownloadPackageCard";
 import StudentMeetingList from "./StudentMeetingList";
 import StudentTutorialHeader from "./StudentTutorialHeader";
 import TutorialDetailsCard from "./TutorialDetailsCard";
@@ -80,7 +81,12 @@ export default function MyTutorialDetail({ id }: { id: string }) {
 						isLoading={meetingsQuery.isLoading}
 					/>
 				)}
-				{tutorial && <TutorialDetailsCard tutorial={tutorial} />}
+				{tutorial && (
+					<div className="flex flex-col gap-4 lg:sticky lg:top-6">
+						<TutorialDetailsCard tutorial={tutorial} />
+						<DownloadPackageCard tutorial={tutorial} />
+					</div>
+				)}
 			</div>
 		</div>
 	);

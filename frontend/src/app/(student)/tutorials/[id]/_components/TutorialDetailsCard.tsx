@@ -17,7 +17,7 @@ export default function TutorialDetailsCard({
 	tutorial: EnrolledTutorial;
 }) {
 	return (
-		<aside className="rounded-xl border border-gray-200 bg-white lg:sticky lg:top-6">
+		<aside className="rounded-xl border border-gray-200 bg-white ">
 			<h2 className="border-b border-gray-100 px-5 py-4 text-base font-semibold text-gray-900">
 				Class details
 			</h2>
