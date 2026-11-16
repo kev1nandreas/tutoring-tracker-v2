@@ -73,6 +73,7 @@ func Migrate(db *gorm.DB) error {
 		&roleEntity.Role{},
 		&userEntity.User{},
 		&tutorialEntity.Tutorial{},
+		&tutorialEntity.TutorialStudent{},
 		&meetingEntity.Meeting{},
 		&attachmentEntity.Attachment{},
 		&paymentEntity.Payment{},

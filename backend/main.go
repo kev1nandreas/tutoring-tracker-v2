@@ -19,6 +19,7 @@ import (
 	submissionFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/submission/factory"
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/notifier"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"go.uber.org/zap"
@@ -93,17 +94,33 @@ func main() {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync()
 
+	// Notifications: one usecase shared by the handler and the event notifier.
+	notificationUsecase := notificationFactory.NewNotificationUsecase(notificationCollection)
+	if _, err := rabbitmq.DeclareQueue(notifier.QueueMaterial); err != nil {
+		log.Fatalf("failed to declare queue %s: %v", notifier.QueueMaterial, err)
+	}
+	eventNotifier := notifier.NewNotifier(rabbitmq)
+
+	// Background worker: consumes notification jobs and fans them out to students.
+	workerCtx, stopWorker := context.WithCancel(ctx)
+	defer stopWorker()
+	go func() {
+		if err := notifier.NewWorker(db, rabbitmq, notificationUsecase).Run(workerCtx); err != nil {
+			log.Printf("notification worker stopped: %v", err)
+		}
+	}()
+
 	// Initialize module usecases and handlers via factories
 	handlers := &handler.Handlers{
 		Role:              handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
 		User:              handler.NewUserHandler(userFactory.NewUserUsecase(db)),
 		Tutorial:          handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db)),
 		Meeting:           handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db)),
-		Attachment:        handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db)),
+		Attachment:        handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier)),
 		Payment:           handler.NewPaymentHandler(paymentFactory.NewPaymentUsecase(db)),
 		PendingValidation: handler.NewPendingValidationHandler(pendingValidationFactory.NewPendingValidationUsecase(db)),
 		Submission:        handler.NewSubmissionHandler(submissionFactory.NewSubmissionUsecase(db)),
-		Notification:      handler.NewNotificationHandler(notificationFactory.NewNotificationUsecase(notificationCollection)),
+		Notification:      handler.NewNotificationHandler(notificationUsecase),
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),
 	}
 

@@ -2862,6 +2862,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "last_login_at": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },

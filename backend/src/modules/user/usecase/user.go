@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"log"
+	"time"
 
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/entity"
@@ -27,6 +29,13 @@ func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		return nil, errors.New("invalid username or password")
+	}
+
+	// track the last login of students; a failure here must not block logging in
+	if user.Role.Name == roleStudent {
+		if err := u.repo.UpdateLastLogin(user.ID, time.Now()); err != nil {
+			log.Printf("failed to update last login for user %s: %v", user.ID, err)
+		}
 	}
 
 	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, user.Role.Name)

@@ -7,6 +7,7 @@ import (
 	tutorialEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var pendingValidationSortColumns = map[string]bool{
@@ -84,9 +85,21 @@ func (r *pendingValidationPostgresRepository) SetStatusForPending(tutorialID uui
 		if len(changed) == 0 {
 			return nil
 		}
-		return tx.Model(&entity.PendingValidation{}).
+		if err := tx.Model(&entity.PendingValidation{}).
 			Where("tutorial_id = ? AND user_id IN ? AND is_validated = ?", tutorialID, changed, entity.StatusPending).
-			Update("is_validated", status).Error
+			Update("is_validated", status).Error; err != nil {
+			return err
+		}
+
+		// accepted students become members of the tutorial
+		if status != entity.StatusAccepted {
+			return nil
+		}
+		members := make([]tutorialEntity.TutorialStudent, len(changed))
+		for i, id := range changed {
+			members[i] = tutorialEntity.TutorialStudent{TutorialID: tutorialID, UserID: id}
+		}
+		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&members).Error
 	})
 	return changed, err
 }

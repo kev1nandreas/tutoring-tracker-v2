@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewAttachmentUsecase(db *gorm.DB) usecase.AttachmentUsecase {
+func NewAttachmentUsecase(db *gorm.DB, notifier usecase.MaterialNotifier) usecase.AttachmentUsecase {
 	repo := repository.NewAttachmentPostgresRepository(db)
-	return usecase.NewAttachmentUsecase(repo)
+	return usecase.NewAttachmentUsecase(repo, notifier)
 }

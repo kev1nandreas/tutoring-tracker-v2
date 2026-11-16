@@ -19,12 +19,18 @@ var (
 	ErrForbidden          = errors.New("only the creator can delete this attachment")
 )
 
-type attachmentUsecase struct {
-	repo repository.AttachmentRepository
+// MaterialNotifier is told whenever material is added to a meeting.
+type MaterialNotifier interface {
+	MeetingMaterialAdded(meetingID uuid.UUID, count int)
 }
 
-func NewAttachmentUsecase(repo repository.AttachmentRepository) AttachmentUsecase {
-	return &attachmentUsecase{repo: repo}
+type attachmentUsecase struct {
+	repo     repository.AttachmentRepository
+	notifier MaterialNotifier
+}
+
+func NewAttachmentUsecase(repo repository.AttachmentRepository, notifier MaterialNotifier) AttachmentUsecase {
+	return &attachmentUsecase{repo: repo, notifier: notifier}
 }
 
 func (u *attachmentUsecase) existingMeeting(meetingID string) (uuid.UUID, error) {
@@ -70,6 +76,8 @@ func (u *attachmentUsecase) CreateBatch(meetingID string, creatorID uuid.UUID, r
 	if err := u.repo.CreateBatch(items); err != nil {
 		return nil, err
 	}
+
+	u.notifier.MeetingMaterialAdded(id, len(items))
 
 	return items, nil
 }

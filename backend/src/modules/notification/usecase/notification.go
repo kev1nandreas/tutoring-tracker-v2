@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/notification/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/notification/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/notification/repository"
@@ -36,6 +37,14 @@ func (u *notificationUsecase) Create(req dto.CreateNotificationRequest) (*entity
 	}
 
 	return notification, nil
+}
+
+func (u *notificationUsecase) NotifyUsers(userIDs []uuid.UUID, notificationType, header, body string) error {
+	items := make([]entity.Notification, len(userIDs))
+	for i, id := range userIDs {
+		items[i] = entity.Notification{UserID: id, Type: notificationType, Header: header, Body: body}
+	}
+	return u.repo.CreateMany(items)
 }
 
 func (u *notificationUsecase) MarkAsRead(id string) (*entity.Notification, error) {

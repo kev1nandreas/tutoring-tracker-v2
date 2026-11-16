@@ -1,6 +1,9 @@
 package repository
 
 import (
+	"time"
+
+	"github.com/google/uuid"
 	roleEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/role/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
@@ -68,4 +71,8 @@ func (r *userPostgresRepository) Update(user *entity.User) error {
 
 func (r *userPostgresRepository) Delete(user *entity.User) error {
 	return r.db.Delete(user).Error
+}
+
+func (r *userPostgresRepository) UpdateLastLogin(id uuid.UUID, at time.Time) error {
+	return r.db.Model(&entity.User{}).Where("id = ?", id).UpdateColumn("last_login_at", at).Error
 }

@@ -143,6 +143,29 @@ func (r *notificationMongoRepository) Create(n *entity.Notification) error {
 	return err
 }
 
+func (r *notificationMongoRepository) CreateMany(items []entity.Notification) error {
+	if len(items) == 0 {
+		return nil
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), queryTimeout)
+	defer cancel()
+
+	now := time.Now()
+	docs := make([]interface{}, len(items))
+	for i := range items {
+		if items[i].ID == uuid.Nil {
+			items[i].ID = uuid.New()
+		}
+		items[i].CreatedAt = now
+		items[i].UpdatedAt = now
+		docs[i] = items[i]
+	}
+
+	_, err := r.col.InsertMany(ctx, docs)
+	return err
+}
+
 func (r *notificationMongoRepository) Update(n *entity.Notification) error {
 	ctx, cancel := context.WithTimeout(context.Background(), queryTimeout)
 	defer cancel()
