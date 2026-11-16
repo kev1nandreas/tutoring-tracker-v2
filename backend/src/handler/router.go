@@ -31,6 +31,7 @@ type Handlers struct {
 	Bundle            *BundleHandler
 	Attendance        *AttendanceHandler
 	Feedback          *FeedbackHandler
+	Student           *StudentHandler
 }
 
 func NewRouter(
@@ -89,6 +90,8 @@ func NewRouter(
 		protected.PUT("/roles/:id", h.Role.UpdateRole)
 		protected.DELETE("/roles/:id", h.Role.DeleteRole)
 
+		protected.GET("/students", h.Student.FindStudents)
+		protected.GET("/students/:id", h.Student.FindStudent)
 		protected.GET("/users", h.User.FindUsers)
 		protected.GET("/users/:id", h.User.FindUser)
 		protected.PUT("/users/:id", h.User.UpdateUser)

@@ -21,6 +21,7 @@ import (
 	paymentFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/payment/factory"
 	pendingValidationFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/pending_validation/factory"
 	roleFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/role/factory"
+	studentFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/student/factory"
 	submissionFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/submission/factory"
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
@@ -140,6 +141,7 @@ func main() {
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),
 		Dashboard:         handler.NewDashboardHandler(dashboardFactory.NewDashboardUsecase(db)),
 		Bundle:            handler.NewBundleHandler(bundleService),
+		Student:           handler.NewStudentHandler(studentFactory.NewStudentUsecase(db)),
 		Feedback:          handler.NewFeedbackHandler(feedbackFactory.NewFeedbackUsecase(db)),
 		Attendance:        handler.NewAttendanceHandler(attendanceFactory.NewAttendanceUsecase(db, storage)),
 	}

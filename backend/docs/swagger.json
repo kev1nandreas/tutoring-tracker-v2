@@ -2376,6 +2376,102 @@
                 }
             }
         },
+        "/students": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Tutors only. Users accepted into any tutorial the tutor created, one row per student. q matches name, username, email or school.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student"
+                ],
+                "summary": "List my students across all my tutorials",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search name, username, email or school",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.StudentRow"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Only tutors",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/students/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Tutors only. The user must have a request in at least one tutorial the tutor created. Per tutorial: enrollment status, meetings, attendance, homework and average grade.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "student"
+                ],
+                "summary": "Student detail with progress in each of my tutorials",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student user ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StudentDetail"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/submissions/{id}": {
             "delete": {
                 "security": [
@@ -3782,6 +3878,10 @@
                 "id": {
                     "type": "string"
                 },
+                "last_login_at": {
+                    "description": "LastLoginAt is nil until the student logs in for the first time.",
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3930,6 +4030,42 @@
                 }
             }
         },
+        "dto.StudentDetail": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_login_at": {
+                    "description": "LastLoginAt is nil until the student logs in for the first time.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "tutorial_count": {
+                    "type": "integer"
+                },
+                "tutorials": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.StudentTutorial"
+                    }
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.StudentMeeting": {
             "type": "object",
             "properties": {
@@ -3962,6 +4098,70 @@
                 },
                 "video_id": {
                     "description": "VideoID is the 11-character YouTube id, or empty when there is no valid recording.",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StudentRow": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_login_at": {
+                    "description": "LastLoginAt is nil until the student logs in for the first time.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "tutorial_count": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.StudentTutorial": {
+            "type": "object",
+            "properties": {
+                "attended": {
+                    "type": "integer"
+                },
+                "avg_grade": {
+                    "description": "AvgGrade is the mean of the graded homework (0-100); nil when nothing is graded.",
+                    "type": "number"
+                },
+                "custom_id": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the enrollment state: pending, accepted or declined.",
+                    "type": "string"
+                },
+                "submitted": {
+                    "type": "integer"
+                },
+                "total_meetings": {
+                    "type": "integer"
+                },
+                "tutorial_id": {
                     "type": "string"
                 }
             }

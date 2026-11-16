@@ -8,6 +8,10 @@ export const MAIN_ENDPOINT = {
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
 	},
+	Student: {
+		List: "/v1/students",
+		Detail: (id: string) => `/v1/students/${id}`,
+	},
 	Feedback: {
 		Form: (code: string) => `/v1/public/feedback/${code}`,
 		Status: (tutorialId: string) =>

@@ -9,6 +9,7 @@ export const PATH = {
 	DASHBOARD: "/tutor",
 	TUTORIALS: "/tutor/tutorials",
 	PENDING_VALIDATION: "/tutor/pending-validation",
+	STUDENTS: "/tutor/students",
 	LOGIN: "/login",
 	FEEDBACK: "/form/feedback",
 	REGISTER: "/register",

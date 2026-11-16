@@ -13,6 +13,8 @@ export type TutorialStudent = {
 	name: string;
 	username: string;
 	school: string;
+	/** ISO time of the last login; null if they never logged in. */
+	last_login_at: string | null;
 	created_at: string;
 };
 

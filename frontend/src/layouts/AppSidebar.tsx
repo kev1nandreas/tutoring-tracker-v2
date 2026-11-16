@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 	LayoutGrid,
 	UserCheck,
+	Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,6 +43,12 @@ const NAV_ITEMS: NavItem[] = [
 		icon: <BookOpen className="w-5 h-5" />,
 		path: PATH.TUTORIALS,
 		description: "Your tutorials",
+	},
+	{
+		name: "Students",
+		icon: <Users className="w-5 h-5" />,
+		path: PATH.STUDENTS,
+		description: "All your students",
 	},
 	{
 		name: "Pending validation",

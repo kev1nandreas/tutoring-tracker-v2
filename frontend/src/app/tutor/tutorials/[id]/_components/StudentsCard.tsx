@@ -3,11 +3,12 @@
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { useState } from "react";
+import StudentDrawer from "@/app/tutor/students/_components/StudentDrawer";
 import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
 import { validationQuestion } from "@/lib/enrollmentMessages";
-import { getInitials } from "@/lib/helper";
+import { formatRelativeTime, getInitials } from "@/lib/helper";
 import type {
 	StudentStatus,
 	TutorialStudent,
@@ -30,9 +31,11 @@ const EMPTY: Record<StudentStatus, string> = {
 function StudentRow({
 	student,
 	actions,
+	onOpen,
 }: {
 	student: TutorialStudent;
 	actions?: React.ReactNode;
+	onOpen: (userId: string) => void;
 }) {
 	return (
 		<li className="flex items-center gap-3 py-3">
@@ -42,15 +45,25 @@ function StudentRow({
 			>
 				{getInitials(student.name)}
 			</span>
-			<div className="min-w-0 flex-1">
-				<p className="truncate text-sm font-medium text-gray-900">
+			<button
+				type="button"
+				onClick={() => onOpen(student.user_id)}
+				className="min-w-0 flex-1 rounded-md text-left focus-visible:outline-2 focus-visible:outline-brand-600"
+			>
+				<p className="truncate text-sm font-medium text-gray-900 hover:text-brand-700 hover:underline">
 					{student.name}
 				</p>
 				<p className="truncate text-xs text-gray-500">
 					@{student.username}
 					{student.school ? ` · ${student.school}` : ""}
 				</p>
-			</div>
+				<p className="truncate text-xs text-gray-400">
+					Last login:{" "}
+					{student.last_login_at
+						? formatRelativeTime(student.last_login_at)
+						: "never"}
+				</p>
+			</button>
 			{actions}
 		</li>
 	);
@@ -58,6 +71,7 @@ function StudentRow({
 
 export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 	const [tab, setTab] = useState<StudentStatus>("accepted");
+	const [openId, setOpenId] = useState<string | null>(null);
 
 	// all three load up front so the tab labels can show counts
 	const accepted = useTutorialStudents(tutorialId, "accepted");
@@ -136,6 +150,7 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 						<StudentRow
 							key={student.id}
 							student={student}
+							onOpen={setOpenId}
 							actions={
 								tab === "pending" ? (
 									<div className="flex shrink-0 gap-2">
@@ -162,6 +177,7 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 					))}
 				</ul>
 			)}
+			<StudentDrawer studentId={openId} onClose={() => setOpenId(null)} />
 			<ConfirmationDialog
 				isOpen={confirm !== null}
 				setIsOpen={(open) => !open && setConfirm(null)}
