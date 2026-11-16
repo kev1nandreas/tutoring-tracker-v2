@@ -5,8 +5,14 @@ import Tabs from "@mui/material/Tabs";
 import { useState } from "react";
 import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
+import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
+import { validationQuestion } from "@/lib/enrollmentMessages";
 import { getInitials } from "@/lib/helper";
-import type { StudentStatus, TutorialStudent } from "@/types/student";
+import type {
+	StudentStatus,
+	TutorialStudent,
+	ValidateAction,
+} from "@/types/student";
 import {
 	useTutorialStudents,
 	useValidateStudentMutation,
@@ -18,7 +24,7 @@ const EMPTY: Record<StudentStatus, string> = {
 	accepted:
 		"No students yet. Share the tutorial code so students can request to join.",
 	pending: "No requests waiting.",
-	declined: "No declined requests.",
+	declined: "No rejected requests.",
 };
 
 function StudentRow({
@@ -60,6 +66,11 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 	const queries = { accepted, pending, declined };
 	const current = queries[tab];
 
+	const [confirm, setConfirm] = useState<{
+		student: TutorialStudent;
+		action: ValidateAction;
+	} | null>(null);
+
 	const validate = useValidateStudentMutation(tutorialId, tutorialCode);
 	const busyId = validate.isPending ? validate.variables?.userId : undefined;
 
@@ -95,7 +106,7 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 			>
 				<Tab value="accepted" label={`Enrolled${count("accepted")}`} />
 				<Tab value="pending" label={`Requests${count("pending")}`} />
-				<Tab value="declined" label={`Declined${count("declined")}`} />
+				<Tab value="declined" label={`Rejected${count("declined")}`} />
 			</Tabs>
 
 			{current.isError ? (
@@ -132,25 +143,15 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 											variant="outline"
 											size="sm"
 											disabled={busyId === student.user_id}
-											onClick={() =>
-												validate.mutate({
-													userId: student.user_id,
-													action: "decline",
-												})
-											}
+											onClick={() => setConfirm({ student, action: "decline" })}
 										>
-											Decline
+											Reject
 										</Button>
 										<Button
 											variant="brand"
 											size="sm"
 											isLoading={busyId === student.user_id}
-											onClick={() =>
-												validate.mutate({
-													userId: student.user_id,
-													action: "accept",
-												})
-											}
+											onClick={() => setConfirm({ student, action: "accept" })}
 										>
 											Accept
 										</Button>
@@ -161,6 +162,25 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 					))}
 				</ul>
 			)}
+			<ConfirmationDialog
+				isOpen={confirm !== null}
+				setIsOpen={(open) => !open && setConfirm(null)}
+				message={
+					confirm
+						? validationQuestion(confirm.action, confirm.student.name)
+						: ""
+				}
+				confirmLabel={confirm?.action === "accept" ? "Accept" : "Reject"}
+				cancelLabel="Cancel"
+				confirmVariant={confirm?.action === "accept" ? "brand" : "red"}
+				onConfirm={() =>
+					confirm &&
+					validate.mutate({
+						userId: confirm.student.user_id,
+						action: confirm.action,
+					})
+				}
+			/>
 		</DashboardCard>
 	);
 }

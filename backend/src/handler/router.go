@@ -88,6 +88,7 @@ func NewRouter(
 		protected.GET("/tutorials/:id/meetings", h.Meeting.FindMeetingsByTutorial)
 		protected.GET("/pending-validations", h.PendingValidation.FindPendingValidations)
 		protected.GET("/tutorials/:id/pending-validations", h.PendingValidation.FindPendingValidationsByTutorial)
+		protected.GET("/pending-validations/mine", h.PendingValidation.FindMyEnrollments)
 		protected.POST("/pending-validations/enroll", h.PendingValidation.Enroll)
 		protected.POST("/pending-validations/validate", h.PendingValidation.Validate)
 		protected.PUT("/tutorials/:id", h.Tutorial.UpdateTutorial)

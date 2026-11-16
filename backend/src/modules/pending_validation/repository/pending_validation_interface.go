@@ -15,8 +15,11 @@ type PendingValidationRepository interface {
 	FindByTutorialID(tutorialID uuid.UUID, params pagination.Params) ([]entity.PendingValidation, pagination.Meta, error)
 	// FindGroupedByCreator returns, per tutorial created by creatorID, its enrollment requests.
 	// Pagination is over tutorials. status, when set, keeps only requests in that state
-	// (tutorials without a matching request are left out).
-	FindGroupedByCreator(creatorID uuid.UUID, status *int, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error)
+	// (tutorials without a matching request are left out). search, when not empty, keeps only
+	// students whose name, username or school contains it (case-insensitive).
+	FindGroupedByCreator(creatorID uuid.UUID, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error)
+	// FindByUser lists the user's own enrollment requests with their tutorial, newest change first.
+	FindByUser(userID uuid.UUID, params pagination.Params) ([]dto.MyEnrollment, pagination.Meta, error)
 	Create(pv *entity.PendingValidation) error
 	Update(pv *entity.PendingValidation) error
 	// SetStatusForPending moves still-pending requests of the given students to status

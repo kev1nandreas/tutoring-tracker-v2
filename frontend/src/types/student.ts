@@ -17,3 +17,9 @@ export type TutorialStudent = {
 };
 
 export type ValidateAction = "accept" | "decline";
+
+/** One tutorial with its enrollment requests (GET /pending-validations). */
+export type ValidationGroup = {
+	tutorial: { name: string; custom_id: string };
+	pending_validations: TutorialStudent[];
+};

@@ -1108,6 +1108,12 @@ const docTemplate = `{
                         "description": "0 pending, 1 accepted, 2 declined",
                         "name": "is_validated",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search students by name, username or school",
+                        "name": "q",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1179,6 +1185,56 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Already enrolled or pending",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/pending-validations/mine": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only students. Newest change first. status is pending, accepted or declined.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "List my enrollment requests and their status",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.MyEnrollment"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Only students",
                         "schema": {
                             "type": "string"
                         }
@@ -2458,6 +2514,31 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.EnrollmentTutorial": {
+            "type": "object",
+            "properties": {
+                "custom_id": {
+                    "type": "string"
+                },
+                "date_ended": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "date_started": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.GradeSubmissionRequest": {
             "type": "object",
             "required": [
@@ -2585,6 +2666,28 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tutorial_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MyEnrollment": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "requested_at": {
+                    "description": "RequestedAt is when the student asked; DecidedAt when the status last changed\n(equal to RequestedAt while still pending).",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "pending, accepted or declined",
+                    "type": "string"
+                },
+                "tutorial": {
+                    "$ref": "#/definitions/dto.EnrollmentTutorial"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }

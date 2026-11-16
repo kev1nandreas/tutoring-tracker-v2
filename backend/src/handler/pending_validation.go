@@ -70,6 +70,32 @@ func (h *PendingValidationHandler) Enroll(c *gin.Context) {
 	}.Send(c)
 }
 
+// FindMyEnrollments godoc
+// @Summary List my enrollment requests and their status
+// @Description Only students. Newest change first. status is pending, accepted or declined.
+// @Tags pending-validation
+// @Security JwtAuth
+// @Produce json
+// @Param page query int false "Page" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Success 200 {array} dto.MyEnrollment
+// @Failure 403 {string} string "Only students"
+// @Router /pending-validations/mine [get]
+func (h *PendingValidationHandler) FindMyEnrollments(c *gin.Context) {
+	callerID, role, ok := h.caller(c)
+	if !ok {
+		return
+	}
+
+	items, meta, err := h.usecase.FindMine(callerID, role, pagination.ParseParams(c))
+	if err != nil {
+		h.fail(c, err, "Failed to retrieve enrollments")
+		return
+	}
+
+	response.NewPaginatedResponse("Enrollments retrieved successfully", items, meta).Send(c)
+}
+
 // FindPendingValidations godoc
 // @Summary List enrollment requests of all my tutorials, grouped by tutorial
 // @Description Only tutors. Covers only tutorials the caller created. Paginated over tutorials. Filter with ?is_validated=0|1|2 (0 pending, 1 accepted, 2 declined).
@@ -79,6 +105,7 @@ func (h *PendingValidationHandler) Enroll(c *gin.Context) {
 // @Param page query int false "Page" default(1)
 // @Param page_size query int false "Page size" default(10)
 // @Param is_validated query int false "0 pending, 1 accepted, 2 declined"
+// @Param q query string false "Search students by name, username or school"
 // @Success 200 {array} dto.TutorialPendingGroup
 // @Failure 403 {string} string "Only tutors"
 // @Router /pending-validations [get]
@@ -100,7 +127,7 @@ func (h *PendingValidationHandler) FindPendingValidations(c *gin.Context) {
 		status = &v
 	}
 
-	items, meta, err := h.usecase.FindGrouped(callerID, role, status, params)
+	items, meta, err := h.usecase.FindGrouped(callerID, role, status, params.Filters["q"], params)
 	if err != nil {
 		h.fail(c, err, "Failed to retrieve pending validations")
 		return

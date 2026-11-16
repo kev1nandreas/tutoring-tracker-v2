@@ -85,11 +85,18 @@ func requireOwner(callerID uuid.UUID, role string, tutorial *tutorialEntity.Tuto
 	return nil
 }
 
-func (u *pendingValidationUsecase) FindGrouped(callerID uuid.UUID, role string, status *int, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error) {
+func (u *pendingValidationUsecase) FindMine(callerID uuid.UUID, role string, params pagination.Params) ([]dto.MyEnrollment, pagination.Meta, error) {
+	if role != roleStudent {
+		return nil, pagination.Meta{}, ErrForbidden
+	}
+	return u.repo.FindByUser(callerID, params)
+}
+
+func (u *pendingValidationUsecase) FindGrouped(callerID uuid.UUID, role string, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error) {
 	if role != roleTutor {
 		return nil, pagination.Meta{}, ErrForbidden
 	}
-	return u.repo.FindGroupedByCreator(callerID, status, params)
+	return u.repo.FindGroupedByCreator(callerID, status, strings.TrimSpace(search), params)
 }
 
 func (u *pendingValidationUsecase) FindByTutorial(callerID uuid.UUID, role, tutorialID string, params pagination.Params) ([]dto.PendingStudent, pagination.Meta, error) {

@@ -9,6 +9,9 @@ import {
 	type ValidateAction,
 } from "@/types/student";
 
+/** Ids whose request changed, and ids that had no pending request. */
+export type ValidateResult = { updated: string[]; skipped: string[] };
+
 /** One status of a tutorial's students; `total` is the full count, `items` the first 100. */
 export async function fetchTutorialStudents(
 	tutorialId: string,
@@ -39,7 +42,7 @@ export async function validateStudents(
 	userIds: string[],
 	action: ValidateAction,
 ) {
-	const { OK, Kind, StatusCode } = await post<MainResponse>(
+	const { OK, Kind, StatusCode } = await post<MainResponse<ValidateResult>>(
 		MAIN_ENDPOINT.Enrollment.Validate,
 		{
 			tutorial_code: tutorialCode,
@@ -55,4 +58,7 @@ export async function validateStudents(
 			StatusCode,
 		);
 	}
+	return (
+		(Kind as MainResponse<ValidateResult>).data ?? { updated: [], skipped: [] }
+	);
 }

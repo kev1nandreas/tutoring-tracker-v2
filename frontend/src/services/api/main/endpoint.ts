@@ -9,6 +9,9 @@ export const MAIN_ENDPOINT = {
 		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
 	},
 	Enrollment: {
+		List: "/v1/pending-validations",
+		Enroll: "/v1/pending-validations/enroll",
+		Mine: "/v1/pending-validations/mine",
 		Validate: "/v1/pending-validations/validate",
 	},
 	Submission: {

@@ -1,15 +1,23 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import useAuthStore from "@/app/stores/useAuthStore";
 import Button from "@/components/button/Button";
 import withAuth from "@/components/hoc/withAuth";
 import Typography from "@/components/Typography";
+import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
+
+const NAV = [
+	{ label: "Home", href: PATH.STUDENT_HOME },
+	{ label: "Join a class", href: PATH.ENROLL },
+];
 
 function StudentLayout({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
+	const pathname = usePathname();
 	const user = useAuthStore.useUser();
 	const logout = useAuthStore.useLogout();
 
@@ -21,9 +29,34 @@ function StudentLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="min-h-screen bg-gray-50">
 			<header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 md:px-6">
-				<Typography weight="bold" className="text-lg">
-					Tutoring Tracker
-				</Typography>
+				<div className="flex items-center gap-6">
+					<Typography weight="bold" className="text-lg">
+						Tutoring Tracker
+					</Typography>
+					<nav aria-label="Main" className="flex gap-1">
+						{NAV.map(({ label, href }) => {
+							const active =
+								href === PATH.STUDENT_HOME
+									? pathname === href
+									: pathname.startsWith(href);
+							return (
+								<Link
+									key={href}
+									href={href}
+									aria-current={active ? "page" : undefined}
+									className={clsxm(
+										"rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-brand-600",
+										active
+											? "bg-brand-50 text-brand-700"
+											: "text-gray-600 hover:bg-gray-100",
+									)}
+								>
+									{label}
+								</Link>
+							);
+						})}
+					</nav>
+				</div>
 				<div className="flex items-center gap-3">
 					<Typography className="text-sm text-gray-600">
 						{user?.name}

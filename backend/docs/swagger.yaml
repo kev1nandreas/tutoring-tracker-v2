@@ -124,6 +124,23 @@ definitions:
     required:
     - tutorial_code
     type: object
+  dto.EnrollmentTutorial:
+    properties:
+      custom_id:
+        type: string
+      date_ended:
+        description: YYYY-MM-DD
+        type: string
+      date_started:
+        description: YYYY-MM-DD
+        type: string
+      description:
+        type: string
+      is_done:
+        type: boolean
+      name:
+        type: string
+    type: object
   dto.GradeSubmissionRequest:
     properties:
       feedback:
@@ -209,6 +226,23 @@ definitions:
       tutorial_id:
         type: string
       tutorial_name:
+        type: string
+    type: object
+  dto.MyEnrollment:
+    properties:
+      id:
+        type: string
+      requested_at:
+        description: |-
+          RequestedAt is when the student asked; DecidedAt when the status last changed
+          (equal to RequestedAt while still pending).
+        type: string
+      status:
+        description: pending, accepted or declined
+        type: string
+      tutorial:
+        $ref: '#/definitions/dto.EnrollmentTutorial'
+      updated_at:
         type: string
     type: object
   dto.PaymentResponse:
@@ -1428,6 +1462,10 @@ paths:
         in: query
         name: is_validated
         type: integer
+      - description: Search students by name, username or school
+        in: query
+        name: q
+        type: string
       produces:
       - application/json
       responses:
@@ -1481,6 +1519,39 @@ paths:
       security:
       - JwtAuth: []
       summary: Enroll in a tutorial with its code
+      tags:
+      - pending-validation
+  /pending-validations/mine:
+    get:
+      description: Only students. Newest change first. status is pending, accepted
+        or declined.
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.MyEnrollment'
+            type: array
+        "403":
+          description: Only students
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List my enrollment requests and their status
       tags:
       - pending-validation
   /pending-validations/validate:

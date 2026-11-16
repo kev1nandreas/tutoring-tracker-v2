@@ -32,7 +32,7 @@ export const useValidateStudentMutation = (
 		}) => validateStudents(tutorialCode, [userId], action),
 		onSuccess: (_, { action }) => {
 			toast.success(
-				action === "accept" ? "Student accepted." : "Request declined.",
+				action === "accept" ? "Student accepted." : "Request rejected.",
 			);
 			queryClient.invalidateQueries({
 				queryKey: ["tutorial", tutorialId, "students"],
