@@ -9,6 +9,7 @@ import (
 	attachmentEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/attachment/entity"
 	attendanceEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/attendance/entity"
 	bundleEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/entity"
+	feedbackEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/feedback/entity"
 	jobEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/job/entity"
 	meetingEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/entity"
 	paymentEntity "github.com/kev1nandreas/go-rest-api-template/src/modules/payment/entity"
@@ -72,6 +73,10 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
+	if err := dropOldFeedbackTable(db); err != nil {
+		return err
+	}
+
 	if err := db.AutoMigrate(
 		&roleEntity.Role{},
 		&userEntity.User{},
@@ -85,11 +90,25 @@ func Migrate(db *gorm.DB) error {
 		&jobEntity.Job{},
 		&bundleEntity.Request{},
 		&attendanceEntity.Attendance{},
+		&feedbackEntity.Feedback{},
 	); err != nil {
 		return err
 	}
 
 	return ensureCascadeDeletes(db)
+}
+
+// dropOldFeedbackTable removes the first version of the feedbacks table (other questions,
+// created and filled only while the form was being built) so AutoMigrate recreates it with
+// the current columns. It only acts while the old column overall_rating still exists.
+func dropOldFeedbackTable(db *gorm.DB) error {
+	var old bool
+	err := db.Raw(`SELECT EXISTS (SELECT 1 FROM information_schema.columns
+		WHERE table_schema = current_schema() AND table_name = 'feedbacks' AND column_name = 'overall_rating')`).Scan(&old).Error
+	if err != nil || !old {
+		return err
+	}
+	return db.Exec("DROP TABLE feedbacks").Error
 }
 
 // cascadeFK is a foreign key that must delete its rows together with the parent row.
@@ -106,6 +125,7 @@ var cascadeFKs = []cascadeFK{
 	{"tutorial_students", "tutorial_id", "tutorials"},
 	{"bundle_requests", "tutorial_id", "tutorials"},
 	{"attendances", "meeting_id", "meetings"},
+	{"feedbacks", "tutorial_id", "tutorials"},
 }
 
 // ensureCascadeDeletes makes every cascadeFK exist with ON DELETE CASCADE. It is safe to

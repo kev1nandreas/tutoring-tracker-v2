@@ -218,6 +218,17 @@ definitions:
       name:
         type: string
     type: object
+  dto.FormInfo:
+    properties:
+      open:
+        description: Open is true when the tutorial is done and its feedback switch
+          is on.
+        type: boolean
+      tutor_name:
+        type: string
+      tutorial_name:
+        type: string
+    type: object
   dto.GradeSubmissionRequest:
     properties:
       feedback:
@@ -245,6 +256,21 @@ definitions:
         type: integer
       year:
         type: integer
+    type: object
+  dto.Item:
+    properties:
+      created_at:
+        type: string
+      delivery_rating:
+        type: integer
+      interactive_rating:
+        type: integer
+      learn_again_rating:
+        type: integer
+      message:
+        type: string
+      unclear_topics:
+        type: string
     type: object
   dto.LoginRequest:
     properties:
@@ -471,6 +497,14 @@ definitions:
       total:
         type: integer
     type: object
+  dto.Status:
+    properties:
+      code:
+        description: Code is the tutorial code the public form lives under.
+        type: string
+      required:
+        type: boolean
+    type: object
   dto.StudentAttendance:
     properties:
       marked_at:
@@ -561,6 +595,57 @@ definitions:
         type: string
       username:
         type: string
+    type: object
+  dto.SubmitRequest:
+    properties:
+      delivery_rating:
+        description: '1-5: how well the tutor delivered the material, how interactive,
+          and wanting to learn with them again.'
+        maximum: 5
+        minimum: 1
+        type: integer
+      email:
+        maxLength: 100
+        type: string
+      interactive_rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      learn_again_rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+      message:
+        description: 'Message: impressions and advice for the tutor.'
+        maxLength: 2000
+        type: string
+      unclear_topics:
+        description: 'UnclearTopics: what the student did not understand and wants
+          covered next.'
+        maxLength: 2000
+        type: string
+    required:
+    - delivery_rating
+    - email
+    - interactive_rating
+    - learn_again_rating
+    - message
+    - unclear_topics
+    type: object
+  dto.Summary:
+    properties:
+      avg_delivery:
+        type: number
+      avg_interactive:
+        type: number
+      avg_learn_again:
+        type: number
+      count:
+        type: integer
+      items:
+        items:
+          $ref: '#/definitions/dto.Item'
+        type: array
     type: object
   dto.TutorDashboard:
     properties:
@@ -1358,6 +1443,26 @@ paths:
       summary: Ask to download everything of a class
       tags:
       - bundle
+  /me/tutorials/{id}/feedback-status:
+    get:
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Status'
+      security:
+      - JwtAuth: []
+      summary: Must I send feedback before opening this tutorial?
+      tags:
+      - feedback
   /me/tutorials/{id}/meetings:
     get:
       description: Only students accepted into the tutorial (others get 404). The
@@ -2249,6 +2354,69 @@ paths:
       summary: Accept or decline students in bulk
       tags:
       - pending-validation
+  /public/feedback/{code}:
+    get:
+      description: No login needed. code is the tutorial code.
+      parameters:
+      - description: Tutorial code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.FormInfo'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      summary: 'Public feedback form: tutorial details'
+      tags:
+      - feedback
+    post:
+      consumes:
+      - application/json
+      description: No login needed. Only works once the tutorial is done and its feedback
+        switch is on. The email is only hashed to stop a second submission; answers
+        are stored without it. A second submission with the same email returns 409.
+      parameters:
+      - description: Tutorial code
+        in: path
+        name: code
+        required: true
+        type: string
+      - description: Feedback
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SubmitRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: "true"
+          schema:
+            type: boolean
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Feedback closed
+          schema:
+            type: string
+        "409":
+          description: Already submitted
+          schema:
+            type: string
+      summary: 'Public feedback form: send feedback'
+      tags:
+      - feedback
   /register:
     post:
       consumes:
@@ -2684,6 +2852,32 @@ paths:
       summary: Update a tutorial by ID
       tags:
       - tutorial
+  /tutorials/{id}/feedback:
+    get:
+      description: Tutors of the tutorial (or an admin). Answers only; who sent them
+        is not stored.
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.Summary'
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Feedback of a tutorial (anonymous)
+      tags:
+      - feedback
   /tutorials/{id}/meetings:
     get:
       parameters:

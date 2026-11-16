@@ -1,11 +1,15 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import DashboardError from "@/components/dashboard/DashboardError";
 import Typography from "@/components/Typography";
 import { ApiError } from "@/lib/errors";
-import { PATH } from "@/shared/path";
+import { fetchFeedbackStatus } from "@/services/api/main/feedback";
+import { feedbackFormPath, PATH } from "@/shared/path";
 import {
 	useMyTutorial,
 	useMyTutorialMeetings,
@@ -27,9 +31,30 @@ function BackLink() {
 }
 
 export default function MyTutorialDetail({ id }: { id: string }) {
+	const router = useRouter();
+	// a finished class with feedback on stays locked until the student sent the form
+	const gate = useQuery({
+		queryKey: ["my-tutorial", id, "feedback-status"],
+		queryFn: () => fetchFeedbackStatus(id),
+		retry: false,
+		staleTime: 0,
+	});
+	useEffect(() => {
+		if (gate.data?.required)
+			router.replace(feedbackFormPath(gate.data.code, id));
+	}, [gate.data, id, router]);
 	const tutorialQuery = useMyTutorial(id);
 	const meetingsQuery = useMyTutorialMeetings(id);
 	const { data: tutorial, isError, error, isLoading, refetch } = tutorialQuery;
+
+	if (gate.isLoading || gate.data?.required) {
+		return (
+			<div
+				className="h-44 animate-pulse rounded-xl bg-gray-100"
+				aria-busy="true"
+			/>
+		);
+	}
 
 	if (isError) {
 		const notFound = error instanceof ApiError && error.status === 404;

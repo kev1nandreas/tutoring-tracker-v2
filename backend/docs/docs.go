@@ -601,6 +601,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/tutorials/{id}/feedback-status": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Must I send feedback before opening this tutorial?",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Status"
+                        }
+                    }
+                }
+            }
+        },
         "/me/tutorials/{id}/meetings": {
             "get": {
                 "security": [
@@ -1947,6 +1980,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/public/feedback/{code}": {
+            "get": {
+                "description": "No login needed. code is the tutorial code.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Public feedback form: tutorial details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FormInfo"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "No login needed. Only works once the tutorial is done and its feedback switch is on. The email is only hashed to stop a second submission; answers are stored without it. A second submission with the same email returns 409.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Public feedback form: send feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Feedback",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SubmitRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "true",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Feedback closed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Already submitted",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "description": "Registers a new user. The role is always student.",
@@ -2610,6 +2735,46 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Tutorial still has payments",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials/{id}/feedback": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Tutors of the tutorial (or an admin). Answers only; who sent them is not stored.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "feedback"
+                ],
+                "summary": "Feedback of a tutorial (anonymous)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.Summary"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
                         "schema": {
                             "type": "string"
                         }
@@ -3301,6 +3466,21 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.FormInfo": {
+            "type": "object",
+            "properties": {
+                "open": {
+                    "description": "Open is true when the tutorial is done and its feedback switch is on.",
+                    "type": "boolean"
+                },
+                "tutor_name": {
+                    "type": "string"
+                },
+                "tutorial_name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.GradeSubmissionRequest": {
             "type": "object",
             "required": [
@@ -3339,6 +3519,29 @@ const docTemplate = `{
                 },
                 "year": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.Item": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "delivery_rating": {
+                    "type": "integer"
+                },
+                "interactive_rating": {
+                    "type": "integer"
+                },
+                "learn_again_rating": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "unclear_topics": {
+                    "type": "string"
                 }
             }
         },
@@ -3675,6 +3878,18 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.Status": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Code is the tutorial code the public form lives under.",
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dto.StudentAttendance": {
             "type": "object",
             "properties": {
@@ -3809,6 +4024,72 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.SubmitRequest": {
+            "type": "object",
+            "required": [
+                "delivery_rating",
+                "email",
+                "interactive_rating",
+                "learn_again_rating",
+                "message",
+                "unclear_topics"
+            ],
+            "properties": {
+                "delivery_rating": {
+                    "description": "1-5: how well the tutor delivered the material, how interactive, and wanting to learn with them again.",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "email": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "interactive_rating": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "learn_again_rating": {
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "message": {
+                    "description": "Message: impressions and advice for the tutor.",
+                    "type": "string",
+                    "maxLength": 2000
+                },
+                "unclear_topics": {
+                    "description": "UnclearTopics: what the student did not understand and wants covered next.",
+                    "type": "string",
+                    "maxLength": 2000
+                }
+            }
+        },
+        "dto.Summary": {
+            "type": "object",
+            "properties": {
+                "avg_delivery": {
+                    "type": "number"
+                },
+                "avg_interactive": {
+                    "type": "number"
+                },
+                "avg_learn_again": {
+                    "type": "number"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.Item"
+                    }
                 }
             }
         },

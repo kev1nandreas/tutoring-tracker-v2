@@ -30,6 +30,7 @@ type Handlers struct {
 	Dashboard         *DashboardHandler
 	Bundle            *BundleHandler
 	Attendance        *AttendanceHandler
+	Feedback          *FeedbackHandler
 }
 
 func NewRouter(
@@ -67,6 +68,10 @@ func NewRouter(
 		v1.POST("/register", limit, h.User.RegisterHandler)
 		v1.GET("/me", factory.JWTAuth(), limit, h.User.MeHandler)
 
+		// public feedback form (no login): per-IP rate limit
+		v1.GET("/public/feedback/:code", limit, h.Feedback.FormInfo)
+		v1.POST("/public/feedback/:code", limit, h.Feedback.Submit)
+
 		// opened by the browser from a signed link, so it takes a token instead of a login
 		v1.GET("/bundles/:id/download", limit, h.Bundle.DownloadBundle)
 
@@ -91,9 +96,11 @@ func NewRouter(
 
 		protected.GET("/me/tutorials", h.Tutorial.FindMyTutorials)
 		protected.GET("/me/tutorials/:id", h.Tutorial.FindMyTutorial)
-		protected.POST("/me/tutorials/:id/bundle", h.Bundle.RequestBundle)
+		protected.POST("/me/tutorials/:id/bundle", h.Feedback.Gate(), h.Bundle.RequestBundle)
 		protected.GET("/me/bundles/:id", h.Bundle.BundleStatus)
-		protected.GET("/me/tutorials/:id/meetings", h.Meeting.FindMyTutorialMeetings)
+		protected.GET("/me/tutorials/:id/meetings", h.Feedback.Gate(), h.Meeting.FindMyTutorialMeetings)
+		protected.GET("/me/tutorials/:id/feedback-status", h.Feedback.Status)
+		protected.GET("/tutorials/:id/feedback", h.Feedback.Summary)
 		protected.GET("/tutorials", h.Tutorial.FindTutorials)
 		protected.POST("/tutorials", h.Tutorial.CreateTutorial)
 		protected.GET("/tutorials/:id", h.Tutorial.FindTutorial)

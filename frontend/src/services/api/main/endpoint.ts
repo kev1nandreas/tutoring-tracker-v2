@@ -8,6 +8,12 @@ export const MAIN_ENDPOINT = {
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
 	},
+	Feedback: {
+		Form: (code: string) => `/v1/public/feedback/${code}`,
+		Status: (tutorialId: string) =>
+			`/v1/me/tutorials/${tutorialId}/feedback-status`,
+		Summary: (tutorialId: string) => `/v1/tutorials/${tutorialId}/feedback`,
+	},
 	Attachment: {
 		List: (meetingId: string) => `/v1/meetings/${meetingId}/attachments`,
 		UploadUrl: (meetingId: string) =>

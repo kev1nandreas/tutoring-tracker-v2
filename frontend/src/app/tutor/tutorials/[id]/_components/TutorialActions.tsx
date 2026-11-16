@@ -1,11 +1,11 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { MessageSquareText, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import Button from "@/components/button/Button";
 import ConfirmationDialog from "@/components/dialog/ConfirmationDialog";
-import { PATH } from "@/shared/path";
+import { PATH, tutorialFeedbackPath } from "@/shared/path";
 import type { Tutorial } from "@/types/tutorial";
 import TutorialFormDialog from "../../_components/TutorialFormDialog";
 import { useDeleteTutorialMutation } from "../../_hooks/useDeleteTutorialMutation";
@@ -23,6 +23,16 @@ export default function TutorialActions({ tutorial }: { tutorial: Tutorial }) {
 	return (
 		<>
 			<div className="flex gap-2">
+				{tutorial.show_feedback && (
+					<Button
+						variant="outline"
+						size="sm"
+						leftIcon={MessageSquareText}
+						onClick={() => router.push(tutorialFeedbackPath(tutorial.id))}
+					>
+						Feedback
+					</Button>
+				)}
 				<Button
 					variant="outline"
 					size="sm"

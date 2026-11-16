@@ -10,10 +10,19 @@ export const PATH = {
 	TUTORIALS: "/tutor/tutorials",
 	PENDING_VALIDATION: "/tutor/pending-validation",
 	LOGIN: "/login",
+	FEEDBACK: "/form/feedback",
 	REGISTER: "/register",
 	FORGOT_PASSWORD: "/forgot-password",
 	RESET_PASSWORD: "/reset-password",
 };
+
+/** Public feedback form of a finished tutorial, by its code. */
+export const feedbackFormPath = (code: string, from?: string) =>
+	`${PATH.FEEDBACK}/${code}${from ? `?from=${from}` : ""}`;
+
+/** What students said about one tutorial (tutor view). */
+export const tutorialFeedbackPath = (tutorialId: string) =>
+	`${PATH.TUTORIALS}/${tutorialId}/feedback`;
 
 /** Homework (submissions and grading) of one meeting. */
 export const homeworkPath = (tutorialId: string, meetingId: string) =>

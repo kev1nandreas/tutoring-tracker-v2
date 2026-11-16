@@ -27,7 +27,8 @@ export function proxy(request: NextRequest) {
 	if (
 		hasCookie ||
 		PUBLIC_PATHS.includes(pathname) ||
-		pathname.startsWith("/sandbox")
+		pathname.startsWith("/sandbox") ||
+		pathname.startsWith(`${PATH.FEEDBACK}/`)
 	) {
 		return NextResponse.next();
 	}

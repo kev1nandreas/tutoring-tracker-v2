@@ -14,6 +14,7 @@ import (
 	bundleFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/factory"
 	bundleUsecase "github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/usecase"
 	dashboardFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/dashboard/factory"
+	feedbackFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/feedback/factory"
 	jobFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/job/factory"
 	meetingFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/factory"
 	notificationFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/notification/factory"
@@ -139,6 +140,7 @@ func main() {
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),
 		Dashboard:         handler.NewDashboardHandler(dashboardFactory.NewDashboardUsecase(db)),
 		Bundle:            handler.NewBundleHandler(bundleService),
+		Feedback:          handler.NewFeedbackHandler(feedbackFactory.NewFeedbackUsecase(db)),
 		Attendance:        handler.NewAttendanceHandler(attendanceFactory.NewAttendanceUsecase(db, storage)),
 	}
 
