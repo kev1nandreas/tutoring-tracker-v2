@@ -10,7 +10,7 @@ type Props = { tutorial: EnrolledTutorial; meetings?: StudentMeeting[] };
 
 function Stat({ label, value }: { label: string; value: number }) {
 	return (
-		<div className="rounded-lg border border-[#d8e0f0] bg-white px-4 py-2.5">
+		<div className="min-w-0 rounded-lg border border-[#d8e0f0] bg-white px-3 py-2.5 sm:px-4">
 			<dd className="text-xl font-bold tabular-nums text-brand-950">{value}</dd>
 			<dt className="text-xs text-gray-500">{label}</dt>
 		</div>
@@ -63,7 +63,7 @@ export default function StudentTutorialHeader({ tutorial, meetings }: Props) {
 					{tutorial.name}
 				</Typography>
 
-				<Typography className="mt-2 max-w-md text-sm leading-relaxed text-gray-700">
+				<Typography className="mt-2 max-w-md text-sm leading-relaxed break-words text-gray-700">
 					{tutorial.description || "No description."}
 				</Typography>
 
@@ -81,7 +81,7 @@ export default function StudentTutorialHeader({ tutorial, meetings }: Props) {
 				</div>
 
 				<div className="mt-6 grid gap-4 lg:grid-cols-[auto_1fr] lg:items-end">
-					<dl className="grid grid-cols-3 gap-3 sm:w-fit">
+					<dl className="grid min-w-0 grid-cols-3 gap-2 sm:w-fit sm:gap-3">
 						<Stat label="Meetings" value={tutorial.total_meetings} />
 						<Stat label="Done" value={tutorial.done_meetings} />
 						<Stat label="With homework" value={homework} />

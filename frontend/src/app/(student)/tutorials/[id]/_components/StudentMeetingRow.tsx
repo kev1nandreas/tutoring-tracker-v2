@@ -52,7 +52,7 @@ export default function StudentMeetingRow({
 						type="button"
 						onClick={() => onOpen(meeting)}
 						className={clsxm(
-							"rounded text-left text-sm font-medium after:absolute after:inset-0 focus-visible:outline-2 focus-visible:outline-brand-600",
+							"min-w-0 rounded text-left text-sm font-medium break-words after:absolute after:inset-0 focus-visible:outline-2 focus-visible:outline-brand-600",
 							meeting.is_done ? "text-gray-500" : "text-gray-900",
 						)}
 					>
@@ -96,7 +96,7 @@ export default function StudentMeetingRow({
 				{meeting.has_homework && (
 					<p className="mt-2 flex items-start gap-1.5 rounded-lg bg-brand-50 px-3 py-2 text-xs leading-relaxed text-brand-900">
 						<NotebookPen size={13} className="mt-0.5 shrink-0" aria-hidden />
-						<span className="line-clamp-2 whitespace-pre-wrap">
+						<span className="line-clamp-2 min-w-0 break-words whitespace-pre-wrap">
 							{meeting.text_homework || "There is homework for this meeting."}
 						</span>
 					</p>

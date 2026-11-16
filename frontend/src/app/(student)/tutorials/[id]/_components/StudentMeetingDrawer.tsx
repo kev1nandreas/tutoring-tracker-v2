@@ -81,7 +81,7 @@ export default function StudentMeetingDrawer({
 									Scheduled
 								</span>
 							)}
-							<h2 className="mt-2 text-xl font-bold leading-snug text-brand-950">
+							<h2 className="mt-2 text-xl font-bold leading-snug break-words text-brand-950">
 								{meeting.title}
 							</h2>
 						</div>
@@ -122,7 +122,7 @@ export default function StudentMeetingDrawer({
 
 						<Section icon={NotebookPen} title="Homework">
 							{meeting.has_homework ? (
-								<p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+								<p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-700">
 									{meeting.text_homework ||
 										"There is homework, but no instructions were added yet."}
 								</p>
