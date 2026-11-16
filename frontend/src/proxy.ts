@@ -3,59 +3,38 @@ import { NextResponse } from "next/server";
 import { ENV } from "./configs/environment";
 import { PATH } from "./shared/path";
 
-// Exact paths that never require a session.
-const PUBLIC_PATHS: string[] = [
-	PATH.LOGIN,
-	PATH.REGISTER,
+// Pages that need no session, and (login/register only) that a signed-in user skips.
+const GUEST_PATHS = [PATH.LOGIN, PATH.REGISTER];
+const PUBLIC_PATHS = [
+	...GUEST_PATHS,
 	PATH.FORGOT_PASSWORD,
 	PATH.RESET_PASSWORD,
 	PATH.NOT_FOUND,
 ];
 
-// Path prefixes that never require a session.
-const PUBLIC_PREFIXES = ["/sandbox"];
-
-/** True when the JWT payload has an `exp` in the future (signature is checked by the API). */
-function hasLiveToken(token: string | undefined): boolean {
-	if (!token) return false;
-	try {
-		const payload = token.split(".")[1];
-		const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-		const { exp } = JSON.parse(atob(base64)) as { exp?: number };
-		return typeof exp === "number" && exp * 1000 > Date.now();
-	} catch {
-		return false;
-	}
-}
-
 /**
- * No (valid) session cookie: redirect to login before any page renders.
- * Role checks stay in `withAuth`, which verifies the user with `/me`.
+ * Cookie-only gate. Whether the token is valid, and which role may see which
+ * page, is checked afterwards by `withAuth` (via `/me`).
  */
 export function proxy(request: NextRequest) {
-	const { pathname, search } = request.nextUrl;
+	const { pathname } = request.nextUrl;
+	const hasCookie = Boolean(request.cookies.get(ENV.TOKEN_KEY)?.value);
+
+	if (hasCookie && GUEST_PATHS.includes(pathname)) {
+		return NextResponse.redirect(new URL(PATH.HOME, request.url));
+	}
 
 	if (
+		hasCookie ||
 		PUBLIC_PATHS.includes(pathname) ||
-		PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+		pathname.startsWith("/sandbox")
 	) {
 		return NextResponse.next();
 	}
 
-	if (hasLiveToken(request.cookies.get(ENV.TOKEN_KEY)?.value)) {
-		return NextResponse.next();
-	}
-
 	const loginUrl = new URL(PATH.LOGIN, request.url);
-	if (pathname !== PATH.HOME) {
-		loginUrl.searchParams.set("redirect", `${pathname}${search}`);
-	}
-
-	const response = NextResponse.redirect(loginUrl);
-	// Drop a stale/expired cookie so it is not sent again.
-	response.cookies.delete(ENV.TOKEN_KEY);
-	response.cookies.delete(ENV.REFRESH_TOKEN_KEY);
-	return response;
+	if (pathname !== PATH.HOME) loginUrl.searchParams.set("redirect", pathname);
+	return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

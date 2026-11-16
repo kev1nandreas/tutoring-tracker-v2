@@ -123,7 +123,7 @@ const AppSidebar: React.FC = () => {
 					/>
 					{showLabel && (
 						<span className="whitespace-nowrap text-lg font-bold tracking-wide text-white">
-							YOUR APP
+							Tutoring Tracker
 						</span>
 					)}
 				</Link>

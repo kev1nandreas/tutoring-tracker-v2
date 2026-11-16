@@ -27,6 +27,7 @@ type Handlers struct {
 	Submission        *SubmissionHandler
 	Notification      *NotificationHandler
 	Job               *JobHandler
+	Dashboard         *DashboardHandler
 }
 
 func NewRouter(
@@ -66,6 +67,9 @@ func NewRouter(
 		protected := v1.Group("")
 		protected.Use(factory.JWTAuth())
 		protected.POST("/register/tutor", h.User.RegisterTutorHandler)
+
+		protected.GET("/dashboard/tutor", h.Dashboard.TutorDashboard)
+		protected.GET("/dashboard/student", h.Dashboard.StudentDashboard)
 
 		protected.GET("/roles", h.Role.FindRoles)
 		protected.POST("/roles", h.Role.CreateRole)

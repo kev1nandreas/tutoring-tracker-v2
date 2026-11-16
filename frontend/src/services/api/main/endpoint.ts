@@ -2,6 +2,10 @@ export const MAIN_ENDPOINT = {
 	User: {
 		Me: "/v1/me",
 	},
+	Dashboard: {
+		Tutor: "/v1/dashboard/tutor",
+		Student: "/v1/dashboard/student",
+	},
 	Auth: {
 		Login: "/v1/login",
 		Register: "/v1/register",

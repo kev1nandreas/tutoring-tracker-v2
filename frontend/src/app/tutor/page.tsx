@@ -1,24 +1,23 @@
 import type { Metadata } from "next";
 import PageTemplate from "@/layouts/template/PageTemplate";
 import { PATH } from "@/shared/path";
+import TutorDashboard from "./_components/TutorDashboard";
 
 export const metadata: Metadata = {
 	title: "Dashboard",
-	description: "Dashboard overview",
+	description: "Upcoming meetings, active tutorials and income.",
 };
 
-export default function DashboardPage() {
+export default function TutorDashboardPage() {
 	return (
 		<PageTemplate
 			title="Dashboard"
-			description="Start building your pages here."
+			description="Your meetings, tutorials and income at a glance."
 			breadcrumbs={[
 				{ name: "Dashboard", redirect: PATH.DASHBOARD, isClickable: false },
 			]}
 		>
-			<div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-500">
-				Empty dashboard page. Add your own content.
-			</div>
+			<TutorDashboard />
 		</PageTemplate>
 	);
 }

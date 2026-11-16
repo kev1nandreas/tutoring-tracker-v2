@@ -89,6 +89,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/dashboard/student": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Pending homework, upcoming tutorials and enrolled active tutorials.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Student dashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StudentDashboard"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/tutor": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Upcoming meetings, active tutorials, income this month/year and meetings still missing an attachment. Tutor sees own tutorials; admin sees all.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Tutor dashboard",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TutorDashboard"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/jobs": {
             "get": {
                 "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
@@ -2301,6 +2363,30 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.Income": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "description": "YYYY-MM",
+                    "type": "string"
+                },
+                "payments_month": {
+                    "type": "integer"
+                },
+                "payments_year": {
+                    "type": "integer"
+                },
+                "this_month": {
+                    "type": "integer"
+                },
+                "this_year": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -2362,6 +2448,35 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MeetingItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "has_homework": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "time_end": {
+                    "type": "string"
+                },
+                "time_start": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "tutorial_name": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PaymentResponse": {
             "type": "object",
             "properties": {
@@ -2407,6 +2522,49 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PendingAttachment": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "meeting_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "tutorial_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PendingHomework": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "meeting_id": {
+                    "type": "string"
+                },
+                "text_homework": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "tutorial_name": {
                     "type": "string"
                 }
             }
@@ -2465,6 +2623,29 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.StudentDashboard": {
+            "type": "object",
+            "properties": {
+                "enrolled_tutorials": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TutorialItem"
+                    }
+                },
+                "pending_homework": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PendingHomework"
+                    }
+                },
+                "upcoming_tutorials": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TutorialItem"
+                    }
+                }
+            }
+        },
         "dto.SubmissionResponse": {
             "type": "object",
             "properties": {
@@ -2508,6 +2689,72 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.TutorDashboard": {
+            "type": "object",
+            "properties": {
+                "active_tutorials": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TutorialItem"
+                    }
+                },
+                "income": {
+                    "$ref": "#/definitions/dto.Income"
+                },
+                "pending_attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PendingAttachment"
+                    }
+                },
+                "upcoming_meetings": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MeetingItem"
+                    }
+                }
+            }
+        },
+        "dto.TutorialItem": {
+            "type": "object",
+            "properties": {
+                "custom_id": {
+                    "type": "string"
+                },
+                "date_ended": {
+                    "type": "string"
+                },
+                "date_started": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "done_meetings": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_enrolled": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "next_meeting_date": {
+                    "description": "Student view: next meeting date of an enrolled tutorial, or whether the\nstudent is enrolled in an upcoming one.",
+                    "type": "string"
+                },
+                "students": {
+                    "description": "Tutor view: accepted students. Student view: always 0.",
+                    "type": "integer"
+                },
+                "total_meetings": {
+                    "type": "integer"
                 }
             }
         },

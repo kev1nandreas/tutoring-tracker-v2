@@ -42,8 +42,11 @@ export const useLoginMutation = () => {
 			login({ ...user, access_token: token });
 			toast.success(`Welcome back, ${user.name}!`);
 			// Only follow same-site redirects; the layout bounces wrong-role access.
+			// "/" is the student home, so it never overrides a role's own landing page.
 			const safe =
-				redirect?.startsWith("/") && !redirect.startsWith("//")
+				redirect?.startsWith("/") &&
+				!redirect.startsWith("//") &&
+				redirect !== "/"
 					? redirect
 					: null;
 			router.push(safe ?? homeForRole(user.role));

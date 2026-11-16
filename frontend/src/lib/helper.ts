@@ -90,3 +90,19 @@ export function formatRelativeTime(value: string) {
 
 	return "Baru saja";
 }
+
+/** "YYYY-MM-DD" -> "Mon 17 Nov" (parsed as a local date, so no timezone shift). */
+export function formatDay(value: string | null | undefined) {
+	if (!value) return "-";
+
+	return new Intl.DateTimeFormat("en-GB", {
+		weekday: "short",
+		day: "numeric",
+		month: "short",
+	}).format(new Date(`${value}T00:00:00`));
+}
+
+/** "10:00", "11:30" -> "10:00–11:30". */
+export function formatTimeRange(start: string, end: string) {
+	return start && end ? `${start}–${end}` : start || end || "";
+}

@@ -4,7 +4,7 @@ export const PATH = {
 	NOT_FOUND: "/404",
 	HOME: "/",
 	STUDENT_HOME: "/",
-	DASHBOARD: "/tutor/dashboard",
+	DASHBOARD: "/tutor",
 	LOGIN: "/login",
 	REGISTER: "/register",
 	FORGOT_PASSWORD: "/forgot-password",

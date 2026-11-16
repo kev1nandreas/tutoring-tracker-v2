@@ -32,12 +32,13 @@ func NewDatabase() *gorm.DB {
 	dbPort := config.GetEnvString("POSTGRES_PORT", "5432")
 
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=%s",
 		dbHostname,
 		dbUser,
 		dbPass,
 		dbName,
 		dbPort,
+		config.GetEnvString("APP_TIMEZONE", "Asia/Jakarta"),
 	)
 
 	for i := 1; i <= 3; i++ {

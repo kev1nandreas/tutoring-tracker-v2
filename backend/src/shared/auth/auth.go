@@ -27,7 +27,7 @@ func HashPassword(password string) (string, error) {
 }
 
 func GenerateToken(userID, username, email, role string) (string, error) {
-	expirationTime := time.Now().Add(5 * time.Minute).Unix()
+	expirationTime := time.Now().Add(12 * time.Hour).Unix()
 
 	claims := &Claims{
 		UserID:   userID,
