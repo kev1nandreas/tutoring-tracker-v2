@@ -382,6 +382,31 @@ definitions:
           $ref: '#/definitions/dto.TutorialItem'
         type: array
     type: object
+  dto.StudentMeeting:
+    properties:
+      date:
+        type: string
+      has_homework:
+        type: boolean
+      id:
+        type: string
+      is_done:
+        type: boolean
+      text_homework:
+        type: string
+      time_end:
+        type: string
+      time_start:
+        type: string
+      title:
+        type: string
+      tutorial_id:
+        type: string
+      video_id:
+        description: VideoID is the 11-character YouTube id, or empty when there is
+          no valid recording.
+        type: string
+    type: object
   dto.SubmissionResponse:
     properties:
       answer:
@@ -1007,6 +1032,87 @@ paths:
       summary: List the tutorials I was accepted into
       tags:
       - tutorial
+  /me/tutorials/{id}:
+    get:
+      description: Only students, and only tutorials they were accepted into (others
+        return 404).
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.EnrolledTutorial'
+        "403":
+          description: Only students
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Get one tutorial I was accepted into
+      tags:
+      - tutorial
+  /me/tutorials/{id}/meetings:
+    get:
+      description: Only students accepted into the tutorial (others get 404). The
+        tutor's private notes are left out, and the recording is returned as a YouTube
+        video id (video_id), not a link.
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Sort column
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.StudentMeeting'
+            type: array
+        "403":
+          description: Only students
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List meetings of a tutorial I was accepted into
+      tags:
+      - meeting
   /meetings:
     get:
       description: Paginated. Non-text columns (ids, flags, numbers, dates) can be

@@ -6,7 +6,8 @@ import { Plus } from "lucide-react";
 import { Fragment, useState } from "react";
 import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
-import { formatDay, todayISO } from "@/lib/helper";
+import TodayLine from "@/components/dashboard/TodayLine";
+import { todayISO } from "@/lib/helper";
 import type { Meeting } from "@/types/meeting";
 import MeetingDetailDrawer from "./MeetingDetailDrawer";
 import MeetingFormDialog from "./MeetingFormDialog";
@@ -15,20 +16,6 @@ import MeetingRow from "./MeetingRow";
 type Props = { tutorialId: string; meetings?: Meeting[]; isLoading: boolean };
 
 type View = "all" | "upcoming" | "past";
-
-/** Today marker, drawn like the "now" line on the timetable. */
-function TodayLine({ today }: { today: string }) {
-	return (
-		<li
-			aria-label={`Today, ${formatDay(today)}`}
-			className="flex items-center gap-2 py-1 text-xs font-medium text-[#c23a2b]"
-		>
-			<span className="h-2 w-2 shrink-0 rounded-full bg-[#c23a2b]" />
-			<span className="h-[2px] flex-1 bg-[#c23a2b]" />
-			<span>Today · {formatDay(today)}</span>
-		</li>
-	);
-}
 
 const EMPTY_TEXT: Record<View, string> = {
 	all: "No meetings yet. They will appear here once they are scheduled.",

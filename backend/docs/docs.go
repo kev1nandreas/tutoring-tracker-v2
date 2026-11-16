@@ -369,6 +369,127 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/tutorials/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only students, and only tutorials they were accepted into (others return 404).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tutorial"
+                ],
+                "summary": "Get one tutorial I was accepted into",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.EnrolledTutorial"
+                        }
+                    },
+                    "403": {
+                        "description": "Only students",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/tutorials/{id}/meetings": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only students accepted into the tutorial (others get 404). The tutor's private notes are left out, and the recording is returned as a YouTube video id (video_id), not a link.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "meeting"
+                ],
+                "summary": "List meetings of a tutorial I was accepted into",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Page size",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Sort column",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "asc or desc",
+                        "name": "order",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.StudentMeeting"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Only students",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/meetings": {
             "get": {
                 "description": "Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=\u003cuuid\u003e",
@@ -2952,6 +3073,42 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.TutorialItem"
                     }
+                }
+            }
+        },
+        "dto.StudentMeeting": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "has_homework": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "text_homework": {
+                    "type": "string"
+                },
+                "time_end": {
+                    "type": "string"
+                },
+                "time_start": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "tutorial_id": {
+                    "type": "string"
+                },
+                "video_id": {
+                    "description": "VideoID is the 11-character YouTube id, or empty when there is no valid recording.",
+                    "type": "string"
                 }
             }
         },

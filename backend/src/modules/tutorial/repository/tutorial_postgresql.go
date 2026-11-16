@@ -117,3 +117,29 @@ func (r *tutorialPostgresRepository) FindEnrolled(userID uuid.UUID, done *bool, 
 
 	return items, params.BuildMeta(total), nil
 }
+
+func (r *tutorialPostgresRepository) FindEnrolledByID(userID, tutorialID uuid.UUID, today string) (*dto.EnrolledTutorial, error) {
+	var item dto.EnrolledTutorial
+	res := r.db.Raw(`
+		SELECT t.id::text AS id, t.custom_id, t.name, COALESCE(t.description, '') AS description,
+		       COALESCE(u.name, '') AS tutor_name,
+		       to_char(t.date_started, 'YYYY-MM-DD') AS date_started,
+		       to_char(t.date_ended, 'YYYY-MM-DD') AS date_ended,
+		       t.is_done,
+		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id) AS total_meetings,
+		       (SELECT COUNT(*) FROM meetings m WHERE m.tutorial_id = t.id AND m.is_done) AS done_meetings,
+		       COALESCE((SELECT to_char(MIN(m.date), 'YYYY-MM-DD') FROM meetings m
+		         WHERE m.tutorial_id = t.id AND m.is_done = false AND m.date >= ?::date), '') AS next_meeting_date
+		FROM tutorials t
+		JOIN pending_validations pv ON pv.tutorial_id = t.id
+		LEFT JOIN users u ON u.id = t.created_by
+		WHERE pv.user_id = ? AND pv.is_validated = 1 AND t.id = ?
+		LIMIT 1`, today, userID, tutorialID).Scan(&item)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return &item, nil
+}

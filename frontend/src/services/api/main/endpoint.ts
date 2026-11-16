@@ -10,6 +10,8 @@ export const MAIN_ENDPOINT = {
 	},
 	Me: {
 		Tutorials: "/v1/me/tutorials",
+		Tutorial: (id: string) => `/v1/me/tutorials/${id}`,
+		TutorialMeetings: (id: string) => `/v1/me/tutorials/${id}/meetings`,
 	},
 	Enrollment: {
 		List: "/v1/pending-validations",

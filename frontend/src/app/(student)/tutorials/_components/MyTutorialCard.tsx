@@ -1,38 +1,24 @@
 import { CalendarDays, User } from "lucide-react";
+import Link from "next/link";
 import ProgressBar from "@/components/dashboard/ProgressBar";
 import Typography from "@/components/Typography";
-import { formatDay, formatShortDate, todayISO } from "@/lib/helper";
+import { formatDay, formatShortDate } from "@/lib/helper";
+import { PATH } from "@/shared/path";
 import type { EnrolledTutorial } from "@/types/student-tutorial";
-
-function statusOf(t: EnrolledTutorial) {
-	if (t.is_done)
-		return {
-			label: "Finished",
-			badge: "bg-gray-100 text-gray-600",
-			accent: "bg-gray-300",
-		};
-	if (t.date_started > todayISO())
-		return {
-			label: "Upcoming",
-			badge: "bg-amber-50 text-amber-700",
-			accent: "bg-amber-400",
-		};
-	return {
-		label: "Active",
-		badge: "bg-green-50 text-green-700",
-		accent: "bg-green-500",
-	};
-}
+import { enrolledStatus } from "./enrolledStatus";
 
 export default function MyTutorialCard({
 	tutorial,
 }: {
 	tutorial: EnrolledTutorial;
 }) {
-	const status = statusOf(tutorial);
+	const status = enrolledStatus(tutorial);
 
 	return (
-		<article className="relative flex flex-col gap-3 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 pl-6">
+		<Link
+			href={`${PATH.STUDENT_TUTORIALS}/${tutorial.id}`}
+			className="group relative flex flex-col gap-3 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 pl-6 transition-all hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+		>
 			<span
 				aria-hidden
 				className={`absolute inset-y-0 left-0 w-1.5 ${status.accent}`}
@@ -89,6 +75,6 @@ export default function MyTutorialCard({
 					</span>
 				)}
 			</div>
-		</article>
+		</Link>
 	);
 }

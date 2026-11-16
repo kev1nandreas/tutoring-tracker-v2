@@ -14,6 +14,8 @@ type MeetingUsecase interface {
 	Create(req dto.CreateMeetingRequest) (*entity.Meeting, error)
 	Update(id string, req dto.UpdateMeetingRequest) (*entity.Meeting, error)
 	Delete(id string) error
+	// IsAcceptedStudent: whether the user was accepted into the tutorial.
+	IsAcceptedStudent(tutorialID string, userID uuid.UUID) (bool, error)
 	// TutorialCreator: who created the tutorial (for access checks).
 	TutorialCreator(tutorialID string) (*uuid.UUID, error)
 }

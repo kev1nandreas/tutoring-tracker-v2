@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"gorm.io/gorm"
 	"time"
 
 	"crypto/rand"
@@ -40,6 +41,21 @@ func (u *tutorialUsecase) FindEnrolled(userID uuid.UUID, role string, done *bool
 		loc = time.UTC
 	}
 	return u.repo.FindEnrolled(userID, done, time.Now().In(loc).Format("2006-01-02"), params)
+}
+
+func (u *tutorialUsecase) FindEnrolledByID(userID uuid.UUID, role, tutorialID string) (*dto.EnrolledTutorial, error) {
+	if role != "student" {
+		return nil, ErrStudentsOnly
+	}
+	tid, err := uuid.Parse(tutorialID)
+	if err != nil {
+		return nil, gorm.ErrRecordNotFound
+	}
+	loc, err := time.LoadLocation(config.GetEnvString("APP_TIMEZONE", "Asia/Jakarta"))
+	if err != nil {
+		loc = time.UTC
+	}
+	return u.repo.FindEnrolledByID(userID, tid, time.Now().In(loc).Format("2006-01-02"))
 }
 
 func (u *tutorialUsecase) FindByID(id string) (*entity.Tutorial, error) {

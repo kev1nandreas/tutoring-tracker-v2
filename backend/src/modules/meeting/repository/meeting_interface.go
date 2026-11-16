@@ -11,6 +11,8 @@ type MeetingRepository interface {
 	FindByTutorialID(tutorialID string, params pagination.Params) ([]entity.Meeting, pagination.Meta, error)
 	FindByID(id string) (*entity.Meeting, error)
 	// TutorialCreator returns tutorials.created_by (nil when unset); gorm.ErrRecordNotFound if the tutorial is missing.
+	// IsAcceptedStudent reports whether the user was accepted into the tutorial.
+	IsAcceptedStudent(tutorialID string, userID uuid.UUID) (bool, error)
 	TutorialCreator(tutorialID string) (*uuid.UUID, error)
 	Create(meeting *entity.Meeting) error
 	Update(meeting *entity.Meeting) error

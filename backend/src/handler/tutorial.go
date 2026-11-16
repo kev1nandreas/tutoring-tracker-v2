@@ -100,6 +100,40 @@ func (h *TutorialHandler) FindMyTutorials(c *gin.Context) {
 	response.NewPaginatedResponse("Tutorials retrieved successfully", items, meta).Send(c)
 }
 
+// FindMyTutorial godoc
+// @Summary Get one tutorial I was accepted into
+// @Description Only students, and only tutorials they were accepted into (others return 404).
+// @Tags tutorial
+// @Security JwtAuth
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Success 200 {object} dto.EnrolledTutorial
+// @Failure 403 {string} string "Only students"
+// @Failure 404 {string} string "Not found"
+// @Router /me/tutorials/{id} [get]
+func (h *TutorialHandler) FindMyTutorial(c *gin.Context) {
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "invalid token, please log in again").Send(c)
+		return
+	}
+
+	item, err := h.usecase.FindEnrolledByID(userID, c.GetString("role"), c.Param("id"))
+	if err != nil {
+		switch {
+		case errors.Is(err, usecase.ErrStudentsOnly):
+			response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "record not found").Send(c)
+		default:
+			response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve tutorial", err.Error()).Send(c)
+		}
+		return
+	}
+
+	response.NewSuccessResponse("Tutorial retrieved successfully", item).Send(c)
+}
+
 // CreateTutorial godoc
 // @Summary Create a tutorial
 // @Tags tutorial

@@ -89,3 +89,11 @@ func (r *meetingPostgresRepository) TutorialCreator(tutorialID string) (*uuid.UU
 	}
 	return row.CreatedBy, nil
 }
+
+func (r *meetingPostgresRepository) IsAcceptedStudent(tutorialID string, userID uuid.UUID) (bool, error) {
+	var n int64
+	err := r.db.Table("pending_validations").
+		Where("tutorial_id = ? AND user_id = ? AND is_validated = 1", tutorialID, userID).
+		Count(&n).Error
+	return n > 0, err
+}

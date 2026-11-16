@@ -41,6 +41,10 @@ func (u *meetingUsecase) FindByID(id string) (*entity.Meeting, error) {
 // ErrInvalidTimeRange is returned when a meeting does not end after it starts.
 var ErrInvalidTimeRange = errors.New("end time must be after the start time")
 
+func (u *meetingUsecase) IsAcceptedStudent(tutorialID string, userID uuid.UUID) (bool, error) {
+	return u.repo.IsAcceptedStudent(tutorialID, userID)
+}
+
 func (u *meetingUsecase) TutorialCreator(tutorialID string) (*uuid.UUID, error) {
 	return u.repo.TutorialCreator(tutorialID)
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/usecase"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
@@ -64,6 +65,60 @@ func (h *MeetingHandler) FindMeetingsByTutorial(c *gin.Context) {
 	}
 
 	response.NewPaginatedResponse("Meetings retrieved successfully", items, meta).Send(c)
+}
+
+// FindMyTutorialMeetings godoc
+// @Summary List meetings of a tutorial I was accepted into
+// @Description Only students accepted into the tutorial (others get 404). The tutor's private notes are left out, and the recording is returned as a YouTube video id (video_id), not a link.
+// @Tags meeting
+// @Security JwtAuth
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Param page query int false "Page" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Param sort query string false "Sort column"
+// @Param order query string false "asc or desc"
+// @Success 200 {array} dto.StudentMeeting
+// @Failure 403 {string} string "Only students"
+// @Failure 404 {string} string "Not found"
+// @Router /me/tutorials/{id}/meetings [get]
+func (h *MeetingHandler) FindMyTutorialMeetings(c *gin.Context) {
+	if c.GetString("role") != "student" {
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only students use this endpoint").Send(c)
+		return
+	}
+	userID, err := uuid.Parse(c.GetString("user_id"))
+	if err != nil {
+		response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "invalid token, please log in again").Send(c)
+		return
+	}
+
+	tutorialID := c.Param("id")
+	if _, err := uuid.Parse(tutorialID); err != nil {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "record not found").Send(c)
+		return
+	}
+	ok, err := h.usecase.IsAcceptedStudent(tutorialID, userID)
+	if err != nil {
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve meetings", err.Error()).Send(c)
+		return
+	}
+	if !ok {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "record not found").Send(c)
+		return
+	}
+
+	items, meta, err := h.usecase.FindByTutorialID(tutorialID, pagination.ParseParams(c))
+	if err != nil {
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve meetings", err.Error()).Send(c)
+		return
+	}
+	out := make([]dto.StudentMeeting, len(items))
+	for i, m := range items {
+		out[i] = dto.ToStudentMeeting(m)
+	}
+
+	response.NewPaginatedResponse("Meetings retrieved successfully", out, meta).Send(c)
 }
 
 // CreateMeeting godoc
