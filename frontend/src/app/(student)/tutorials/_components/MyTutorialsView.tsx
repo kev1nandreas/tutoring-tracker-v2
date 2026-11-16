@@ -16,13 +16,13 @@ import MyTutorialCard from "./MyTutorialCard";
 const PAGE_SIZE = 9;
 
 const TABS: { value: EnrolledFilter; label: string }[] = [
-	{ value: "all", label: "All" },
 	{ value: "active", label: "Active" },
 	{ value: "done", label: "Finished" },
+	{ value: "all", label: "All" },
 ];
 
 export default function MyTutorialsView() {
-	const [status, setStatus] = React.useState<EnrolledFilter>("all");
+	const [status, setStatus] = React.useState<EnrolledFilter>("active");
 	const [page, setPage] = React.useState(1);
 
 	const { data, isLoading, isError, error, refetch, isPlaceholderData } =

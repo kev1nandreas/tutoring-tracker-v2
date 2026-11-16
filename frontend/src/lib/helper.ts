@@ -123,6 +123,18 @@ export function timeOf(value: string | null | undefined) {
 	return /T(\d{2}:\d{2})/.exec(value ?? "")?.[1] ?? "";
 }
 
+/** Sort key: date plus start time as written, e.g. "2026-11-20 10:30". */
+function startKey(m: { date: string; time_start: string }) {
+	return `${m.date.slice(0, 10)} ${timeOf(m.time_start)}`;
+}
+
+/** Oldest first, by date and then start time. Returns a new array. */
+export function sortByStart<T extends { date: string; time_start: string }>(
+	meetings: T[],
+) {
+	return [...meetings].sort((a, b) => startKey(a).localeCompare(startKey(b)));
+}
+
 /** Local date as "YYYY-MM-DD". */
 export function todayISO() {
 	return new Date().toLocaleDateString("en-CA");

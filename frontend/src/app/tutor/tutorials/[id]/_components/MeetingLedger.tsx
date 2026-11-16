@@ -3,11 +3,11 @@
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { FileUp, Plus } from "lucide-react";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import TodayLine from "@/components/dashboard/TodayLine";
-import { todayISO } from "@/lib/helper";
+import { sortByStart, todayISO } from "@/lib/helper";
 import type { Meeting } from "@/types/meeting";
 import ImportScheduleDialog from "./ImportScheduleDialog";
 import MeetingDetailDrawer from "./MeetingDetailDrawer";
@@ -22,7 +22,7 @@ type Props = {
 	isLoading: boolean;
 };
 
-type View = "all" | "upcoming" | "past";
+type View = "upcoming" | "past" | "all";
 
 const EMPTY_TEXT: Record<View, string> = {
 	all: "No meetings yet. They will appear here once they are scheduled.",
@@ -33,10 +33,12 @@ const EMPTY_TEXT: Record<View, string> = {
 export default function MeetingLedger({
 	tutorialId,
 	showAttendance,
-	meetings = [],
+	meetings: unsorted = [],
 	isLoading,
 }: Props) {
-	const [view, setView] = useState<View>("all");
+	const [view, setView] = useState<View>("upcoming");
+	// by date, then start time (the API only orders by date)
+	const meetings = useMemo(() => sortByStart(unsorted), [unsorted]);
 	const [isAddOpen, setIsAddOpen] = useState(false);
 	const [isImportOpen, setIsImportOpen] = useState(false);
 	const [editing, setEditing] = useState<Meeting | null>(null);
@@ -114,9 +116,9 @@ export default function MeetingLedger({
 						},
 					}}
 				>
-					<Tab value="all" label="All" />
 					<Tab value="upcoming" label={`Upcoming (${upcomingCount})`} />
 					<Tab value="past" label={`Past (${pastCount})`} />
+					<Tab value="all" label="All" />
 				</Tabs>
 
 				{visible.length === 0 ? (

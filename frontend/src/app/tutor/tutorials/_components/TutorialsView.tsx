@@ -18,13 +18,13 @@ import TutorialFormDialog from "./TutorialFormDialog";
 const PAGE_SIZE = 9;
 
 const FILTERS: { value: TutorialStatus; label: string }[] = [
-	{ value: "all", label: "All" },
 	{ value: "active", label: "Active" },
 	{ value: "done", label: "Done" },
+	{ value: "all", label: "All" },
 ];
 
 export default function TutorialsView() {
-	const [status, setStatus] = React.useState<TutorialStatus>("all");
+	const [status, setStatus] = React.useState<TutorialStatus>("active");
 	const [page, setPage] = React.useState(1);
 	const [isAddOpen, setIsAddOpen] = React.useState(false);
 

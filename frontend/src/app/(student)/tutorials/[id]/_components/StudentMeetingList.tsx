@@ -2,10 +2,10 @@
 
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import TodayLine from "@/components/dashboard/TodayLine";
-import { todayISO } from "@/lib/helper";
+import { sortByStart, todayISO } from "@/lib/helper";
 import type { StudentMeeting } from "@/types/student-meeting";
 import StudentMeetingDrawer from "./StudentMeetingDrawer";
 import StudentMeetingRow from "./StudentMeetingRow";
@@ -16,7 +16,7 @@ type Props = {
 	isLoading: boolean;
 	canAttend?: boolean;
 };
-type View = "all" | "upcoming" | "past";
+type View = "upcoming" | "past" | "all";
 
 const EMPTY: Record<View, string> = {
 	all: "No meetings yet. Your tutor will add them here.",
@@ -25,11 +25,13 @@ const EMPTY: Record<View, string> = {
 };
 
 export default function StudentMeetingList({
-	meetings = [],
+	meetings: unsorted = [],
 	isLoading,
 	canAttend,
 }: Props) {
-	const [view, setView] = useState<View>("all");
+	const [view, setView] = useState<View>("upcoming");
+	// by date, then start time (the API only orders by date)
+	const meetings = useMemo(() => sortByStart(unsorted), [unsorted]);
 	// ids, not objects, so the panel and player always show fresh data
 	const [openId, setOpenId] = useState<string | null>(null);
 	const [watchId, setWatchId] = useState<string | null>(null);
@@ -81,12 +83,12 @@ export default function StudentMeetingList({
 						},
 					}}
 				>
-					<Tab value="all" label="All" />
 					<Tab value="upcoming" label={`Upcoming (${upcomingCount})`} />
 					<Tab
 						value="past"
 						label={`Past (${meetings.length - upcomingCount})`}
 					/>
+					<Tab value="all" label="All" />
 				</Tabs>
 
 				{visible.length === 0 ? (
