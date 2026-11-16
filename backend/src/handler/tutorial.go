@@ -1,0 +1,153 @@
+package handler
+
+import (
+	"errors"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/dto"
+	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/usecase"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/response"
+	"gorm.io/gorm"
+)
+
+type TutorialHandler struct {
+	usecase usecase.TutorialUsecase
+}
+
+func NewTutorialHandler(uc usecase.TutorialUsecase) *TutorialHandler {
+	return &TutorialHandler{usecase: uc}
+}
+
+// FindTutorials godoc
+// @Summary List tutorials with pagination
+// @Description Paginated. Non-text columns (ids, flags, numbers, dates) can be used as exact filters, e.g. ?role_id=<uuid>
+// @Tags tutorial
+// @Produce json
+// @Param page query int false "Page" default(1)
+// @Param page_size query int false "Page size" default(10)
+// @Param sort query string false "Sort column"
+// @Param order query string false "asc or desc"
+// @Success 200 {array} entity.Tutorial
+// @Router /tutorials [get]
+func (h *TutorialHandler) FindTutorials(c *gin.Context) {
+	params := pagination.ParseParams(c)
+
+	items, meta, err := h.usecase.FindAll(params)
+	if err != nil {
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to retrieve tutorials", err.Error()).Send(c)
+		return
+	}
+
+	response.NewPaginatedResponse("Tutorials retrieved successfully", items, meta).Send(c)
+}
+
+// CreateTutorial godoc
+// @Summary Create a tutorial
+// @Tags tutorial
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param input body dto.CreateTutorialRequest true "Create tutorial"
+// @Success 201 {object} entity.Tutorial
+// @Failure 400 {string} string "Bad Request"
+// @Router /tutorials [post]
+func (h *TutorialHandler) CreateTutorial(c *gin.Context) {
+	var input dto.CreateTutorialRequest
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", err.Error()).Send(c)
+		return
+	}
+
+	item, err := h.usecase.Create(input)
+	if err != nil {
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to create tutorial", err.Error()).Send(c)
+		return
+	}
+
+	response.Response{
+		StatusCode: http.StatusCreated,
+		Success:    true,
+		Message:    "Tutorial created successfully",
+		Data:       item,
+	}.Send(c)
+}
+
+// FindTutorial godoc
+// @Summary Get a tutorial by ID
+// @Tags tutorial
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Success 200 {object} entity.Tutorial
+// @Failure 404 {string} string "Not found"
+// @Router /tutorials/{id} [get]
+func (h *TutorialHandler) FindTutorial(c *gin.Context) {
+	item, err := h.usecase.FindByID(c.Param("id"))
+	if err != nil {
+		h.notFoundOrError(c, err)
+		return
+	}
+
+	response.NewSuccessResponse("Tutorial retrieved successfully", item).Send(c)
+}
+
+// UpdateTutorial godoc
+// @Summary Update a tutorial by ID
+// @Tags tutorial
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Param input body dto.UpdateTutorialRequest true "Update tutorial"
+// @Success 200 {object} entity.Tutorial
+// @Failure 404 {string} string "Not found"
+// @Router /tutorials/{id} [put]
+func (h *TutorialHandler) UpdateTutorial(c *gin.Context) {
+	var input dto.UpdateTutorialRequest
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", err.Error()).Send(c)
+		return
+	}
+
+	item, err := h.usecase.Update(c.Param("id"), input)
+	if err != nil {
+		h.notFoundOrError(c, err)
+		return
+	}
+
+	response.NewSuccessResponse("Tutorial updated successfully", item).Send(c)
+}
+
+// DeleteTutorial godoc
+// @Summary Delete a tutorial by ID
+// @Tags tutorial
+// @Security JwtAuth
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Success 204 {string} string "Deleted"
+// @Failure 404 {string} string "Not found"
+// @Router /tutorials/{id} [delete]
+func (h *TutorialHandler) DeleteTutorial(c *gin.Context) {
+	if err := h.usecase.Delete(c.Param("id")); err != nil {
+		h.notFoundOrError(c, err)
+		return
+	}
+
+	response.Response{
+		StatusCode: http.StatusNoContent,
+		Success:    true,
+		Message:    "Tutorial deleted successfully",
+		Data:       true,
+	}.Send(c)
+}
+
+func (h *TutorialHandler) notFoundOrError(c *gin.Context, err error) {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", err.Error()).Send(c)
+		return
+	}
+	response.NewErrorResponse(http.StatusInternalServerError, "Failed to process tutorial", err.Error()).Send(c)
+}
