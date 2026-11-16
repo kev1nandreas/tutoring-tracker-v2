@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"gorm.io/gorm"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/repository"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/cache"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 )
 
@@ -23,13 +25,24 @@ type FileCleaner interface {
 	RemoveMeetingFiles(ctx context.Context, meetingIDs []uuid.UUID)
 }
 
+// enrolledTTL: progress counts per enrolled tutorial. Every write invalidates the cache
+// and the date is part of the key, so a day is safe.
+const enrolledTTL = 24 * time.Hour
+
 type tutorialUsecase struct {
 	repo  repository.TutorialRepository
 	files FileCleaner
+	cache *cache.Cache
 }
 
-func NewTutorialUsecase(repo repository.TutorialRepository, files FileCleaner) TutorialUsecase {
-	return &tutorialUsecase{repo: repo, files: files}
+// NewTutorialUsecase builds the usecase. c may be nil (no caching).
+func NewTutorialUsecase(repo repository.TutorialRepository, files FileCleaner, c *cache.Cache) TutorialUsecase {
+	return &tutorialUsecase{repo: repo, files: files, cache: c}
+}
+
+type enrolledResult struct {
+	Items []dto.EnrolledTutorial
+	Meta  pagination.Meta
 }
 
 func (u *tutorialUsecase) FindAll(params pagination.Params, creatorID *uuid.UUID) ([]entity.Tutorial, pagination.Meta, error) {
@@ -47,7 +60,18 @@ func (u *tutorialUsecase) FindEnrolled(userID uuid.UUID, role string, done *bool
 	if err != nil {
 		loc = time.UTC
 	}
-	return u.repo.FindEnrolled(userID, done, time.Now().In(loc).Format("2006-01-02"), params)
+	today := time.Now().In(loc).Format("2006-01-02")
+	doneKey := "any"
+	if done != nil {
+		doneKey = fmt.Sprint(*done)
+	}
+	// the date is in the key: "next meeting" depends on today
+	key := fmt.Sprintf("enrolled:%s:%s:%s:%+v", userID, today, doneKey, params)
+	res, err := cache.Remember(u.cache, cache.NSTutorials, key, enrolledTTL, func() (enrolledResult, error) {
+		items, meta, err := u.repo.FindEnrolled(userID, done, today, params)
+		return enrolledResult{Items: items, Meta: meta}, err
+	})
+	return res.Items, res.Meta, err
 }
 
 func (u *tutorialUsecase) FindEnrolledByID(userID uuid.UUID, role, tutorialID string) (*dto.EnrolledTutorial, error) {
@@ -62,7 +86,9 @@ func (u *tutorialUsecase) FindEnrolledByID(userID uuid.UUID, role, tutorialID st
 	if err != nil {
 		loc = time.UTC
 	}
-	return u.repo.FindEnrolledByID(userID, tid, time.Now().In(loc).Format("2006-01-02"))
+	today := time.Now().In(loc).Format("2006-01-02")
+	return cache.Remember(u.cache, cache.NSTutorials, fmt.Sprintf("enrolled-one:%s:%s:%s", userID, tid, today), enrolledTTL,
+		func() (*dto.EnrolledTutorial, error) { return u.repo.FindEnrolledByID(userID, tid, today) })
 }
 
 func (u *tutorialUsecase) FindByID(id string) (*entity.Tutorial, error) {

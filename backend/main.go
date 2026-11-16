@@ -29,6 +29,7 @@ import (
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
 	userUC "github.com/kev1nandreas/go-rest-api-template/src/modules/user/usecase"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/cache"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/googleauth"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/incomesync"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/mailer"
@@ -86,9 +87,20 @@ func main() {
 
 	// Initialize infrastructure
 	redisClient := factory.NewRedisClient()
-	// redisClient is ready to inject into module factories/handlers.
-	_ = redisClient
+	defer redisClient.Close()
 	db := factory.NewDatabase()
+
+	// Read cache for the expensive aggregates (dashboards, per-student stats). Any write to
+	// a table they read from invalidates them, see cache.RegisterInvalidation.
+	pingCtx, cancelPing := context.WithTimeout(context.Background(), 2*time.Second)
+	if err := redisClient.Ping(pingCtx).Err(); err != nil {
+		log.Printf("Redis unreachable, running without the read cache (will retry): %v", err)
+	}
+	cancelPing()
+	readCache := cache.New(redisClient)
+	if err := cache.RegisterInvalidation(db, readCache); err != nil {
+		log.Fatalf("failed to register cache invalidation: %v", err)
+	}
 
 	var mongoCollection *mongo.Collection
 	if isLogging {
@@ -162,7 +174,7 @@ func main() {
 	handlers := &handler.Handlers{
 		Role:       handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
 		User:       handler.NewUserHandler(userFactory.NewUserUsecase(db, googleauth.New(config.GetEnvString("GOOGLE_CLIENT_ID", "")), userMail, config.GetEnvString("FRONTEND_URL", "http://localhost:3000"))),
-		Tutorial:   handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage)),
+		Tutorial:   handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage, readCache)),
 		Meeting:    handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db, storage)),
 		Attachment: handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier, storage)),
 		Payment: handler.NewPaymentHandler(paymentFactory.NewPaymentUsecase(db, incomesync.New(
@@ -173,9 +185,9 @@ func main() {
 		Submission:        handler.NewSubmissionHandler(submissionFactory.NewSubmissionUsecase(db)),
 		Notification:      handler.NewNotificationHandler(notificationUsecase),
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),
-		Dashboard:         handler.NewDashboardHandler(dashboardFactory.NewDashboardUsecase(db)),
+		Dashboard:         handler.NewDashboardHandler(dashboardFactory.NewDashboardUsecase(db, readCache)),
 		Bundle:            handler.NewBundleHandler(bundleService),
-		Student:           handler.NewStudentHandler(studentFactory.NewStudentUsecase(db)),
+		Student:           handler.NewStudentHandler(studentFactory.NewStudentUsecase(db, readCache)),
 		Feedback:          handler.NewFeedbackHandler(feedbackFactory.NewFeedbackUsecase(db)),
 		Attendance:        handler.NewAttendanceHandler(attendanceFactory.NewAttendanceUsecase(db, storage)),
 	}

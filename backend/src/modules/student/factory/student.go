@@ -3,9 +3,10 @@ package factory
 import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/student/repository"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/student/usecase"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/cache"
 	"gorm.io/gorm"
 )
 
-func NewStudentUsecase(db *gorm.DB) usecase.StudentUsecase {
-	return usecase.NewStudentUsecase(repository.NewStudentPostgresRepository(db))
+func NewStudentUsecase(db *gorm.DB, c *cache.Cache) usecase.StudentUsecase {
+	return usecase.NewStudentUsecase(repository.NewStudentPostgresRepository(db), c)
 }

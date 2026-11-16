@@ -2,11 +2,14 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/student/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/student/repository"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/cache"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"gorm.io/gorm"
 )
@@ -21,17 +24,36 @@ type StudentUsecase interface {
 	Detail(callerID uuid.UUID, role, studentID string) (*dto.StudentDetail, error)
 }
 
-type studentUsecase struct{ repo repository.StudentRepository }
+// studentTTL: attendance, homework and grades are aggregated per student. Every write
+// invalidates the cache, so the TTL only bounds changes made outside the app (manual SQL).
+const studentTTL = 24 * time.Hour
 
-func NewStudentUsecase(repo repository.StudentRepository) StudentUsecase {
-	return &studentUsecase{repo: repo}
+type studentUsecase struct {
+	repo  repository.StudentRepository
+	cache *cache.Cache
+}
+
+// NewStudentUsecase builds the usecase. c may be nil (no caching).
+func NewStudentUsecase(repo repository.StudentRepository, c *cache.Cache) StudentUsecase {
+	return &studentUsecase{repo: repo, cache: c}
+}
+
+type listResult struct {
+	Rows []dto.StudentRow
+	Meta pagination.Meta
 }
 
 func (u *studentUsecase) List(callerID uuid.UUID, role, search string, params pagination.Params) ([]dto.StudentRow, pagination.Meta, error) {
 	if role != "tutor" {
 		return nil, pagination.Meta{}, ErrForbidden
 	}
-	return u.repo.List(callerID, strings.TrimSpace(search), params)
+	search = strings.TrimSpace(search)
+	key := fmt.Sprintf("list:%s:%s:%+v", callerID, search, params)
+	res, err := cache.Remember(u.cache, cache.NSStudents, key, studentTTL, func() (listResult, error) {
+		rows, meta, err := u.repo.List(callerID, search, params)
+		return listResult{Rows: rows, Meta: meta}, err
+	})
+	return res.Rows, res.Meta, err
 }
 
 func (u *studentUsecase) Detail(callerID uuid.UUID, role, studentID string) (*dto.StudentDetail, error) {
@@ -42,7 +64,8 @@ func (u *studentUsecase) Detail(callerID uuid.UUID, role, studentID string) (*dt
 	if err != nil {
 		return nil, ErrNotFound
 	}
-	d, err := u.repo.Detail(callerID, sid)
+	d, err := cache.Remember(u.cache, cache.NSStudents, fmt.Sprintf("detail:%s:%s", callerID, sid), studentTTL,
+		func() (*dto.StudentDetail, error) { return u.repo.Detail(callerID, sid) })
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrNotFound
 	}

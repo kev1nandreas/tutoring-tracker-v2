@@ -3,24 +3,34 @@ package usecase
 import (
 	"time"
 
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/cache"
+
 	"github.com/kev1nandreas/go-rest-api-template/config"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/dashboard/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/dashboard/repository"
 )
 
-const listLimit = 5
+const (
+	listLimit = 5
+	// Dashboards also depend on the time of day (a meeting that started drops out of
+	// "upcoming" without any write), so they get a short TTL. Writes still invalidate
+	// them right away (see cache.RegisterInvalidation).
+	dashboardTTL = 5 * time.Minute
+)
 
 type dashboardUsecase struct {
-	repo repository.DashboardRepository
-	loc  *time.Location
+	repo  repository.DashboardRepository
+	loc   *time.Location
+	cache *cache.Cache
 }
 
-func NewDashboardUsecase(repo repository.DashboardRepository) DashboardUsecase {
+// NewDashboardUsecase builds the usecase. cache may be nil (no caching).
+func NewDashboardUsecase(repo repository.DashboardRepository, c *cache.Cache) DashboardUsecase {
 	loc, err := time.LoadLocation(config.GetEnvString("APP_TIMEZONE", "Asia/Jakarta"))
 	if err != nil {
 		loc = time.UTC
 	}
-	return &dashboardUsecase{repo: repo, loc: loc}
+	return &dashboardUsecase{repo: repo, loc: loc, cache: c}
 }
 
 func (u *dashboardUsecase) clock() repository.Clock {
@@ -44,7 +54,11 @@ func (u *dashboardUsecase) Tutor(tutorID string, isAdmin bool) (*dto.TutorDashbo
 		owner = ""
 	}
 	c := u.clock()
+	return cache.Remember(u.cache, cache.NSDashboard, "tutor:"+owner+":"+c.Today, dashboardTTL,
+		func() (*dto.TutorDashboard, error) { return u.buildTutor(owner, c) })
+}
 
+func (u *dashboardUsecase) buildTutor(owner string, c repository.Clock) (*dto.TutorDashboard, error) {
 	upcoming, err := u.repo.UpcomingMeetings(owner, c, listLimit)
 	if err != nil {
 		return nil, err
@@ -75,7 +89,11 @@ func (u *dashboardUsecase) Tutor(tutorID string, isAdmin bool) (*dto.TutorDashbo
 
 func (u *dashboardUsecase) Student(userID string) (*dto.StudentDashboard, error) {
 	c := u.clock()
+	return cache.Remember(u.cache, cache.NSDashboard, "student:"+userID+":"+c.Today, dashboardTTL,
+		func() (*dto.StudentDashboard, error) { return u.buildStudent(userID, c) })
+}
 
+func (u *dashboardUsecase) buildStudent(userID string, c repository.Clock) (*dto.StudentDashboard, error) {
 	homework, err := u.repo.PendingHomework(userID, c, 10)
 	if err != nil {
 		return nil, err
