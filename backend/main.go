@@ -169,7 +169,7 @@ func main() {
 			config.GetEnvString("PERSONAL_WEBSITE_URL", ""),
 			config.GetEnvString("PERSONAL_WEBSITE_API_KEY", ""),
 		))),
-		PendingValidation: handler.NewPendingValidationHandler(pendingValidationFactory.NewPendingValidationUsecase(db)),
+		PendingValidation: handler.NewPendingValidationHandler(pendingValidationFactory.NewPendingValidationUsecase(db, notificationUsecase)),
 		Submission:        handler.NewSubmissionHandler(submissionFactory.NewSubmissionUsecase(db)),
 		Notification:      handler.NewNotificationHandler(notificationUsecase),
 		Job:               handler.NewJobHandler(jobFactory.NewJobUsecase(db)),

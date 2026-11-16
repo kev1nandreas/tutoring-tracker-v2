@@ -17,6 +17,8 @@ type Props = {
 	onToggle: (userId: string) => void;
 	onToggleAll: () => void;
 	onAct: (userId: string, action: ValidateAction) => void;
+	/** Opens the student's detail panel. */
+	onOpen: (userId: string) => void;
 };
 
 const requestedOn = (iso: string) =>
@@ -34,6 +36,7 @@ type Ctx = Pick<
 	| "onToggle"
 	| "onToggleAll"
 	| "onAct"
+	| "onOpen"
 >;
 
 // Cells read live state from context, so the column definitions stay stable.
@@ -46,6 +49,7 @@ const SubTableContext = React.createContext<Ctx>({
 	onToggle: () => {},
 	onToggleAll: () => {},
 	onAct: () => {},
+	onOpen: () => {},
 });
 
 function SelectAllCheckbox() {
@@ -78,6 +82,28 @@ function RowCheckbox({ student }: { student: TutorialStudent }) {
 			onChange={() => onToggle(student.user_id)}
 			slotProps={{ input: { "aria-label": `Select ${student.name}` } }}
 		/>
+	);
+}
+
+function NameCell({ student }: { student: TutorialStudent }) {
+	const { onOpen } = React.useContext(SubTableContext);
+	return (
+		<button
+			type="button"
+			onClick={() => onOpen(student.user_id)}
+			aria-label={`Open details of ${student.name}`}
+			className="flex items-center gap-3 rounded-md text-left focus-visible:outline-2 focus-visible:outline-brand-600"
+		>
+			<span
+				aria-hidden
+				className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
+			>
+				{getInitials(student.name)}
+			</span>
+			<span className="font-medium text-gray-900 hover:text-brand-700 hover:underline">
+				{student.name}
+			</span>
+		</button>
 	);
 }
 
@@ -116,6 +142,7 @@ export default function StudentsSubTable({
 	onToggle,
 	onToggleAll,
 	onAct,
+	onOpen,
 }: Props) {
 	const columns = React.useMemo<ColumnDef<TutorialStudent, unknown>[]>(() => {
 		const cols: ColumnDef<TutorialStudent, unknown>[] = [];
@@ -134,19 +161,7 @@ export default function StudentsSubTable({
 				accessorKey: "name",
 				header: "Student",
 				meta: { align: "left" },
-				cell: ({ row }) => (
-					<span className="flex items-center gap-3">
-						<span
-							aria-hidden
-							className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
-						>
-							{getInitials(row.original.name)}
-						</span>
-						<span className="font-medium text-gray-900">
-							{row.original.name}
-						</span>
-					</span>
-				),
+				cell: ({ row }) => <NameCell student={row.original} />,
 			},
 			{
 				accessorKey: "username",
@@ -185,8 +200,9 @@ export default function StudentsSubTable({
 			onToggle,
 			onToggleAll,
 			onAct,
+			onOpen,
 		}),
-		[students, selectedIds, busyUserIds, onToggle, onToggleAll, onAct],
+		[students, selectedIds, busyUserIds, onToggle, onToggleAll, onAct, onOpen],
 	);
 
 	return (

@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewPendingValidationUsecase(db *gorm.DB) usecase.PendingValidationUsecase {
+func NewPendingValidationUsecase(db *gorm.DB, sender usecase.Sender) usecase.PendingValidationUsecase {
 	repo := repository.NewPendingValidationPostgresRepository(db)
-	return usecase.NewPendingValidationUsecase(repo)
+	return usecase.NewPendingValidationUsecase(repo, sender)
 }

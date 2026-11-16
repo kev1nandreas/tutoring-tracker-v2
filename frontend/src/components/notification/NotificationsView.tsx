@@ -2,7 +2,7 @@
 
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
-import { Bell, BookOpen, CheckCheck, Download } from "lucide-react";
+import { Bell, BookOpen, CheckCheck, Download, UserCheck } from "lucide-react";
 import * as React from "react";
 import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
@@ -18,6 +18,7 @@ const PAGE_SIZE = 10;
 const TYPE_ICON: Record<string, typeof Bell> = {
 	material: BookOpen,
 	download: Download,
+	enrollment: UserCheck,
 };
 
 function Row({

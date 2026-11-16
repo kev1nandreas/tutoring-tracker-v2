@@ -21,6 +21,7 @@ import type {
 	ValidateAction,
 	ValidationGroup,
 } from "@/types/student";
+import StudentDrawer from "../../students/_components/StudentDrawer";
 import { useBulkValidate, type ValidateBatch } from "../_hooks/useBulkValidate";
 import { useSelection } from "../_hooks/useSelection";
 import { useValidationGroups } from "../_hooks/useValidationGroups";
@@ -91,6 +92,7 @@ const plural = (n: number) => `${n} ${n === 1 ? "student" : "students"}`;
 export default function PendingValidationView() {
 	const [status, setStatus] = React.useState<StudentStatus>("pending");
 	const [page, setPage] = React.useState(1);
+	const [openId, setOpenId] = React.useState<string | null>(null);
 	const [confirm, setConfirm] = React.useState<Pending | null>(null);
 	const [searchInput, setSearchInput] = React.useState("");
 	const search = useDebouncedValue(searchInput.trim(), 300);
@@ -333,6 +335,7 @@ export default function PendingValidationView() {
 										canAct={canAct}
 										selectedIds={selection[code] ?? []}
 										busyUserIds={busyIds}
+										onOpen={setOpenId}
 										onToggle={(userId) => toggle(code, userId)}
 										onToggleAll={() =>
 											toggleAll(
@@ -363,6 +366,8 @@ export default function PendingValidationView() {
 						)}
 					</div>
 				)}
+
+				<StudentDrawer studentId={openId} onClose={() => setOpenId(null)} />
 
 				<ConfirmationDialog
 					isOpen={confirm !== null}

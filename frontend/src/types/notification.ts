@@ -1,7 +1,7 @@
 export type Notification = {
 	id: string;
 	user_id: string;
-	/** e.g. "material", "download" */
+	/** e.g. "material", "download", "enrollment" */
 	type: string;
 	header: string;
 	body: string;

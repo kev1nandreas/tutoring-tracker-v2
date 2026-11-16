@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"strings"
 
 	"github.com/google/uuid"
@@ -25,12 +27,24 @@ var (
 	ErrTutorialDone    = errors.New("tutorial is already finished")
 )
 
-type pendingValidationUsecase struct {
-	repo repository.PendingValidationRepository
+// TypeEnrollment is the notification type used when a tutor decides on an enrollment request.
+const TypeEnrollment = "enrollment"
+
+// Sender delivers one notification (in-app, plus an email copy) to many users
+// (implemented by the notification usecase).
+type Sender interface {
+	NotifyUsers(userIDs []uuid.UUID, notificationType, header, body string) error
 }
 
-func NewPendingValidationUsecase(repo repository.PendingValidationRepository) PendingValidationUsecase {
-	return &pendingValidationUsecase{repo: repo}
+type pendingValidationUsecase struct {
+	repo   repository.PendingValidationRepository
+	sender Sender
+}
+
+// NewPendingValidationUsecase builds the usecase. sender is optional: when nil, students
+// are not notified.
+func NewPendingValidationUsecase(repo repository.PendingValidationRepository, sender Sender) PendingValidationUsecase {
+	return &pendingValidationUsecase{repo: repo, sender: sender}
 }
 
 func (u *pendingValidationUsecase) Enroll(callerID uuid.UUID, role string, req dto.EnrollRequest) (*entity.PendingValidation, error) {
@@ -162,6 +176,15 @@ func (u *pendingValidationUsecase) Validate(callerID uuid.UUID, role string, req
 	changed, err := u.repo.SetStatusForPending(tutorial.ID, ids, status)
 	if err != nil {
 		return nil, err
+	}
+
+	// Tell the accepted students (in-app and by email). Best effort: a failure here is
+	// logged and never undoes the validation.
+	if status == entity.StatusAccepted && len(changed) > 0 && u.sender != nil {
+		body := fmt.Sprintf("You were accepted into \"%s\" (code %s). You can now open its meetings and materials.", tutorial.Name, tutorial.CustomID)
+		if err := u.sender.NotifyUsers(changed, TypeEnrollment, "Enrollment accepted", body); err != nil {
+			log.Printf("pending validation: failed to notify accepted students of tutorial %s: %v", tutorial.ID, err)
+		}
 	}
 
 	done := make(map[uuid.UUID]bool, len(changed))
