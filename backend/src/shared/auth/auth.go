@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -114,4 +115,48 @@ func ParseResetToken(token string) (userID, fingerprint string, err error) {
 // MatchesPassword reports whether a reset token's fingerprint belongs to this password hash.
 func MatchesPassword(fingerprint, passwordHash string) bool {
 	return subtle.ConstantTimeCompare([]byte(fingerprint), []byte(passwordFingerprint(passwordHash))) == 1
+}
+
+// EmailVerifyTTL is how long an email verification link works.
+const EmailVerifyTTL = 24 * time.Hour
+
+func verifyKey() []byte { return append(append([]byte{}, JwtKey...), []byte("|email-verify")...) }
+
+func emailFingerprint(email string) string {
+	sum := sha256.Sum256([]byte(strings.ToLower(email)))
+	return hex.EncodeToString(sum[:8])
+}
+
+// GenerateEmailVerifyToken makes a token proving control of one user's current email.
+// It stops matching if the user later changes the email.
+func GenerateEmailVerifyToken(userID, email string) (string, error) {
+	claims := &resetClaims{
+		UserID:      userID,
+		Fingerprint: emailFingerprint(email),
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(EmailVerifyTTL).Unix(),
+			Subject:   "email-verify",
+		},
+	}
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(verifyKey())
+}
+
+// ParseEmailVerifyToken returns the user id and email fingerprint of a valid verification token.
+func ParseEmailVerifyToken(token string) (userID, fingerprint string, err error) {
+	claims := &resetClaims{}
+	parsed, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("unexpected signing method")
+		}
+		return verifyKey(), nil
+	})
+	if err != nil || !parsed.Valid || claims.Subject != "email-verify" || claims.UserID == "" {
+		return "", "", errors.New("verification link is invalid or has expired")
+	}
+	return claims.UserID, claims.Fingerprint, nil
+}
+
+// MatchesEmail reports whether a verification token's fingerprint belongs to this email.
+func MatchesEmail(fingerprint, email string) bool {
+	return subtle.ConstantTimeCompare([]byte(fingerprint), []byte(emailFingerprint(email))) == 1
 }

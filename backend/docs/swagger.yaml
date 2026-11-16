@@ -23,6 +23,11 @@ definitions:
     type: object
   dto.CompleteProfileRequest:
     properties:
+      email:
+        description: 'Email is optional: empty keeps the current one. A new email
+          must be verified again.'
+        maxLength: 100
+        type: string
       name:
         maxLength: 100
         type: string
@@ -182,6 +187,13 @@ definitions:
       url:
         type: string
     type: object
+  dto.EmailNotificationsRequest:
+    properties:
+      enabled:
+        type: boolean
+    required:
+    - enabled
+    type: object
   dto.EnrollRequest:
     properties:
       tutorial_code:
@@ -337,6 +349,12 @@ definitions:
         type: string
       email:
         type: string
+      email_notifications:
+        type: boolean
+      email_verified:
+        description: 'EmailVerified: Google sign-ups start verified; others verify
+          by link.'
+        type: boolean
       id:
         type: string
       last_login_at:
@@ -952,6 +970,13 @@ definitions:
           type: string
         type: array
     type: object
+  dto.VerifyEmailRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
   entity.Job:
     properties:
       created_at:
@@ -1090,6 +1115,14 @@ definitions:
         type: string
       email:
         type: string
+      email_notifications:
+        description: 'EmailNotifications: send a copy of notifications by email (only
+          while EmailVerified).'
+        type: boolean
+      email_verified:
+        description: 'EmailVerified: Google sign-ups start verified; others must follow
+          the emailed link.'
+        type: boolean
       id:
         type: string
       last_login_at:
@@ -1307,6 +1340,31 @@ paths:
           schema:
             type: string
       summary: Set a new password with a reset token
+      tags:
+      - user
+  /auth/verify-email:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Token
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Invalid or expired link
+          schema:
+            type: string
+      summary: Verify an email with the token from the emailed link
       tags:
       - user
   /bundles/{id}/download:
@@ -1547,6 +1605,56 @@ paths:
       summary: Check a download request
       tags:
       - bundle
+  /me/email-notifications:
+    put:
+      consumes:
+      - application/json
+      description: Turning on needs a verified email
+      parameters:
+      - description: Enabled
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.EmailNotificationsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MeResponse'
+        "403":
+          description: Email not verified
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Turn emailed notifications on or off
+      tags:
+      - user
+  /me/email/verification:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "409":
+          description: Already verified
+          schema:
+            type: string
+        "429":
+          description: Sent a moment ago
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Email a verification link to the caller
+      tags:
+      - user
   /me/profile:
     put:
       consumes:

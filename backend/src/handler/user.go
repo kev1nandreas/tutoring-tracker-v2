@@ -220,6 +220,8 @@ func (h *UserHandler) CompleteProfileHandler(c *gin.Context) {
 	resp, err := h.usecase.CompleteProfile(c.GetString("username"), req)
 	if err != nil {
 		switch {
+		case errors.Is(err, usecase.ErrEmailTaken):
+			response.NewErrorResponse(http.StatusConflict, "That email is already registered", err.Error()).Send(c)
 		case errors.Is(err, usecase.ErrUsernameTaken):
 			response.NewErrorResponse(http.StatusConflict, "That username is already taken", err.Error()).Send(c)
 		case errors.Is(err, gorm.ErrRecordNotFound):
@@ -231,6 +233,89 @@ func (h *UserHandler) CompleteProfileHandler(c *gin.Context) {
 	}
 
 	response.NewSuccessResponse("Profile saved", resp).Send(c)
+}
+
+// SendVerificationEmailHandler godoc
+// @Summary Email a verification link to the caller
+// @Tags user
+// @Security JwtAuth
+// @Produce json
+// @Success 200 {string} string "OK"
+// @Failure 409 {string} string "Already verified"
+// @Failure 429 {string} string "Sent a moment ago"
+// @Router /me/email/verification [post]
+func (h *UserHandler) SendVerificationEmailHandler(c *gin.Context) {
+	err := h.usecase.SendVerificationEmail(c.GetString("username"))
+	switch {
+	case err == nil:
+		response.NewSuccessResponse("Verification email sent", nil).Send(c)
+	case errors.Is(err, usecase.ErrAlreadyVerified):
+		response.NewErrorResponse(http.StatusConflict, "Your email is already verified", err.Error()).Send(c)
+	case errors.Is(err, usecase.ErrTooManyEmails):
+		response.NewErrorResponse(http.StatusTooManyRequests, "A verification email was just sent. Wait a minute and try again", err.Error()).Send(c)
+	case errors.Is(err, usecase.ErrMailDisabled):
+		response.NewErrorResponse(http.StatusServiceUnavailable, "Email sending is not set up on this server", err.Error()).Send(c)
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "User no longer exists").Send(c)
+	default:
+		response.NewErrorResponse(http.StatusInternalServerError, err.Error(), err.Error()).Send(c)
+	}
+}
+
+// VerifyEmailHandler godoc
+// @Summary Verify an email with the token from the emailed link
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param input body dto.VerifyEmailRequest true "Token"
+// @Success 200 {string} string "OK"
+// @Failure 400 {string} string "Invalid or expired link"
+// @Router /auth/verify-email [post]
+func (h *UserHandler) VerifyEmailHandler(c *gin.Context) {
+	var req dto.VerifyEmailRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Missing token", err.Error()).Send(c)
+		return
+	}
+	if err := h.usecase.VerifyEmail(req.Token); err != nil {
+		if errors.Is(err, usecase.ErrInvalidResetToken) {
+			response.NewErrorResponse(http.StatusBadRequest, "This verification link is invalid or has expired", err.Error()).Send(c)
+			return
+		}
+		response.NewErrorResponse(http.StatusInternalServerError, "Could not verify email", err.Error()).Send(c)
+		return
+	}
+	response.NewSuccessResponse("Email verified", nil).Send(c)
+}
+
+// EmailNotificationsHandler godoc
+// @Summary Turn emailed notifications on or off
+// @Description Turning on needs a verified email
+// @Tags user
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param input body dto.EmailNotificationsRequest true "Enabled"
+// @Success 200 {object} dto.MeResponse
+// @Failure 403 {string} string "Email not verified"
+// @Router /me/email-notifications [put]
+func (h *UserHandler) EmailNotificationsHandler(c *gin.Context) {
+	var req dto.EmailNotificationsRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Enabled == nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Bad Request", "enabled is required").Send(c)
+		return
+	}
+	me, err := h.usecase.SetEmailNotifications(c.GetString("username"), *req.Enabled)
+	switch {
+	case err == nil:
+		response.NewSuccessResponse("Saved", me).Send(c)
+	case errors.Is(err, usecase.ErrEmailNotVerified):
+		response.NewErrorResponse(http.StatusForbidden, "Verify your email before turning on email notifications", err.Error()).Send(c)
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "User no longer exists").Send(c)
+	default:
+		response.NewErrorResponse(http.StatusInternalServerError, "Could not save", err.Error()).Send(c)
+	}
 }
 
 // GoogleLoginHandler godoc

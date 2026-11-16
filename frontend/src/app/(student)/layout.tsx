@@ -16,6 +16,7 @@ const NAV = [
 	{ label: "Home", href: PATH.STUDENT_HOME },
 	{ label: "My tutorials", href: PATH.STUDENT_TUTORIALS },
 	{ label: "Join a class", href: PATH.ENROLL },
+	{ label: "Settings", href: PATH.SETTINGS },
 ];
 
 function StudentLayout({ children }: { children: React.ReactNode }) {

@@ -10,7 +10,7 @@ import (
 )
 
 // NewNotificationUsecase stores notifications in col and, when mailer is not nil, also emails
-// them to the users (addresses come from the users table in db).
+// them to the users who have a verified email and email notifications turned on (read from db).
 func NewNotificationUsecase(col *mongo.Collection, db *gorm.DB, mailer usecase.Mailer) usecase.NotificationUsecase {
 	repo := repository.NewNotificationMongoRepository(col)
 	if mailer == nil {
@@ -18,7 +18,7 @@ func NewNotificationUsecase(col *mongo.Collection, db *gorm.DB, mailer usecase.M
 	}
 	lookup := func(ids []uuid.UUID) (map[uuid.UUID]string, error) {
 		var users []userEntity.User
-		if err := db.Select("id", "email").Where("id IN ?", ids).Find(&users).Error; err != nil {
+		if err := db.Select("id", "email").Where("id IN ? AND email_verified = ? AND email_notifications = ?", ids, true, true).Find(&users).Error; err != nil {
 			return nil, err
 		}
 		out := make(map[uuid.UUID]string, len(users))

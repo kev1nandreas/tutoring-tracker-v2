@@ -18,6 +18,12 @@ type UserUsecase interface {
 	ResetPassword(req dto.ResetPasswordRequest) error
 	// CompleteProfile saves the caller's identity. The username may change, so a new token comes back.
 	CompleteProfile(callerUsername string, req dto.CompleteProfileRequest) (*dto.LoginResponse, error)
+	// SendVerificationEmail mails a verification link to the caller's current email.
+	SendVerificationEmail(callerUsername string) error
+	// VerifyEmail marks the email in the link as verified.
+	VerifyEmail(token string) error
+	// SetEmailNotifications turns the emailed copies of notifications on or off. Turning on needs a verified email.
+	SetEmailNotifications(callerUsername string, enabled bool) (*dto.MeResponse, error)
 	Me(username string) (*dto.MeResponse, error)
 	Register(req dto.RegisterRequest) (*entity.User, error)
 	RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error)

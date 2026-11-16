@@ -13,6 +13,10 @@ export type User = {
 	role: Role;
 	/** false for a Google sign-up that has not given its school and phone yet. */
 	profile_complete?: boolean;
+	/** Google sign-ups start verified; others verify by the emailed link. */
+	email_verified?: boolean;
+	/** Send a copy of notifications by email (needs a verified email). */
+	email_notifications?: boolean;
 };
 
 export type WithToken = {

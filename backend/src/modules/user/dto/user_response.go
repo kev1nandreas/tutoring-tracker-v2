@@ -29,9 +29,12 @@ type MeResponse struct {
 	RoleID   uuid.UUID `json:"role_id"`
 	Role     string    `json:"role"`
 	// ProfileComplete is false for a Google sign-up that has not yet given its school and phone.
-	ProfileComplete bool       `json:"profile_complete"`
-	LastLoginAt     *time.Time `json:"last_login_at"`
-	CreatedAt       time.Time  `json:"created_at"`
+	ProfileComplete bool `json:"profile_complete"`
+	// EmailVerified: Google sign-ups start verified; others verify by link.
+	EmailVerified      bool       `json:"email_verified"`
+	EmailNotifications bool       `json:"email_notifications"`
+	LastLoginAt        *time.Time `json:"last_login_at"`
+	CreatedAt          time.Time  `json:"created_at"`
 }
 
 type LoginResponse struct {

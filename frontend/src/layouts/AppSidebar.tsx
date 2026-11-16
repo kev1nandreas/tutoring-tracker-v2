@@ -6,6 +6,7 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	LayoutGrid,
+	Settings,
 	UserCheck,
 	Users,
 	Wallet,
@@ -62,6 +63,12 @@ const NAV_ITEMS: NavItem[] = [
 		icon: <Wallet className="w-5 h-5" />,
 		path: PATH.PAYMENTS,
 		description: "Payments and income",
+	},
+	{
+		name: "Settings",
+		icon: <Settings className="w-5 h-5" />,
+		path: PATH.TUTOR_SETTINGS,
+		description: "Profile and email",
 	},
 ];
 

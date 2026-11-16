@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -60,6 +61,17 @@ func (u *userUsecase) CompleteProfile(callerUsername string, req dto.CompletePro
 		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("could not check username")
 		}
+	}
+
+	if email := strings.ToLower(strings.TrimSpace(req.Email)); email != "" && !strings.EqualFold(email, user.Email) {
+		if taken, err := u.repo.ExistsByEmail(email); err != nil {
+			return nil, errors.New("could not check email")
+		} else if taken {
+			return nil, ErrEmailTaken
+		}
+		user.Email = email
+		// the new address is unproven: no more emails to it until it is verified
+		user.EmailVerified = false
 	}
 
 	user.Name = req.Name
@@ -163,6 +175,14 @@ func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto
 		}
 	}
 
+	// Google proved this person controls the email
+	if !user.EmailVerified {
+		user.EmailVerified = true
+		if err := u.repo.Update(user); err != nil {
+			log.Printf("failed to mark email verified for user %s: %v", user.ID, err)
+		}
+	}
+
 	if user.Role.Name == roleStudent {
 		if err := u.repo.UpdateLastLogin(user.ID, time.Now()); err != nil {
 			log.Printf("failed to update last login for user %s: %v", user.ID, err)
@@ -198,6 +218,9 @@ func (u *userUsecase) createGoogleStudent(p *googleauth.Profile) (*entity.User, 
 		Email:    p.Email,
 		Username: googleUsername(p.Email),
 		Password: hashed,
+		// Google checked the email
+		EmailVerified:      true,
+		EmailNotifications: true,
 	}
 	if err := u.repo.Create(user); err != nil {
 		return nil, errors.New("could not save user")
@@ -374,16 +397,123 @@ func (u *userUsecase) Delete(id string) error {
 
 func toMeResponse(user *entity.User) *dto.MeResponse {
 	return &dto.MeResponse{
-		ID:              user.ID,
-		Name:            user.Name,
-		School:          user.School,
-		Phone:           user.Phone,
-		Email:           user.Email,
-		Username:        user.Username,
-		RoleID:          user.RoleID,
-		Role:            user.Role.Name,
-		ProfileComplete: user.School != "" && user.Phone != "",
-		LastLoginAt:     user.LastLoginAt,
-		CreatedAt:       user.CreatedAt,
+		ID:                 user.ID,
+		Name:               user.Name,
+		School:             user.School,
+		Phone:              user.Phone,
+		Email:              user.Email,
+		Username:           user.Username,
+		RoleID:             user.RoleID,
+		Role:               user.Role.Name,
+		ProfileComplete:    user.School != "" && user.Phone != "",
+		EmailVerified:      user.EmailVerified,
+		EmailNotifications: user.EmailNotifications,
+		LastLoginAt:        user.LastLoginAt,
+		CreatedAt:          user.CreatedAt,
 	}
+}
+
+// ErrEmailNotVerified is returned when an action needs a verified email.
+var ErrEmailNotVerified = errors.New("verify your email first")
+
+// ErrAlreadyVerified is returned when the email is already verified.
+var ErrAlreadyVerified = errors.New("email is already verified")
+
+// ErrTooManyEmails is returned when a verification email was sent a moment ago.
+var ErrTooManyEmails = errors.New("a verification email was just sent; wait a minute")
+
+// ErrMailDisabled is returned when the server has no SMTP setup.
+var ErrMailDisabled = errors.New("email sending is not configured")
+
+const verifyCooldown = time.Minute
+
+var (
+	verifyMu   sync.Mutex
+	verifySent = map[uuid.UUID]time.Time{}
+)
+
+// allowVerifyEmail enforces one verification email per user per minute.
+func allowVerifyEmail(id uuid.UUID) bool {
+	verifyMu.Lock()
+	defer verifyMu.Unlock()
+	if last, ok := verifySent[id]; ok && time.Since(last) < verifyCooldown {
+		return false
+	}
+	verifySent[id] = time.Now()
+	return true
+}
+
+func (u *userUsecase) SendVerificationEmail(callerUsername string) error {
+	if u.mailer == nil {
+		return ErrMailDisabled
+	}
+	user, err := u.repo.FindByUsername(callerUsername)
+	if err != nil {
+		return err
+	}
+	if user.EmailVerified {
+		return ErrAlreadyVerified
+	}
+	if !allowVerifyEmail(user.ID) {
+		return ErrTooManyEmails
+	}
+
+	token, err := auth.GenerateEmailVerifyToken(user.ID.String(), user.Email)
+	if err != nil {
+		return errors.New("could not create verification link")
+	}
+	link := u.frontendURL + "/verify-email?token=" + url.QueryEscape(token)
+	text, html := mailer.Email{
+		AppName:  "Tutoring Tracker",
+		Title:    "Verify your email",
+		Greeting: fmt.Sprintf("Hi %s,", user.Name),
+		Paragraphs: []string{
+			"Please confirm that this email address is yours. Once it is verified you can turn on email notifications in your settings.",
+			fmt.Sprintf("The link expires in %d hours.", int(auth.EmailVerifyTTL.Hours())),
+		},
+		ButtonLabel: "Verify email",
+		ButtonURL:   link,
+		Footnote:    "If you did not create a Tutoring Tracker account, you can ignore this email.",
+	}.Render()
+
+	// synchronous: the user is waiting on this button and should see a failure
+	if err := u.mailer.SendHTML(user.Email, "Verify your email", text, html); err != nil {
+		log.Printf("verify email: send to user %s failed: %v", user.ID, err)
+		return errors.New("could not send the email, try again later")
+	}
+	return nil
+}
+
+func (u *userUsecase) VerifyEmail(token string) error {
+	userID, fingerprint, err := auth.ParseEmailVerifyToken(token)
+	if err != nil {
+		return ErrInvalidResetToken
+	}
+	user, err := u.repo.FindByID(userID)
+	if err != nil || !auth.MatchesEmail(fingerprint, user.Email) {
+		return ErrInvalidResetToken
+	}
+	if user.EmailVerified {
+		return nil
+	}
+	user.EmailVerified = true
+	if err := u.repo.Update(user); err != nil {
+		return errors.New("could not save")
+	}
+	return nil
+}
+
+func (u *userUsecase) SetEmailNotifications(callerUsername string, enabled bool) (*dto.MeResponse, error) {
+	user, err := u.repo.FindByUsername(callerUsername)
+	if err != nil {
+		return nil, err
+	}
+	if enabled && !user.EmailVerified {
+		return nil, ErrEmailNotVerified
+	}
+	user.EmailNotifications = enabled
+	if err := u.repo.Update(user); err != nil {
+		return nil, errors.New("could not save")
+	}
+	return toMeResponse(user), nil
 }

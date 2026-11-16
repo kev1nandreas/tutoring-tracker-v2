@@ -28,3 +28,28 @@ func TestResetTokenRejectsLoginToken(t *testing.T) {
 		t.Fatal("garbage accepted")
 	}
 }
+
+func TestEmailVerifyToken(t *testing.T) {
+	tok, err := GenerateEmailVerifyToken("user-1", "A@x.co")
+	if err != nil {
+		t.Fatal(err)
+	}
+	id, fp, err := ParseEmailVerifyToken(tok)
+	if err != nil || id != "user-1" {
+		t.Fatalf("parse: %v id=%q", err, id)
+	}
+	if !MatchesEmail(fp, "a@x.co") {
+		t.Fatal("must match the same email, case-insensitive")
+	}
+	if MatchesEmail(fp, "other@x.co") {
+		t.Fatal("must stop matching after the email changes")
+	}
+	// the two token kinds must not be interchangeable
+	reset, _ := GenerateResetToken("user-1", "h")
+	if _, _, err := ParseEmailVerifyToken(reset); err == nil {
+		t.Fatal("reset token accepted as verify token")
+	}
+	if _, _, err := ParseResetToken(tok); err == nil {
+		t.Fatal("verify token accepted as reset token")
+	}
+}

@@ -220,6 +220,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/verify-email": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Verify an email with the token from the emailed link",
+                "parameters": [
+                    {
+                        "description": "Token",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.VerifyEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or expired link",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/bundles/{id}/download": {
             "get": {
                 "description": "Opened by the browser from download_url, so it takes a signed token instead of a login. The zip is built while it is sent, straight from storage; nothing is saved on the server.",
@@ -571,6 +610,87 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/email-notifications": {
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Turning on needs a verified email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Turn emailed notifications on or off",
+                "parameters": [
+                    {
+                        "description": "Enabled",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.EmailNotificationsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MeResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Email not verified",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/email/verification": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Email a verification link to the caller",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Already verified",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "429": {
+                        "description": "Sent a moment ago",
                         "schema": {
                             "type": "string"
                         }
@@ -3468,6 +3588,11 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
+                "email": {
+                    "description": "Email is optional: empty keeps the current one. A new email must be verified again.",
+                    "type": "string",
+                    "maxLength": 100
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 100
@@ -3687,6 +3812,17 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.EmailNotificationsRequest": {
+            "type": "object",
+            "required": [
+                "enabled"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
                 }
             }
         },
@@ -3918,6 +4054,13 @@ const docTemplate = `{
                 },
                 "email": {
                     "type": "string"
+                },
+                "email_notifications": {
+                    "type": "boolean"
+                },
+                "email_verified": {
+                    "description": "EmailVerified: Google sign-ups start verified; others verify by link.",
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
@@ -4817,6 +4960,17 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.VerifyEmailRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "entity.Job": {
             "type": "object",
             "properties": {
@@ -5022,6 +5176,14 @@ const docTemplate = `{
                 },
                 "email": {
                     "type": "string"
+                },
+                "email_notifications": {
+                    "description": "EmailNotifications: send a copy of notifications by email (only while EmailVerified).",
+                    "type": "boolean"
+                },
+                "email_verified": {
+                    "description": "EmailVerified: Google sign-ups start verified; others must follow the emailed link.",
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"

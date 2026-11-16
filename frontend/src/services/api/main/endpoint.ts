@@ -2,6 +2,8 @@ export const MAIN_ENDPOINT = {
 	User: {
 		Me: "/v1/me",
 		Profile: "/v1/me/profile",
+		SendVerification: "/v1/me/email/verification",
+		EmailNotifications: "/v1/me/email-notifications",
 	},
 	Tutorial: {
 		List: "/v1/tutorials",
@@ -72,6 +74,7 @@ export const MAIN_ENDPOINT = {
 	Auth: {
 		Login: "/v1/login",
 		Google: "/v1/login/google",
+		VerifyEmail: "/v1/auth/verify-email",
 		Register: "/v1/register",
 		RegisterTutor: "/v1/register/tutor",
 		// Not implemented by the backend yet (used by the template pages).

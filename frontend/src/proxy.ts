@@ -9,6 +9,8 @@ const PUBLIC_PATHS = [
 	...GUEST_PATHS,
 	// Finishes Google sign-in: has no app cookie yet, and sets it itself.
 	PATH.LOGIN_GOOGLE,
+	// Opened from the emailed link, possibly in a browser that is not signed in.
+	PATH.VERIFY_EMAIL,
 	PATH.FORGOT_PASSWORD,
 	PATH.RESET_PASSWORD,
 	PATH.NOT_FOUND,
