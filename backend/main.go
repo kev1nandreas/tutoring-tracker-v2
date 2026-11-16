@@ -26,6 +26,7 @@ import (
 	submissionFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/submission/factory"
 	tutorialFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/tutorial/factory"
 	userFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/user/factory"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/googleauth"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/incomesync"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/mailer"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/notifier"
@@ -147,7 +148,7 @@ func main() {
 	// Initialize module usecases and handlers via factories
 	handlers := &handler.Handlers{
 		Role:       handler.NewRoleHandler(roleFactory.NewRoleUsecase(db)),
-		User:       handler.NewUserHandler(userFactory.NewUserUsecase(db)),
+		User:       handler.NewUserHandler(userFactory.NewUserUsecase(db, googleauth.New(config.GetEnvString("GOOGLE_CLIENT_ID", "")))),
 		Tutorial:   handler.NewTutorialHandler(tutorialFactory.NewTutorialUsecase(db, storage)),
 		Meeting:    handler.NewMeetingHandler(meetingFactory.NewMeetingUsecase(db, storage)),
 		Attachment: handler.NewAttachmentHandler(attachmentFactory.NewAttachmentUsecase(db, eventNotifier, storage)),

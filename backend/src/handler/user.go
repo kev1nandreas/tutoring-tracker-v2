@@ -148,6 +148,38 @@ func (h *UserHandler) LoginHandler(c *gin.Context) {
 	response.NewSuccessResponse("Login successful", loginResp).Send(c)
 }
 
+// GoogleLoginHandler godoc
+// @Summary Authenticate with a Google ID token
+// @Description Verifies the Google ID token, then signs in the user with that email (a new email becomes a student) and returns a JWT
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param input body dto.GoogleLoginRequest true "Google ID token"
+// @Success 200 {object} dto.LoginResponse
+// @Failure 400 {string} string "Bad Request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 501 {string} string "Google login is not configured"
+// @Router /login/google [post]
+func (h *UserHandler) GoogleLoginHandler(c *gin.Context) {
+	var req dto.GoogleLoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Bad Request", err.Error()).Send(c)
+		return
+	}
+
+	loginResp, err := h.usecase.LoginWithGoogle(c.Request.Context(), req.IDToken)
+	if err != nil {
+		if errors.Is(err, usecase.ErrGoogleDisabled) {
+			response.NewErrorResponse(http.StatusNotImplemented, "Google login is not configured", err.Error()).Send(c)
+			return
+		}
+		response.NewErrorResponse(http.StatusUnauthorized, "Google sign-in failed", err.Error()).Send(c)
+		return
+	}
+
+	response.NewSuccessResponse("Login successful", loginResp).Send(c)
+}
+
 // RegisterHandler godoc
 // @Summary Register a new student
 // @Description Registers a new user. The role is always student.

@@ -25,3 +25,8 @@ type UpdateUserRequest struct {
 	Username *string    `json:"username"`
 	Password *string    `json:"password"`
 }
+
+// GoogleLoginRequest carries the Google ID token obtained by the frontend.
+type GoogleLoginRequest struct {
+	IDToken string `json:"id_token" binding:"required"`
+}

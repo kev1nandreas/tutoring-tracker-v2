@@ -66,6 +66,7 @@ func NewRouter(
 		limit := factory.RateLimiter(rate.Every(time.Minute/60), 60)
 
 		v1.POST("/login", limit, h.User.LoginHandler)
+		v1.POST("/login/google", limit, h.User.GoogleLoginHandler)
 		v1.POST("/register", limit, h.User.RegisterHandler)
 		v1.GET("/me", factory.JWTAuth(), limit, h.User.MeHandler)
 

@@ -229,6 +229,13 @@ definitions:
       tutorial_name:
         type: string
     type: object
+  dto.GoogleLoginRequest:
+    properties:
+      id_token:
+        type: string
+    required:
+    - id_token
+    type: object
   dto.GradeSubmissionRequest:
     properties:
       feedback:
@@ -1364,6 +1371,41 @@ paths:
           schema:
             type: string
       summary: Authenticate a user
+      tags:
+      - user
+  /login/google:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the Google ID token, then signs in the user with that
+        email (a new email becomes a student) and returns a JWT
+      parameters:
+      - description: Google ID token
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GoogleLoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "501":
+          description: Google login is not configured
+          schema:
+            type: string
+      summary: Authenticate with a Google ID token
       tags:
       - user
   /me:

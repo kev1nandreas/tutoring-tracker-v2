@@ -70,6 +70,7 @@ export const MAIN_ENDPOINT = {
 	},
 	Auth: {
 		Login: "/v1/login",
+		Google: "/v1/login/google",
 		Register: "/v1/register",
 		RegisterTutor: "/v1/register/tutor",
 		// Not implemented by the backend yet (used by the template pages).

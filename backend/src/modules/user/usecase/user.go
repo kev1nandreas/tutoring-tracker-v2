@@ -1,24 +1,112 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"log"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/user/repository"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/auth"
+	"github.com/kev1nandreas/go-rest-api-template/src/shared/googleauth"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
-type userUsecase struct {
-	repo repository.UserRepository
+// GoogleVerifier checks a Google ID token (implemented by googleauth.Verifier).
+type GoogleVerifier interface {
+	Verify(ctx context.Context, idToken string) (*googleauth.Profile, error)
 }
 
-func NewUserUsecase(repo repository.UserRepository) UserUsecase {
-	return &userUsecase{repo: repo}
+type userUsecase struct {
+	repo   repository.UserRepository
+	google GoogleVerifier
+}
+
+// NewUserUsecase builds the usecase. google may be nil: Google login is then disabled.
+func NewUserUsecase(repo repository.UserRepository, google GoogleVerifier) UserUsecase {
+	return &userUsecase{repo: repo, google: google}
+}
+
+// ErrGoogleDisabled is returned when Google login is not configured.
+var ErrGoogleDisabled = errors.New("google login is not configured")
+
+func (u *userUsecase) LoginWithGoogle(ctx context.Context, idToken string) (*dto.LoginResponse, error) {
+	if u.google == nil {
+		return nil, ErrGoogleDisabled
+	}
+	profile, err := u.google.Verify(ctx, idToken)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := u.repo.FindByEmail(profile.Email)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("could not look up user")
+		}
+		// first time with this email: create a student; school and phone are filled in later
+		user, err = u.createGoogleStudent(profile)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if user.Role.Name == roleStudent {
+		if err := u.repo.UpdateLastLogin(user.ID, time.Now()); err != nil {
+			log.Printf("failed to update last login for user %s: %v", user.ID, err)
+		}
+	}
+
+	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, user.Role.Name)
+	if err != nil {
+		return nil, errors.New("error generating token")
+	}
+	return &dto.LoginResponse{Token: token, User: *toMeResponse(user)}, nil
+}
+
+func (u *userUsecase) createGoogleStudent(p *googleauth.Profile) (*entity.User, error) {
+	role, err := u.repo.FindRoleByName(roleStudent)
+	if err != nil {
+		return nil, errors.New("student role not found")
+	}
+	// the account has no usable password: a random one nobody knows
+	hashed, err := auth.HashPassword(auth.GenerateRandomKey())
+	if err != nil {
+		return nil, errors.New("could not hash password")
+	}
+
+	name := p.Name
+	if name == "" {
+		name = strings.SplitN(p.Email, "@", 2)[0]
+	}
+	user := &entity.User{
+		RoleID:   role.ID,
+		Role:     *role,
+		Name:     name,
+		Email:    p.Email,
+		Username: googleUsername(p.Email),
+		Password: hashed,
+	}
+	if err := u.repo.Create(user); err != nil {
+		return nil, errors.New("could not save user")
+	}
+	return user, nil
+}
+
+// googleUsername is the email's local part plus a random suffix (usernames are unique, max 50).
+func googleUsername(email string) string {
+	local := strings.SplitN(email, "@", 2)[0]
+	if len(local) > 30 {
+		local = local[:30]
+	}
+	return local + "-" + uuid.NewString()[:8]
 }
 
 func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {

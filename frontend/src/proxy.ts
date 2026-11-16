@@ -7,6 +7,8 @@ import { PATH } from "./shared/path";
 const GUEST_PATHS = [PATH.LOGIN, PATH.REGISTER];
 const PUBLIC_PATHS = [
 	...GUEST_PATHS,
+	// Finishes Google sign-in: has no app cookie yet, and sets it itself.
+	PATH.LOGIN_GOOGLE,
 	PATH.FORGOT_PASSWORD,
 	PATH.RESET_PASSWORD,
 	PATH.NOT_FOUND,

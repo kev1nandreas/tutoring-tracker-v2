@@ -376,6 +376,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/login/google": {
+            "post": {
+                "description": "Verifies the Google ID token, then signs in the user with that email (a new email becomes a student) and returns a JWT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Authenticate with a Google ID token",
+                "parameters": [
+                    {
+                        "description": "Google ID token",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GoogleLoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "501": {
+                        "description": "Google login is not configured",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/me": {
             "get": {
                 "security": [
@@ -3573,6 +3625,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tutorial_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.GoogleLoginRequest": {
+            "type": "object",
+            "required": [
+                "id_token"
+            ],
+            "properties": {
+                "id_token": {
                     "type": "string"
                 }
             }

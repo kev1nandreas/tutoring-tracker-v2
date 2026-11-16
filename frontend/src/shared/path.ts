@@ -14,6 +14,7 @@ export const PATH = {
 	NOTIFICATIONS: "/notifications",
 	TUTOR_NOTIFICATIONS: "/tutor/notifications",
 	LOGIN: "/login",
+	LOGIN_GOOGLE: "/login/google",
 	FEEDBACK: "/form/feedback",
 	REGISTER: "/register",
 	FORGOT_PASSWORD: "/forgot-password",

@@ -2,8 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Lock, Mail } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { FormProvider, type SubmitHandler, useForm } from "react-hook-form";
 import Button from "@/components/button/Button";
+import GoogleSignInButton from "@/components/button/GoogleSignInButton";
 import Input from "@/components/form/Input";
 import LabelText from "@/components/form/LabelText";
 import PrimaryLink from "@/components/links/PrimaryLink";
@@ -19,6 +21,7 @@ export default function LoginForm() {
 	});
 
 	const mutation = useLoginMutation();
+	const redirect = useSearchParams().get("redirect");
 
 	const { handleSubmit } = methods;
 
@@ -79,6 +82,14 @@ export default function LoginForm() {
 					>
 						Sign in
 					</Button>
+
+					<div className="flex items-center gap-3 text-xs text-[var(--ink-soft)]">
+						<span className="h-px flex-1 bg-gray-200" />
+						or
+						<span className="h-px flex-1 bg-gray-200" />
+					</div>
+
+					<GoogleSignInButton redirect={redirect} />
 
 					<Typography className="text-sm text-[var(--ink-soft)]">
 						Don&apos;t have an account?{" "}
