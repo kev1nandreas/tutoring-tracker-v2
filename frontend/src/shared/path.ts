@@ -5,6 +5,7 @@ export const PATH = {
 	HOME: "/",
 	STUDENT_HOME: "/",
 	DASHBOARD: "/tutor",
+	TUTORIALS: "/tutor/tutorials",
 	LOGIN: "/login",
 	REGISTER: "/register",
 	FORGOT_PASSWORD: "/forgot-password",

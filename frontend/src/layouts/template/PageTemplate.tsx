@@ -6,6 +6,8 @@ interface PageTemplateProps {
 	title: string;
 	description?: string;
 	breadcrumbs: Breadcrumb[];
+	/** Right-aligned header content, e.g. an "Add" button. */
+	action?: React.ReactNode;
 }
 
 export default function PageTemplate({
@@ -13,24 +15,28 @@ export default function PageTemplate({
 	title,
 	description,
 	breadcrumbs,
+	action,
 }: PageTemplateProps) {
 	return (
 		<div className="flex flex-col gap-3">
 			<BreadCrumbs breadcrumbs={breadcrumbs} />
 
-			<div className="mb-4">
-				<Typography
-					as="h1"
-					weight="semibold"
-					className="text-2xl text-gray-900"
-				>
-					{title}
-				</Typography>
-				{description && (
-					<Typography as="p" className="text-sm text-gray-500">
-						{description}
+			<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+				<div>
+					<Typography
+						as="h1"
+						weight="semibold"
+						className="text-2xl text-gray-900"
+					>
+						{title}
 					</Typography>
-				)}
+					{description && (
+						<Typography as="p" className="text-sm text-gray-500">
+							{description}
+						</Typography>
+					)}
+				</div>
+				{action}
 			</div>
 
 			{children}

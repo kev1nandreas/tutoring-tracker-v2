@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	BookOpen,
 	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
@@ -21,6 +22,8 @@ type NavItem = {
 	icon: React.ReactNode;
 	path?: string;
 	description?: string;
+	/** Active only on this exact path (a parent route such as /tutor). */
+	exact?: boolean;
 	subItems?: { name: string; path: string; description?: string }[];
 };
 
@@ -31,6 +34,13 @@ const NAV_ITEMS: NavItem[] = [
 		icon: <LayoutGrid className="w-5 h-5" />,
 		path: PATH.DASHBOARD,
 		description: "Overview",
+		exact: true,
+	},
+	{
+		name: "Tutorials",
+		icon: <BookOpen className="w-5 h-5" />,
+		path: PATH.TUTORIALS,
+		description: "Your tutorials",
 	},
 ];
 
@@ -49,7 +59,8 @@ const AppSidebar: React.FC = () => {
 	const subMenuRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
 	const isActive = useCallback(
-		(path: string) => pathname.includes(path),
+		(path: string, exact = false) =>
+			exact ? pathname === path : pathname.startsWith(path),
 		[pathname],
 	);
 
@@ -164,7 +175,7 @@ const AppSidebar: React.FC = () => {
 											className={clsxm(
 												"relative flex items-center gap-3 rounded-lg py-2.5 text-sm font-medium transition-colors duration-150",
 												showLabel ? "px-3" : "justify-center px-0",
-												isActive(nav.path)
+												isActive(nav.path, nav.exact)
 													? "bg-white text-brand-700 shadow-sm"
 													: "text-white/75 hover:bg-white/10 hover:text-white",
 											)}

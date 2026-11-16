@@ -62,3 +62,15 @@ export type MainResponse<T = unknown> = {
 	data?: T;
 	error?: string;
 };
+
+export type PageMeta = {
+	page: number;
+	page_size: number;
+	total_items: number;
+	total_pages: number;
+	has_next: boolean;
+	has_prev: boolean;
+};
+
+/** Go backend list envelope. */
+export type PaginatedMainResponse<T> = MainResponse<T[]> & { meta?: PageMeta };

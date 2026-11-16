@@ -106,3 +106,14 @@ export function formatDay(value: string | null | undefined) {
 export function formatTimeRange(start: string, end: string) {
 	return start && end ? `${start}–${end}` : start || end || "";
 }
+
+/** ISO or "YYYY-MM-DD" -> "17 Nov 2026" (date part only, no timezone shift). */
+export function formatShortDate(value: string | null | undefined) {
+	if (!value) return "-";
+
+	return new Intl.DateTimeFormat("en-GB", {
+		day: "numeric",
+		month: "short",
+		year: "numeric",
+	}).format(new Date(`${value.slice(0, 10)}T00:00:00`));
+}
