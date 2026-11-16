@@ -54,3 +54,11 @@ export type UninterceptedApiError = {
 	status: boolean;
 	message: string | Record<string, string[]>;
 };
+
+/** Envelope returned by the Go backend. */
+export type MainResponse<T = unknown> = {
+	success: boolean;
+	message: string;
+	data?: T;
+	error?: string;
+};

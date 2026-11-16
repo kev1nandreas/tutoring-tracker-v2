@@ -11,23 +11,23 @@ declare module "@mui/material/styles" {
 	}
 }
 
-// Mirrors tailwind.config.ts `primary` / `secondary` palettes so MUI and
+// Mirrors tailwind.config.ts `primary` / `secondary` palettes (primary is brand blue) so MUI and
 // Tailwind-styled parts of the app stay visually consistent.
 const muiTheme = createTheme({
 	palette: {
 		primary: {
-			50: "#fae1e1",
-			100: "#f7cccc",
-			200: "#f3b3b3",
-			300: "#ee9a9a",
-			400: "#ea8080",
-			light: "#ea8080",
-			main: "#e66767",
-			dark: "#c05656",
-			600: "#c05656",
-			700: "#994545",
-			800: "#733434",
-			900: "#4d2222",
+			50: "#EFF6FF",
+			100: "#DBEAFE",
+			200: "#BFDBFE",
+			300: "#93C5FD",
+			400: "#60A5FA",
+			light: "#3B82F6",
+			main: "#2563EB",
+			dark: "#1D4ED8",
+			600: "#2563EB",
+			700: "#1D4ED8",
+			800: "#1E40AF",
+			900: "#1E3A8A",
 			contrastText: "#ffffff",
 		},
 		secondary: {

@@ -6,12 +6,13 @@ import Loading from "@/app/loading";
 import useAuthStore from "@/app/stores/useAuthStore";
 import { ENV } from "@/configs/environment";
 import useIdleTimeout from "@/hooks/useIdleTimeout";
-import { getRefreshToken, getToken, removeToken } from "@/lib/cookies";
+import { getToken, removeToken } from "@/lib/cookies";
+import { decodeToken } from "@/lib/jwt";
 import { get } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
-import { PATH } from "@/shared/path";
-import type { ApiResponse } from "@/types/api";
-import type { User } from "@/types/user";
+import { homeForRole, PATH } from "@/shared/path";
+import type { MainResponse } from "@/types/api";
+import type { Role, User } from "@/types/user";
 
 /**
  * Auto logout after 5 minutes of no mouse/keyboard/touch/scroll activity.
@@ -24,95 +25,101 @@ export interface WithAuthProps {
 	user: User;
 }
 
+export interface WithAuthOptions {
+	/** Roles allowed to see the page. Others are sent to their own home. */
+	roles?: Role[];
+}
+
 /**
- * Gate a page behind a verified session.
+ * Gate a page behind a valid session and (optionally) a role.
  *
- * Nothing renders until the stored token has been checked against the
- * matching profile endpoint, so a guarded page never flashes for a signed
- * out visitor. A missing or rejected token clears the session and sends the
- * visitor to the login page, carrying `?redirect=` so
- * both login mutations can bounce them back afterwards.
- *
- * The axios interceptor already refreshes an expired access token and
- * retries once, so a failure here means the session is genuinely unusable.
+ * A missing/expired token, or a token the backend rejects on `/me`, clears the
+ * session and redirects to login with `?redirect=`. The user's id and role come
+ * from `/me`; a signed-in user with the wrong role is redirected to the home of
+ * their own role. Nothing renders until this check passes.
  */
 export default function withAuth<P extends object>(
-	Component: React.ComponentType<P>,
+	Component: React.ComponentType<P & WithAuthProps>,
+	options: WithAuthOptions = {},
 ) {
+	const allowedRoles = options.roles;
+
 	function ComponentWithAuth(props: P) {
 		const router = useRouter();
 		const pathname = usePathname();
-		const loginPath = PATH.LOGIN;
-		const profileEndpoint = MAIN_ENDPOINT.User.CurrentUser;
 
 		const user = useAuthStore.useUser();
 		const login = useAuthStore.useLogin();
 		const logout = useAuthStore.useLogout();
 
-		const [isVerified, setIsVerified] = React.useState(Boolean(user));
+		const [isReady, setIsReady] = React.useState(false);
+
+		const redirectToLogin = React.useCallback(() => {
+			removeToken();
+			logout();
+			router.replace(`${PATH.LOGIN}?redirect=${encodeURIComponent(pathname)}`);
+		}, [logout, router, pathname]);
 
 		React.useEffect(() => {
 			let cancelled = false;
-
-			const redirectToLogin = () => {
-				removeToken();
-				logout();
-				router.replace(`${loginPath}?redirect=${encodeURIComponent(pathname)}`);
-			};
+			let timer: ReturnType<typeof setTimeout> | undefined;
 
 			const verify = async () => {
 				const token = getToken();
+				const exp = token ? decodeToken(token)?.exp : undefined;
 
-				if (!token) {
+				if (!token || !exp || exp * 1000 <= Date.now()) {
 					redirectToLogin();
 					return;
 				}
 
-				// The store is already hydrated for this session — the token was
-				// verified on login or on an earlier guarded page.
-				if (user) {
-					setIsVerified(true);
+				// Ask the backend who this is. The role and id come from /me, not
+				// from the token, so a demoted or deleted user is caught here.
+				let sessionUser = user;
+				if (!sessionUser) {
+					const { OK, Kind } = await get<MainResponse<User>>(
+						MAIN_ENDPOINT.User.Me,
+					);
+					if (cancelled) return;
+
+					const me = (Kind as MainResponse<User>)?.data;
+					if (!OK || !me) {
+						redirectToLogin();
+						return;
+					}
+					login({ ...me, access_token: token });
+					sessionUser = me;
+				}
+
+				if (allowedRoles && !allowedRoles.includes(sessionUser.role)) {
+					router.replace(homeForRole(sessionUser.role));
 					return;
 				}
 
-				const { OK, Kind } = await get<ApiResponse<User>>(profileEndpoint);
+				setIsReady(true);
 
-				if (cancelled) return;
-
-				if (!OK) {
-					redirectToLogin();
-					return;
-				}
-
-				login({
-					...(Kind as ApiResponse<User>).data,
-					access_token: token,
-					// The store needs both tokens; reuse the stored refresh token.
-					refresh_token: getRefreshToken() || token,
-				});
-				setIsVerified(true);
+				// The token cannot be refreshed: sign out the moment it expires.
+				timer = setTimeout(
+					redirectToLogin,
+					Math.max(exp * 1000 - Date.now(), 0),
+				);
 			};
 
 			verify();
 
 			return () => {
 				cancelled = true;
+				if (timer) clearTimeout(timer);
 			};
-		}, [user, login, logout, router, pathname, loginPath, profileEndpoint]);
-
-		const handleIdle = React.useCallback(() => {
-			removeToken();
-			logout();
-			router.replace(`${loginPath}?redirect=${encodeURIComponent(pathname)}`);
-		}, [logout, router, pathname, loginPath]);
+		}, [user, login, router, redirectToLogin]);
 
 		useIdleTimeout(
-			handleIdle,
+			redirectToLogin,
 			IDLE_TIMEOUT_MS,
-			IDLE_LOGOUT_ENABLED && isVerified && Boolean(user),
+			IDLE_LOGOUT_ENABLED && isReady && Boolean(user),
 		);
 
-		if (!isVerified || !user) {
+		if (!isReady || !user) {
 			return <Loading />;
 		}
 

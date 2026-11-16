@@ -15,9 +15,9 @@ export const setRefreshToken = (token: string) => {
 	cookies.set(ENV.REFRESH_TOKEN_KEY, token, { path: "/" });
 };
 
-export const setTokens = (accessToken: string, refreshToken: string) => {
+export const setTokens = (accessToken: string, refreshToken?: string) => {
 	setToken(accessToken);
-	setRefreshToken(refreshToken);
+	if (refreshToken) setRefreshToken(refreshToken);
 };
 
 export const removeToken = () => {

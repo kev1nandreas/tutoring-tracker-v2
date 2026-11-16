@@ -2,30 +2,23 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Lock, Mail } from "lucide-react";
-import * as React from "react";
 import { FormProvider, type SubmitHandler, useForm } from "react-hook-form";
 import Button from "@/components/button/Button";
-import AccountLockedPopUp from "@/components/dialog/AccountLockedPopUp";
 import Input from "@/components/form/Input";
 import LabelText from "@/components/form/LabelText";
 import PrimaryLink from "@/components/links/PrimaryLink";
 import Typography from "@/components/Typography";
-import { useFadeInUp } from "@/hooks/useGsapAnimation";
 import { PATH } from "@/shared/path";
 import { type LoginRequest, loginRequestSchema } from "@/types/login";
 import { useLoginMutation } from "../_hooks/useLoginMutation";
 
 export default function LoginForm() {
-	const animationRef = useFadeInUp<HTMLDivElement>({ duration: 2 });
-
-	const [lockedUntil, setLockedUntil] = React.useState<string | null>(null);
-
 	const methods = useForm<LoginRequest>({
 		resolver: zodResolver(loginRequestSchema),
 		defaultValues: { email: "", password: "" },
 	});
 
-	const mutation = useLoginMutation({ onAccountLocked: setLockedUntil });
+	const mutation = useLoginMutation();
 
 	const { handleSubmit } = methods;
 
@@ -34,33 +27,31 @@ export default function LoginForm() {
 	};
 
 	return (
-		<div ref={animationRef} className="rounded-2xl bg-white p-10 shadow-xl">
-			<AccountLockedPopUp
-				isOpen={!!lockedUntil}
-				setIsOpen={(open) => !open && setLockedUntil(null)}
-				lockedUntil={lockedUntil}
-			/>
-
-			<Typography as="h1" className="text-3xl" weight="bold">
-				Welcome Back
+		<div>
+			<Typography
+				as="h1"
+				className="auth-display text-[2rem] leading-tight"
+				weight="bold"
+			>
+				Welcome back
 			</Typography>
-			<Typography className="mt-1 text-gray-500">
-				Login to continue to your account
+			<Typography className="mt-2 text-[var(--ink-soft)]">
+				Sign in with your email to see your lessons and homework.
 			</Typography>
 
 			<FormProvider {...methods}>
 				<form
 					onSubmit={handleSubmit(onSubmit)}
-					className="mt-6 flex flex-col gap-4"
+					className="mt-8 flex flex-col gap-5"
 				>
 					<div>
 						<LabelText labelTextClasname="mb-1.5 font-semibold">
-							Email Address
+							Email address
 						</LabelText>
 						<Input
 							id="email"
 							type="email"
-							placeholder="Enter your email"
+							placeholder="you@example.com"
 							leftIcon={Mail}
 							autoComplete="email"
 						/>
@@ -86,19 +77,20 @@ export default function LoginForm() {
 						isLoading={mutation.isPending}
 						className="w-full"
 					>
-						Sign In
+						Sign in
 					</Button>
 
-					<div className="flex items-center justify-end">
+					<Typography className="text-sm text-[var(--ink-soft)]">
+						Don&apos;t have an account?{" "}
 						<PrimaryLink
-							href={PATH.FORGOT_PASSWORD}
+							href={PATH.REGISTER}
 							size="small"
 							underline={false}
 							className="text-brand-600 hover:text-brand-700 font-semibold"
 						>
-							Forgot Password?
+							Create one
 						</PrimaryLink>
-					</div>
+					</Typography>
 				</form>
 			</FormProvider>
 		</div>

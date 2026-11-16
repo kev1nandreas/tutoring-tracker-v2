@@ -2,77 +2,53 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import useAuthStore from "@/app/stores/useAuthStore";
-import { AccountLockedError } from "@/lib/errors";
 import { post } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
-import { PATH } from "@/shared/path";
-import type { ApiResponse } from "@/types/api";
-import type {
-	AccountLockedErrorData,
-	LoginRequest,
-	LoginResponse,
-} from "@/types/login";
+import { homeForRole } from "@/shared/path";
+import type { MainResponse } from "@/types/api";
+import type { LoginRequest, LoginResponse } from "@/types/login";
 
-interface UseLoginMutationProps {
-	onSuccess?: () => void;
-	onAccountLocked?: (lockedUntil: string) => void;
-}
-
-export const useLoginMutation = ({
-	onSuccess,
-	onAccountLocked,
-}: UseLoginMutationProps = {}) => {
+export const useLoginMutation = () => {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const redirect = searchParams.get("redirect") || PATH.DASHBOARD;
+	const redirect = searchParams.get("redirect");
 
 	const { login } = useAuthStore();
 
 	return useMutation({
 		mutationFn: async (data: LoginRequest) => {
-			const { Kind, OK, StatusCode } = await post<
-				ApiResponse<LoginResponse | AccountLockedErrorData>
-			>(MAIN_ENDPOINT.Auth.Login, data as unknown as Record<string, unknown>);
+			const { Kind, OK } = await post<MainResponse<LoginResponse>>(
+				MAIN_ENDPOINT.Auth.Login,
+				data,
+			);
+			const response = Kind as MainResponse<LoginResponse>;
+			const token = response?.data?.token;
 
-			if (!OK) {
-				const response = Kind as ApiResponse<AccountLockedErrorData>;
-				const retryAfter = response?.data?.retry_after;
-
-				if (StatusCode === 423 && typeof retryAfter === "number") {
-					const lockedUntil = new Date(
-						Date.now() + retryAfter * 1000,
-					).toISOString();
-
-					throw new AccountLockedError(
-						response?.message ?? "Account locked.",
-						lockedUntil,
-					);
-				}
-
+			if (!OK || !token) {
 				throw new Error(
-					response?.message ?? "Unable to sign in. Please try again.",
+					response?.error ||
+						response?.message ||
+						"Unable to sign in. Please try again.",
 				);
 			}
 
-			return (Kind as ApiResponse<LoginResponse>).data;
-		},
-		onSuccess: (data) => {
-			login({
-				...data.user,
-				access_token: data.access_token,
-				refresh_token: data.refresh_token,
-			});
-			toast.success("Signed in successfully.");
-			onSuccess?.();
+			const user = response.data?.user;
+			if (!user)
+				throw new Error("Unable to load your profile. Please try again.");
 
-			router.push(redirect);
+			return { token, user };
+		},
+		onSuccess: ({ token, user }) => {
+			login({ ...user, access_token: token });
+			toast.success(`Welcome back, ${user.name}!`);
+			// Only follow same-site redirects; the layout bounces wrong-role access.
+			const safe =
+				redirect?.startsWith("/") && !redirect.startsWith("//")
+					? redirect
+					: null;
+			router.push(safe ?? homeForRole(user.role));
 		},
 		onError: (error: Error) => {
-			if (error instanceof AccountLockedError) {
-				onAccountLocked?.(error.lockedUntil);
-				return;
-			}
-
 			toast.error(error.message || "Failed to sign in. Please try again.");
 		},
 	});
