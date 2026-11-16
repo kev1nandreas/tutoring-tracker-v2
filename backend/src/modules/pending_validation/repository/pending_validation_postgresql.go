@@ -115,6 +115,21 @@ func (r *pendingValidationPostgresRepository) SetStatusForPending(tutorialID uui
 	return changed, err
 }
 
+func (r *pendingValidationPostgresRepository) RemoveAccepted(tutorialID, userID uuid.UUID) (bool, error) {
+	removed := false
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		res := tx.Where("tutorial_id = ? AND user_id = ? AND is_validated = ?", tutorialID, userID, entity.StatusAccepted).
+			Delete(&entity.PendingValidation{})
+		if res.Error != nil {
+			return res.Error
+		}
+		removed = res.RowsAffected > 0
+		return tx.Where("tutorial_id = ? AND user_id = ?", tutorialID, userID).
+			Delete(&tutorialEntity.TutorialStudent{}).Error
+	})
+	return removed, err
+}
+
 func (r *pendingValidationPostgresRepository) FindGroupedByCreator(creatorID uuid.UUID, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error) {
 	// a tutorial is listed when it has at least one request matching status and search
 	exists := "EXISTS (SELECT 1 FROM pending_validations pv JOIN users u ON u.id = pv.user_id WHERE pv.tutorial_id = tutorials.id"

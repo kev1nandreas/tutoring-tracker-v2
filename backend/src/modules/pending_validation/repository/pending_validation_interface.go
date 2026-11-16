@@ -25,4 +25,8 @@ type PendingValidationRepository interface {
 	// SetStatusForPending moves still-pending requests of the given students to status
 	// and returns the user ids that were changed.
 	SetStatusForPending(tutorialID uuid.UUID, userIDs []uuid.UUID, status int) ([]uuid.UUID, error)
+	// RemoveAccepted unenrolls an accepted student: it deletes the request and the
+	// membership, so the student can ask to join again later. It reports whether the
+	// student was enrolled. Attendance and homework are kept.
+	RemoveAccepted(tutorialID, userID uuid.UUID) (bool, error)
 }

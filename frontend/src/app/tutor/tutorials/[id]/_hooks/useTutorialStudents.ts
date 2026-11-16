@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
 	fetchTutorialStudents,
+	unenrollStudent,
 	validateStudents,
 } from "@/services/api/main/student";
 import type { StudentStatus, ValidateAction } from "@/types/student";
@@ -37,6 +38,25 @@ export const useValidateStudentMutation = (
 			queryClient.invalidateQueries({
 				queryKey: ["tutorial", tutorialId, "students"],
 			});
+			queryClient.invalidateQueries({ queryKey: ["dashboard", "tutor"] });
+		},
+		onError: (error: Error) => toast.error(error.message),
+	});
+};
+
+/** Remove an enrolled student, then refresh the lists and the dashboard counts. */
+export const useUnenrollStudentMutation = (tutorialId: string) => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (userId: string) => unenrollStudent(tutorialId, userId),
+		onSuccess: () => {
+			toast.success("Student removed from the tutorial.");
+			queryClient.invalidateQueries({
+				queryKey: ["tutorial", tutorialId, "students"],
+			});
+			queryClient.invalidateQueries({ queryKey: ["tutor-student"] });
+			queryClient.invalidateQueries({ queryKey: ["tutor-students"] });
 			queryClient.invalidateQueries({ queryKey: ["dashboard", "tutor"] });
 		},
 		onError: (error: Error) => toast.error(error.message),

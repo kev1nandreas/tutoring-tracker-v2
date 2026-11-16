@@ -200,6 +200,30 @@ func (h *PendingValidationHandler) Validate(c *gin.Context) {
 	response.NewSuccessResponse("Validation processed", result).Send(c)
 }
 
+// Unenroll godoc
+// @Summary Remove a student from a tutorial
+// @Description Only the tutor who created the tutorial. The student loses access and can request to join again; attendance and homework are kept.
+// @Tags pending-validation
+// @Security JwtAuth
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Param userId path string true "Student user ID"
+// @Success 200 {string} string "Student removed"
+// @Failure 403 {string} string "Not your tutorial"
+// @Failure 404 {string} string "Student is not enrolled"
+// @Router /tutorials/{id}/students/{userId} [delete]
+func (h *PendingValidationHandler) Unenroll(c *gin.Context) {
+	callerID, role, ok := h.caller(c)
+	if !ok {
+		return
+	}
+	if err := h.usecase.Unenroll(callerID, role, c.Param("id"), c.Param("userId")); err != nil {
+		h.fail(c, err, "Failed to remove the student")
+		return
+	}
+	response.NewSuccessResponse("Student removed", nil).Send(c)
+}
+
 func (h *PendingValidationHandler) fail(c *gin.Context, err error, msg string) {
 	switch {
 	case errors.Is(err, usecase.ErrForbidden):

@@ -320,7 +320,6 @@ export default function PendingValidationView() {
 							columns={columns}
 							isLoading={isLoading}
 							omitSort
-							defaultExpanded
 							withPaginationControl
 							manualPagination
 							pagination={{ page, size: PAGE_SIZE }}

@@ -143,6 +143,39 @@ func (u *pendingValidationUsecase) FindByTutorial(callerID uuid.UUID, role, tuto
 	return out, meta, nil
 }
 
+func (u *pendingValidationUsecase) Unenroll(callerID uuid.UUID, role, tutorialID, studentID string) error {
+	if role != roleTutor {
+		return ErrForbidden
+	}
+	tid, err := uuid.Parse(tutorialID)
+	if err != nil {
+		return ErrNotFound
+	}
+	sid, err := uuid.Parse(studentID)
+	if err != nil {
+		return ErrNotFound
+	}
+	tutorial, err := u.repo.FindTutorialByID(tid)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
+		return err
+	}
+	if err := requireOwner(callerID, role, tutorial); err != nil {
+		return err
+	}
+
+	removed, err := u.repo.RemoveAccepted(tid, sid)
+	if err != nil {
+		return err
+	}
+	if !removed {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (u *pendingValidationUsecase) Validate(callerID uuid.UUID, role string, req dto.ValidateRequest) (*dto.ValidateResponse, error) {
 	if role != roleTutor {
 		return nil, ErrForbidden

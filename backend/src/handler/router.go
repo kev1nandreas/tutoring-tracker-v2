@@ -123,6 +123,7 @@ func NewRouter(
 		protected.GET("/pending-validations/mine", h.PendingValidation.FindMyEnrollments)
 		protected.POST("/pending-validations/enroll", h.PendingValidation.Enroll)
 		protected.POST("/pending-validations/validate", h.PendingValidation.Validate)
+		protected.DELETE("/tutorials/:id/students/:userId", h.PendingValidation.Unenroll)
 		protected.PUT("/tutorials/:id", h.Tutorial.UpdateTutorial)
 		protected.DELETE("/tutorials/:id", h.Tutorial.DeleteTutorial)
 

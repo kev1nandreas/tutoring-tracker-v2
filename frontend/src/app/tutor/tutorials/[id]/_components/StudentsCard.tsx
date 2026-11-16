@@ -16,6 +16,7 @@ import type {
 } from "@/types/student";
 import {
 	useTutorialStudents,
+	useUnenrollStudentMutation,
 	useValidateStudentMutation,
 } from "../_hooks/useTutorialStudents";
 
@@ -85,7 +86,10 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 		action: ValidateAction;
 	} | null>(null);
 
+	const [removing, setRemoving] = useState<TutorialStudent | null>(null);
+
 	const validate = useValidateStudentMutation(tutorialId, tutorialCode);
+	const unenroll = useUnenrollStudentMutation(tutorialId);
 	const busyId = validate.isPending ? validate.variables?.userId : undefined;
 
 	const count = (s: StudentStatus) =>
@@ -171,6 +175,19 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 											Accept
 										</Button>
 									</div>
+								) : tab === "accepted" ? (
+									<Button
+										variant="outline"
+										size="sm"
+										isLoading={
+											unenroll.isPending &&
+											unenroll.variables === student.user_id
+										}
+										disabled={unenroll.isPending}
+										onClick={() => setRemoving(student)}
+									>
+										Remove
+									</Button>
 								) : undefined
 							}
 						/>
@@ -196,6 +213,19 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 						action: confirm.action,
 					})
 				}
+			/>
+			<ConfirmationDialog
+				isOpen={removing !== null}
+				setIsOpen={(open) => !open && setRemoving(null)}
+				message={
+					removing
+						? `Remove ${removing.name} from this tutorial? They lose access to its meetings and materials, and can ask to join again. Their attendance and homework are kept.`
+						: ""
+				}
+				confirmLabel="Remove"
+				cancelLabel="Cancel"
+				confirmVariant="red"
+				onConfirm={() => removing && unenroll.mutate(removing.user_id)}
 			/>
 		</DashboardCard>
 	);

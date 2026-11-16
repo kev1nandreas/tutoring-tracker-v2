@@ -19,4 +19,7 @@ type PendingValidationUsecase interface {
 	FindByTutorial(callerID uuid.UUID, role, tutorialID string, params pagination.Params) ([]dto.PendingStudent, pagination.Meta, error)
 	// Validate accepts or declines many students at once; only the tutorial's creator may call it.
 	Validate(callerID uuid.UUID, role string, req dto.ValidateRequest) (*dto.ValidateResponse, error)
+	// Unenroll removes an accepted student from a tutorial; only its creator may call it.
+	// It returns ErrNotFound when the student is not enrolled.
+	Unenroll(callerID uuid.UUID, role, tutorialID, studentID string) error
 }

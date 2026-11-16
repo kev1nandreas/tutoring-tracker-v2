@@ -10,6 +10,8 @@ export const MAIN_ENDPOINT = {
 		Detail: (id: string) => `/v1/tutorials/${id}`,
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 		Students: (id: string) => `/v1/tutorials/${id}/pending-validations`,
+		Student: (id: string, userId: string) =>
+			`/v1/tutorials/${id}/students/${userId}`,
 		ImportSchedule: (id: string) => `/v1/tutorials/${id}/meetings/import`,
 	},
 	Student: {

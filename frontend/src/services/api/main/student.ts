@@ -1,5 +1,5 @@
 import { ApiError } from "@/lib/errors";
-import { get, post } from "@/services/api/main/call";
+import { del, get, post } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
 import type { MainResponse, PaginatedMainResponse } from "@/types/api";
 import {
@@ -35,6 +35,21 @@ export async function fetchTutorialStudents(
 		);
 	}
 	return { items: response.data ?? [], total: response.meta?.total_items ?? 0 };
+}
+
+/** Removes an enrolled student from a tutorial. They can ask to join again. */
+export async function unenrollStudent(tutorialId: string, userId: string) {
+	const { OK, Kind, StatusCode } = await del<MainResponse>(
+		MAIN_ENDPOINT.Tutorial.Student(tutorialId, userId),
+	);
+
+	if (!OK) {
+		const response = Kind as MainResponse;
+		throw new ApiError(
+			response?.error || response?.message || "Failed to remove the student.",
+			StatusCode,
+		);
+	}
 }
 
 export async function validateStudents(
