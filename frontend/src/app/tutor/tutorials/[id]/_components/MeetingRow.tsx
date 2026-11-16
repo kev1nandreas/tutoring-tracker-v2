@@ -1,5 +1,4 @@
-import { Check, NotebookPen, Video } from "lucide-react";
-import Typography from "@/components/Typography";
+import { Check, NotebookPen, Pencil, Video } from "lucide-react";
 import clsxm from "@/lib/clsxm";
 import { formatTimeRange, timeOf } from "@/lib/helper";
 import type { Meeting } from "@/types/meeting";
@@ -9,18 +8,26 @@ type Props = {
 	/** First meeting that has not happened yet. */
 	isNext: boolean;
 	isPast: boolean;
+	onEdit: (meeting: Meeting) => void;
+	onOpen: (meeting: Meeting) => void;
 };
 
 const WEEKDAY = new Intl.DateTimeFormat("en-GB", { weekday: "short" });
 const MONTH = new Intl.DateTimeFormat("en-GB", { month: "short" });
 
 /** Date tile + title/time + state. Done meetings are muted; the next one is highlighted. */
-export default function MeetingRow({ meeting, isNext, isPast }: Props) {
+export default function MeetingRow({
+	meeting,
+	isNext,
+	isPast,
+	onEdit,
+	onOpen,
+}: Props) {
 	const day = new Date(`${meeting.date.slice(0, 10)}T00:00:00`);
 	const needsUpdate = isPast && !meeting.is_done;
 
 	return (
-		<li className="flex items-center gap-4 py-3">
+		<li className="group relative flex items-center gap-4 py-3">
 			<div
 				aria-hidden
 				className={clsxm(
@@ -40,15 +47,16 @@ export default function MeetingRow({ meeting, isNext, isPast }: Props) {
 			</div>
 
 			<div className="min-w-0 flex-1">
-				<Typography
-					weight="medium"
+				<button
+					type="button"
+					onClick={() => onOpen(meeting)}
 					className={clsxm(
-						"truncate text-sm",
+						"block max-w-full truncate rounded text-left text-sm font-medium after:absolute after:inset-0 focus-visible:outline-2 focus-visible:outline-brand-600",
 						meeting.is_done ? "text-gray-500" : "text-gray-900",
 					)}
 				>
 					{meeting.title}
-				</Typography>
+				</button>
 				<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
 					<span className="tabular-nums">
 						{formatTimeRange(
@@ -66,7 +74,7 @@ export default function MeetingRow({ meeting, isNext, isPast }: Props) {
 							href={meeting.youtube_link}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="flex items-center gap-1 text-brand-700 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand-600"
+							className="relative z-10 flex items-center gap-1 text-brand-700 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand-600"
 						>
 							<Video size={12} aria-hidden /> Recording
 						</a>
@@ -89,6 +97,15 @@ export default function MeetingRow({ meeting, isNext, isPast }: Props) {
 					</span>
 				) : null}
 			</div>
+
+			<button
+				type="button"
+				onClick={() => onEdit(meeting)}
+				aria-label={`Edit ${meeting.title}`}
+				className="relative z-10 shrink-0 rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-brand-700 focus-visible:outline-2 focus-visible:outline-brand-600"
+			>
+				<Pencil size={16} aria-hidden />
+			</button>
 		</li>
 	);
 }

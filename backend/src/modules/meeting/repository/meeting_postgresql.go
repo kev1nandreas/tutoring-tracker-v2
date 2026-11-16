@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"github.com/google/uuid"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/meeting/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pagination"
 	"gorm.io/gorm"
@@ -75,4 +76,16 @@ func (r *meetingPostgresRepository) Update(meeting *entity.Meeting) error {
 
 func (r *meetingPostgresRepository) Delete(meeting *entity.Meeting) error {
 	return r.db.Delete(meeting).Error
+}
+
+func (r *meetingPostgresRepository) TutorialCreator(tutorialID string) (*uuid.UUID, error) {
+	var row struct{ CreatedBy *uuid.UUID }
+	res := r.db.Table("tutorials").Select("created_by").Where("id = ?", tutorialID).Limit(1).Scan(&row)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	return row.CreatedBy, nil
 }

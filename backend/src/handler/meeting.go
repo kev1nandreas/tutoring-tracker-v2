@@ -68,6 +68,7 @@ func (h *MeetingHandler) FindMeetingsByTutorial(c *gin.Context) {
 
 // CreateMeeting godoc
 // @Summary Create a meeting
+// @Description Only the tutor who created the tutorial (or an admin) can add meetings. date is YYYY-MM-DD; time_start and time_end are HH:MM in the app timezone.
 // @Tags meeting
 // @Security JwtAuth
 // @Accept json
@@ -75,6 +76,7 @@ func (h *MeetingHandler) FindMeetingsByTutorial(c *gin.Context) {
 // @Param input body dto.CreateMeetingRequest true "Create meeting"
 // @Success 201 {object} entity.Meeting
 // @Failure 400 {string} string "Bad Request"
+// @Failure 403 {string} string "Forbidden"
 // @Router /meetings [post]
 func (h *MeetingHandler) CreateMeeting(c *gin.Context) {
 	var input dto.CreateMeetingRequest
@@ -84,8 +86,16 @@ func (h *MeetingHandler) CreateMeeting(c *gin.Context) {
 		return
 	}
 
+	if !h.canManageTutorial(c, input.TutorialID.String()) {
+		return
+	}
+
 	item, err := h.usecase.Create(input)
 	if err != nil {
+		if errors.Is(err, usecase.ErrInvalidTimeRange) {
+			response.NewErrorResponse(http.StatusBadRequest, "Invalid time range", err.Error()).Send(c)
+			return
+		}
 		response.NewErrorResponse(http.StatusInternalServerError, "Failed to create meeting", err.Error()).Send(c)
 		return
 	}
@@ -118,6 +128,7 @@ func (h *MeetingHandler) FindMeeting(c *gin.Context) {
 
 // UpdateMeeting godoc
 // @Summary Update a meeting by ID
+// @Description Only the tutor who created the tutorial (or an admin) can update its meetings.
 // @Tags meeting
 // @Security JwtAuth
 // @Accept json
@@ -135,8 +146,16 @@ func (h *MeetingHandler) UpdateMeeting(c *gin.Context) {
 		return
 	}
 
+	if !h.canManageMeeting(c) {
+		return
+	}
+
 	item, err := h.usecase.Update(c.Param("id"), input)
 	if err != nil {
+		if errors.Is(err, usecase.ErrInvalidTimeRange) {
+			response.NewErrorResponse(http.StatusBadRequest, "Invalid time range", err.Error()).Send(c)
+			return
+		}
 		h.notFoundOrError(c, err)
 		return
 	}
@@ -146,6 +165,7 @@ func (h *MeetingHandler) UpdateMeeting(c *gin.Context) {
 
 // DeleteMeeting godoc
 // @Summary Delete a meeting by ID
+// @Description Only the tutor who created the tutorial (or an admin) can delete its meetings.
 // @Tags meeting
 // @Security JwtAuth
 // @Produce json
@@ -154,6 +174,10 @@ func (h *MeetingHandler) UpdateMeeting(c *gin.Context) {
 // @Failure 404 {string} string "Not found"
 // @Router /meetings/{id} [delete]
 func (h *MeetingHandler) DeleteMeeting(c *gin.Context) {
+	if !h.canManageMeeting(c) {
+		return
+	}
+
 	if err := h.usecase.Delete(c.Param("id")); err != nil {
 		h.notFoundOrError(c, err)
 		return
@@ -165,6 +189,53 @@ func (h *MeetingHandler) DeleteMeeting(c *gin.Context) {
 		Message:    "Meeting deleted successfully",
 		Data:       true,
 	}.Send(c)
+}
+
+// canManageTutorial lets only the creating tutor, or an admin, change a tutorial's
+// meetings. It writes the error response itself and returns false when denied.
+func (h *MeetingHandler) canManageTutorial(c *gin.Context, tutorialID string) bool {
+	role := c.GetString("role")
+	if role == "admin" {
+		return true
+	}
+	if role != "tutor" {
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor can change meetings").Send(c)
+		return false
+	}
+
+	creator, err := h.usecase.TutorialCreator(tutorialID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", err.Error()).Send(c)
+			return false
+		}
+		response.NewErrorResponse(http.StatusInternalServerError, "Failed to process meeting", err.Error()).Send(c)
+		return false
+	}
+	// someone else's tutorial looks the same as a missing one
+	if creator == nil || creator.String() != c.GetString("user_id") {
+		response.NewErrorResponse(http.StatusNotFound, "Tutorial not found", "record not found").Send(c)
+		return false
+	}
+	return true
+}
+
+// canManageMeeting is canManageTutorial for the tutorial that owns meeting :id.
+func (h *MeetingHandler) canManageMeeting(c *gin.Context) bool {
+	if c.GetString("role") == "admin" {
+		return true
+	}
+	if c.GetString("role") != "tutor" {
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor can change meetings").Send(c)
+		return false
+	}
+
+	meeting, err := h.usecase.FindByID(c.Param("id"))
+	if err != nil {
+		h.notFoundOrError(c, err)
+		return false
+	}
+	return h.canManageTutorial(c, meeting.TutorialID.String())
 }
 
 func (h *MeetingHandler) notFoundOrError(c *gin.Context, err error) {

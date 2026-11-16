@@ -27,6 +27,7 @@ definitions:
   dto.CreateMeetingRequest:
     properties:
       date:
+        format: date
         type: string
       has_homework:
         type: boolean
@@ -37,8 +38,10 @@ definitions:
       text_homework:
         type: string
       time_end:
+        example: "17:30"
         type: string
       time_start:
+        example: "16:00"
         type: string
       title:
         type: string
@@ -52,7 +55,6 @@ definitions:
     - time_start
     - title
     - tutorial_id
-    - youtube_link
     type: object
   dto.CreatePaymentRequest:
     properties:
@@ -404,6 +406,7 @@ definitions:
   dto.UpdateMeetingRequest:
     properties:
       date:
+        format: date
         type: string
       has_homework:
         type: boolean
@@ -414,12 +417,12 @@ definitions:
       text_homework:
         type: string
       time_end:
+        example: "17:30"
         type: string
       time_start:
+        example: "16:00"
         type: string
       title:
-        type: string
-      tutorial_id:
         type: string
       youtube_link:
         type: string
@@ -928,6 +931,8 @@ paths:
     post:
       consumes:
       - application/json
+      description: Only the tutor who created the tutorial (or an admin) can add meetings.
+        date is YYYY-MM-DD; time_start and time_end are HH:MM in the app timezone.
       parameters:
       - description: Create meeting
         in: body
@@ -946,6 +951,10 @@ paths:
           description: Bad Request
           schema:
             type: string
+        "403":
+          description: Forbidden
+          schema:
+            type: string
       security:
       - JwtAuth: []
       summary: Create a meeting
@@ -953,6 +962,8 @@ paths:
       - meeting
   /meetings/{id}:
     delete:
+      description: Only the tutor who created the tutorial (or an admin) can delete
+        its meetings.
       parameters:
       - description: Meeting ID
         in: path
@@ -999,6 +1010,8 @@ paths:
     put:
       consumes:
       - application/json
+      description: Only the tutor who created the tutorial (or an admin) can update
+        its meetings.
       parameters:
       - description: Meeting ID
         in: path

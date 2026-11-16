@@ -2,13 +2,17 @@
 
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import { Plus } from "lucide-react";
 import { Fragment, useState } from "react";
+import Button from "@/components/button/Button";
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import { formatDay, todayISO } from "@/lib/helper";
 import type { Meeting } from "@/types/meeting";
+import MeetingDetailDrawer from "./MeetingDetailDrawer";
+import MeetingFormDialog from "./MeetingFormDialog";
 import MeetingRow from "./MeetingRow";
 
-type Props = { meetings?: Meeting[]; isLoading: boolean };
+type Props = { tutorialId: string; meetings?: Meeting[]; isLoading: boolean };
 
 type View = "all" | "upcoming" | "past";
 
@@ -32,8 +36,17 @@ const EMPTY_TEXT: Record<View, string> = {
 	past: "No past meetings.",
 };
 
-export default function MeetingLedger({ meetings = [], isLoading }: Props) {
+export default function MeetingLedger({
+	tutorialId,
+	meetings = [],
+	isLoading,
+}: Props) {
 	const [view, setView] = useState<View>("all");
+	const [isAddOpen, setIsAddOpen] = useState(false);
+	const [editing, setEditing] = useState<Meeting | null>(null);
+	// keep the id, not the object, so the panel shows fresh data after an edit
+	const [selectedId, setSelectedId] = useState<string | null>(null);
+	const selected = meetings.find((m) => m.id === selectedId) ?? null;
 	const today = todayISO();
 	const dateOf = (m: Meeting) => m.date.slice(0, 10);
 
@@ -54,59 +67,96 @@ export default function MeetingLedger({ meetings = [], isLoading }: Props) {
 	const firstUpcoming = visible.findIndex((m) => dateOf(m) >= today);
 	const todayAt = firstUpcoming === -1 ? visible.length : firstUpcoming;
 
-	return (
-		<DashboardCard
-			title="Meetings"
-			count={meetings.length}
-			isLoading={isLoading}
-			isEmpty={meetings.length === 0}
-			emptyText={EMPTY_TEXT.all}
+	const addButton = (
+		<Button
+			variant="brand"
+			size="sm"
+			leftIcon={Plus}
+			onClick={() => setIsAddOpen(true)}
 		>
-			<Tabs
-				value={view}
-				onChange={(_, next: View) => setView(next)}
-				aria-label="Filter meetings"
-				sx={{
-					minHeight: 40,
-					mt: -1,
-					mb: 1,
-					borderBottom: 1,
-					borderColor: "divider",
-					"& .MuiTab-root": {
-						textTransform: "none",
-						fontWeight: 500,
-						fontSize: 14,
-						minHeight: 40,
-						minWidth: 72,
-					},
-				}}
-			>
-				<Tab value="all" label="All" />
-				<Tab value="upcoming" label={`Upcoming (${upcomingCount})`} />
-				<Tab value="past" label={`Past (${pastCount})`} />
-			</Tabs>
+			Add meeting
+		</Button>
+	);
 
-			{visible.length === 0 ? (
-				<p className="py-8 text-center text-sm text-gray-400">
-					{EMPTY_TEXT[view]}
-				</p>
-			) : (
-				<ul className="divide-y divide-gray-100">
-					{visible.map((m, i) => (
-						<Fragment key={m.id}>
-							{showToday && i === todayAt && <TodayLine today={today} />}
-							<MeetingRow
-								meeting={m}
-								isNext={m.id === nextId}
-								isPast={dateOf(m) < today}
-							/>
-						</Fragment>
-					))}
-					{showToday && todayAt === visible.length && (
-						<TodayLine today={today} />
-					)}
-				</ul>
-			)}
-		</DashboardCard>
+	return (
+		<>
+			<DashboardCard
+				title="Meetings"
+				count={meetings.length}
+				isLoading={isLoading}
+				isEmpty={meetings.length === 0}
+				emptyText="No meetings yet. Add the first one to start the schedule."
+				action={meetings.length > 0 ? addButton : undefined}
+				emptyAction={addButton}
+			>
+				<Tabs
+					value={view}
+					onChange={(_, next: View) => setView(next)}
+					aria-label="Filter meetings"
+					sx={{
+						minHeight: 40,
+						mt: -1,
+						mb: 1,
+						borderBottom: 1,
+						borderColor: "divider",
+						"& .MuiTab-root": {
+							textTransform: "none",
+							fontWeight: 500,
+							fontSize: 14,
+							minHeight: 40,
+							minWidth: 72,
+						},
+					}}
+				>
+					<Tab value="all" label="All" />
+					<Tab value="upcoming" label={`Upcoming (${upcomingCount})`} />
+					<Tab value="past" label={`Past (${pastCount})`} />
+				</Tabs>
+
+				{visible.length === 0 ? (
+					<p className="py-8 text-center text-sm text-gray-400">
+						{EMPTY_TEXT[view]}
+					</p>
+				) : (
+					<ul className="divide-y divide-gray-100">
+						{visible.map((m, i) => (
+							<Fragment key={m.id}>
+								{showToday && i === todayAt && <TodayLine today={today} />}
+								<MeetingRow
+									meeting={m}
+									isNext={m.id === nextId}
+									isPast={dateOf(m) < today}
+									onEdit={setEditing}
+									onOpen={(meeting) => setSelectedId(meeting.id)}
+								/>
+							</Fragment>
+						))}
+						{showToday && todayAt === visible.length && (
+							<TodayLine today={today} />
+						)}
+					</ul>
+				)}
+			</DashboardCard>
+
+			<MeetingDetailDrawer
+				meeting={selected}
+				onClose={() => setSelectedId(null)}
+				onEdit={(meeting) => {
+					setSelectedId(null);
+					setEditing(meeting);
+				}}
+			/>
+			<MeetingFormDialog
+				isOpen={isAddOpen}
+				onClose={() => setIsAddOpen(false)}
+				tutorialId={tutorialId}
+			/>
+			<MeetingFormDialog
+				isOpen={editing !== null}
+				onClose={() => setEditing(null)}
+				tutorialId={tutorialId}
+				meeting={editing ?? undefined}
+			/>
+		</>
 	);
 }

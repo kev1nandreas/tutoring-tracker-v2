@@ -369,6 +369,7 @@ const docTemplate = `{
                         "JwtAuth": []
                     }
                 ],
+                "description": "Only the tutor who created the tutorial (or an admin) can add meetings. date is YYYY-MM-DD; time_start and time_end are HH:MM in the app timezone.",
                 "consumes": [
                     "application/json"
                 ],
@@ -399,6 +400,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
                         "schema": {
                             "type": "string"
                         }
@@ -445,6 +452,7 @@ const docTemplate = `{
                         "JwtAuth": []
                     }
                 ],
+                "description": "Only the tutor who created the tutorial (or an admin) can update its meetings.",
                 "consumes": [
                     "application/json"
                 ],
@@ -494,6 +502,7 @@ const docTemplate = `{
                         "JwtAuth": []
                     }
                 ],
+                "description": "Only the tutor who created the tutorial (or an admin) can delete its meetings.",
                 "produces": [
                     "application/json"
                 ],
@@ -2245,12 +2254,12 @@ const docTemplate = `{
                 "time_end",
                 "time_start",
                 "title",
-                "tutorial_id",
-                "youtube_link"
+                "tutorial_id"
             ],
             "properties": {
                 "date": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "date"
                 },
                 "has_homework": {
                     "type": "boolean"
@@ -2265,10 +2274,12 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "time_end": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "17:30"
                 },
                 "time_start": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "16:00"
                 },
                 "title": {
                     "type": "string"
@@ -2807,7 +2818,8 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "date": {
-                    "type": "string"
+                    "type": "string",
+                    "format": "date"
                 },
                 "has_homework": {
                     "type": "boolean"
@@ -2822,15 +2834,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "time_end": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "17:30"
                 },
                 "time_start": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "16:00"
                 },
                 "title": {
-                    "type": "string"
-                },
-                "tutorial_id": {
                     "type": "string"
                 },
                 "youtube_link": {

@@ -7,6 +7,10 @@ export const MAIN_ENDPOINT = {
 		Detail: (id: string) => `/v1/tutorials/${id}`,
 		Meetings: (id: string) => `/v1/tutorials/${id}/meetings`,
 	},
+	Meeting: {
+		Create: "/v1/meetings",
+		Detail: (id: string) => `/v1/meetings/${id}`,
+	},
 	Dashboard: {
 		Tutor: "/v1/dashboard/tutor",
 		Student: "/v1/dashboard/student",
