@@ -13,6 +13,8 @@ import (
 // Claims struct to be encoded to JWT
 type Claims struct {
 	Username string `json:"username"`
+	Email    string `json:"email"`
+	Role     string `json:"role"`
 	jwt.StandardClaims
 }
 
@@ -23,12 +25,17 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func GenerateToken(username string) (string, error) {
+func GenerateToken(username, email, role string) (string, error) {
 	expirationTime := time.Now().Add(5 * time.Minute).Unix()
 
-	claims := &jwt.StandardClaims{
-		ExpiresAt: expirationTime,
-		Issuer:    username,
+	claims := &Claims{
+		Username: username,
+		Email:    email,
+		Role:     role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime,
+			Issuer:    username,
+		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
