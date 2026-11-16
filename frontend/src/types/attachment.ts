@@ -31,7 +31,7 @@ export const ATTACHMENT_EXTENSIONS: Record<
 	Exclude<AttachmentType, "other">,
 	string[]
 > = {
-	ppt: [".ppt", ".pps", ".pptx", ".ppsx", ".odp", ".key"],
+	ppt: [".ppt", ".pps", ".pptx", ".ppsx", ".odp", ".key", ".pdf"],
 	picture: [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"],
 	book: [".pdf", ".epub", ".mobi"],
 	video: [".mp4", ".m4v", ".webm", ".mov", ".mkv"],
@@ -62,7 +62,7 @@ const extOf = (name: string) => {
 	return i < 0 ? "" : name.slice(i).toLowerCase();
 };
 
-/** Best category for a file name; "other" when unknown. */
+/** Best category for a file name; "other" when unknown. A .pdf is picked as a book; it is also accepted as a presentation. */
 export function detectAttachmentType(name: string): AttachmentType {
 	const ext = extOf(name);
 	for (const t of ["ppt", "picture", "book", "video"] as const) {

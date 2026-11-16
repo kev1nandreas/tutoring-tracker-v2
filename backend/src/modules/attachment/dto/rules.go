@@ -39,6 +39,7 @@ var contentTypes = map[string]map[string]string{
 		".ppsx": "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
 		".odp":  "application/vnd.oasis.opendocument.presentation",
 		".key":  "application/vnd.apple.keynote",
+		".pdf":  "application/pdf", // slides exported as PDF
 	},
 	TypePicture: {
 		".jpg":  "image/jpeg",
