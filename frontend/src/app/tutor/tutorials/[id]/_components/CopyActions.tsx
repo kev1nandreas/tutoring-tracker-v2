@@ -13,6 +13,7 @@ const enrollText = (t: Tutorial, origin: string) =>
 3. Masukkan kode kelas: *${t.custom_id}*.
 4. Klik kirim, lalu tunggu tutor menyetujui permintaanmu.
 5. Setelah disetujui, kelas akan muncul di halaman utama kamu.
+6. Jangan lupa verifikasi email melalui menu *Setting* untuk dapat notifikasi via email yaa😉
 
 Kalau ada kendala, kabari ya. Terima kasih!🙌`;
 
