@@ -18,16 +18,21 @@ type UserResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type LoginResponse struct {
-	Token string `json:"token"`
+// MeResponse is the authenticated user's profile, role included.
+type MeResponse struct {
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	School      string     `json:"school"`
+	Phone       string     `json:"phone"`
+	Email       string     `json:"email"`
+	Username    string     `json:"username"`
+	RoleID      uuid.UUID  `json:"role_id"`
+	Role        string     `json:"role"`
+	LastLoginAt *time.Time `json:"last_login_at"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
-// MeResponse is the authenticated user's profile.
-type MeResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	Username string    `json:"username"`
-	Email    string    `json:"email"`
-	RoleID   uuid.UUID `json:"role_id"`
-	Role     string    `json:"role"`
+type LoginResponse struct {
+	Token string     `json:"token"`
+	User  MeResponse `json:"user"`
 }

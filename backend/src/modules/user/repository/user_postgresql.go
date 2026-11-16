@@ -53,6 +53,20 @@ func (r *userPostgresRepository) FindByUsername(username string) (*entity.User, 
 	return &user, nil
 }
 
+func (r *userPostgresRepository) FindByEmail(email string) (*entity.User, error) {
+	var user entity.User
+	if err := r.db.Preload("Role").Where("LOWER(email) = LOWER(?)", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *userPostgresRepository) ExistsByEmail(email string) (bool, error) {
+	var n int64
+	err := r.db.Model(&entity.User{}).Where("LOWER(email) = LOWER(?)", email).Count(&n).Error
+	return n > 0, err
+}
+
 func (r *userPostgresRepository) FindRoleByName(name string) (*roleEntity.Role, error) {
 	var role roleEntity.Role
 	if err := r.db.Where("name = ?", name).First(&role).Error; err != nil {

@@ -15,7 +15,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("Please provide a seeder action: 'up' or 'down'")
+		log.Fatal("Please provide a seeder action: 'up', 'tutor' or 'down'")
 	}
 
 	action := os.Args[1]
@@ -33,6 +33,14 @@ func main() {
 			log.Fatalf("Failed to run seeders: %v", err)
 		}
 		log.Println("Seeders completed successfully!")
+	case "tutor":
+		log.Println("Seeding roles and the default tutor only...")
+		if err := seeders.SeedRoles(db); err != nil {
+			log.Fatalf("Failed to seed roles: %v", err)
+		}
+		if err := seeders.SeedTutor(db); err != nil {
+			log.Fatalf("Failed to seed tutor: %v", err)
+		}
 	case "down":
 		log.Println("Clearing all seeded data (down)...")
 		if err := seeders.ClearAllData(db); err != nil {
@@ -40,7 +48,7 @@ func main() {
 		}
 		log.Println("Data cleared successfully!")
 	default:
-		log.Fatalf("Unknown action: %s. Use 'up' or 'down'", action)
+		log.Fatalf("Unknown action: %s. Use 'up', 'tutor' or 'down'", action)
 	}
 }
 

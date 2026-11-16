@@ -13,6 +13,8 @@ type UserRepository interface {
 	FindAll(params pagination.Params) ([]entity.User, pagination.Meta, error)
 	FindByID(id string) (*entity.User, error)
 	FindByUsername(username string) (*entity.User, error)
+	FindByEmail(email string) (*entity.User, error)
+	ExistsByEmail(email string) (bool, error)
 	FindRoleByName(name string) (*roleEntity.Role, error)
 	UpdateLastLogin(id uuid.UUID, at time.Time) error
 	Create(user *entity.User) error

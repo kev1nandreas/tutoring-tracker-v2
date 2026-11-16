@@ -22,13 +22,13 @@ func NewUserUsecase(repo repository.UserRepository) UserUsecase {
 }
 
 func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
-	user, err := u.repo.FindByUsername(req.Username)
+	user, err := u.repo.FindByEmail(req.Email)
 	if err != nil {
-		return nil, errors.New("invalid username or password")
+		return nil, errors.New("invalid email or password")
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		return nil, errors.New("invalid username or password")
+		return nil, errors.New("invalid email or password")
 	}
 
 	// track the last login of students; a failure here must not block logging in
@@ -43,7 +43,7 @@ func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 		return nil, errors.New("error generating token")
 	}
 
-	return &dto.LoginResponse{Token: token}, nil
+	return &dto.LoginResponse{Token: token, User: *toMeResponse(user)}, nil
 }
 
 const (
@@ -52,6 +52,9 @@ const (
 )
 
 // ErrForbidden is returned when the caller is not allowed to perform the action.
+// ErrEmailTaken is returned when registering an email that is already in use.
+var ErrEmailTaken = errors.New("email is already registered")
+
 var ErrForbidden = errors.New("only a tutor can register a tutor")
 
 // Me returns the profile (id and role included) of the user from the token.
@@ -60,14 +63,7 @@ func (u *userUsecase) Me(username string) (*dto.MeResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &dto.MeResponse{
-		ID:       user.ID,
-		Name:     user.Name,
-		Username: user.Username,
-		Email:    user.Email,
-		RoleID:   user.RoleID,
-		Role:     user.Role.Name,
-	}, nil
+	return toMeResponse(user), nil
 }
 
 // Register creates a public account; the role is always student.
@@ -96,6 +92,13 @@ func (u *userUsecase) createWithRole(roleName string, req dto.RegisterRequest) (
 	role, err := u.repo.FindRoleByName(roleName)
 	if err != nil {
 		return nil, errors.New(roleName + " role not found")
+	}
+
+	// Login is by email, so an email must belong to exactly one account.
+	if taken, err := u.repo.ExistsByEmail(req.Email); err != nil {
+		return nil, errors.New("could not check email")
+	} else if taken {
+		return nil, ErrEmailTaken
 	}
 
 	hashedPassword, err := auth.HashPassword(req.Password)
@@ -174,4 +177,19 @@ func (u *userUsecase) Delete(id string) error {
 	}
 
 	return u.repo.Delete(user)
+}
+
+func toMeResponse(user *entity.User) *dto.MeResponse {
+	return &dto.MeResponse{
+		ID:          user.ID,
+		Name:        user.Name,
+		School:      user.School,
+		Phone:       user.Phone,
+		Email:       user.Email,
+		Username:    user.Username,
+		RoleID:      user.RoleID,
+		Role:        user.Role.Name,
+		LastLoginAt: user.LastLoginAt,
+		CreatedAt:   user.CreatedAt,
+	}
 }

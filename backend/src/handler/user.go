@@ -122,12 +122,12 @@ func (h *UserHandler) notFoundOrError(c *gin.Context, err error) {
 
 // LoginHandler godoc
 // @Summary Authenticate a user
-// @Description Authenticates a user using username and password, returns a JWT token if successful
+// @Description Authenticates a user using email and password, returns a JWT token if successful
 // @Tags user
 // @Accept json
 // @Produce json
 // @Param user body dto.LoginRequest true "User login object"
-// @Success 200 {string} string "JWT Token"
+// @Success 200 {object} dto.LoginResponse
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized"
 // @Router /login [post]
@@ -141,11 +141,11 @@ func (h *UserHandler) LoginHandler(c *gin.Context) {
 
 	loginResp, err := h.usecase.Login(req)
 	if err != nil {
-		response.NewErrorResponse(http.StatusUnauthorized, "Invalid username or password", err.Error()).Send(c)
+		response.NewErrorResponse(http.StatusUnauthorized, "Invalid email or password", err.Error()).Send(c)
 		return
 	}
 
-	response.NewSuccessResponse("Login successful", gin.H{"token": loginResp.Token}).Send(c)
+	response.NewSuccessResponse("Login successful", loginResp).Send(c)
 }
 
 // RegisterHandler godoc
@@ -168,6 +168,10 @@ func (h *UserHandler) RegisterHandler(c *gin.Context) {
 	}
 
 	if _, err := h.usecase.Register(req); err != nil {
+		if errors.Is(err, usecase.ErrEmailTaken) {
+			response.NewErrorResponse(http.StatusConflict, "Email already registered", err.Error()).Send(c)
+			return
+		}
 		response.NewErrorResponse(http.StatusInternalServerError, "Could not register user", err.Error()).Send(c)
 		return
 	}
@@ -200,6 +204,10 @@ func (h *UserHandler) RegisterTutorHandler(c *gin.Context) {
 	}
 
 	if _, err := h.usecase.RegisterTutor(c.GetString("username"), req); err != nil {
+		if errors.Is(err, usecase.ErrEmailTaken) {
+			response.NewErrorResponse(http.StatusConflict, "Email already registered", err.Error()).Send(c)
+			return
+		}
 		if errors.Is(err, usecase.ErrForbidden) {
 			response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
 			return

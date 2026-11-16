@@ -33,6 +33,9 @@ test:
 seed:
 	go run scripts/seeders/cmd/main.go up
 
+seed-tutor:
+	go run scripts/seeders/cmd/main.go tutor
+
 seed-clear:
 	go run scripts/seeders/cmd/main.go down
 

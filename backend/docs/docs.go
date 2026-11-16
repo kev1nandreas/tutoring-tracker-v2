@@ -176,7 +176,7 @@ const docTemplate = `{
         },
         "/login": {
             "post": {
-                "description": "Authenticates a user using username and password, returns a JWT token if successful",
+                "description": "Authenticates a user using email and password, returns a JWT token if successful",
                 "consumes": [
                     "application/json"
                 ],
@@ -200,9 +200,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "JWT Token",
+                        "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/dto.LoginResponse"
                         }
                     },
                     "400": {
@@ -2304,34 +2304,57 @@ const docTemplate = `{
         "dto.LoginRequest": {
             "type": "object",
             "required": [
-                "password",
-                "username"
+                "email",
+                "password"
             ],
             "properties": {
-                "password": {
+                "email": {
                     "type": "string"
                 },
-                "username": {
+                "password": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.MeResponse"
                 }
             }
         },
         "dto.MeResponse": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
+                "last_login_at": {
+                    "type": "string"
+                },
                 "name": {
+                    "type": "string"
+                },
+                "phone": {
                     "type": "string"
                 },
                 "role": {
                     "type": "string"
                 },
                 "role_id": {
+                    "type": "string"
+                },
+                "school": {
                     "type": "string"
                 },
                 "username": {
