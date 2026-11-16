@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Lock, Mail, Phone, School, User } from "lucide-react";
 import { FormProvider, type SubmitHandler, useForm } from "react-hook-form";
 import Button from "@/components/button/Button";
+import GoogleSignInButton from "@/components/button/GoogleSignInButton";
 import Input from "@/components/form/Input";
 import LabelText from "@/components/form/LabelText";
 import PrimaryLink from "@/components/links/PrimaryLink";
@@ -45,10 +46,23 @@ export default function RegisterForm() {
 				Sign up as a student. Your tutor will add you to their classes.
 			</Typography>
 
+			<div className="mt-8">
+				<GoogleSignInButton label="Sign up with Google" />
+				<Typography className="mt-2 text-xs text-[var(--ink-soft)]">
+					We take your name and email from Google, then ask for your school,
+					phone and a username.
+				</Typography>
+				<div className="mt-5 flex items-center gap-3 text-xs text-[var(--ink-soft)]">
+					<span className="h-px flex-1 bg-gray-200" />
+					or fill in the form
+					<span className="h-px flex-1 bg-gray-200" />
+				</div>
+			</div>
+
 			<FormProvider {...methods}>
 				<form
 					onSubmit={methods.handleSubmit(onSubmit)}
-					className="mt-8 flex flex-col gap-5"
+					className="mt-6 flex flex-col gap-5"
 				>
 					<div>
 						<LabelText labelTextClasname="mb-1.5 font-semibold">

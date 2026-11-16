@@ -71,6 +71,7 @@ func NewRouter(
 		v1.POST("/auth/reset-password", limit, h.User.ResetPasswordHandler)
 		v1.POST("/register", limit, h.User.RegisterHandler)
 		v1.GET("/me", factory.JWTAuth(), limit, h.User.MeHandler)
+		v1.PUT("/me/profile", factory.JWTAuth(), limit, h.User.CompleteProfileHandler)
 
 		// public feedback form (no login): per-IP rate limit
 		v1.GET("/public/feedback/:code", limit, h.Feedback.FormInfo)

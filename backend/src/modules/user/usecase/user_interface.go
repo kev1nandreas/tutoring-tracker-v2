@@ -16,6 +16,8 @@ type UserUsecase interface {
 	ForgotPassword(email string)
 	// ResetPassword sets a new password using the token from the emailed link.
 	ResetPassword(req dto.ResetPasswordRequest) error
+	// CompleteProfile saves the caller's identity. The username may change, so a new token comes back.
+	CompleteProfile(callerUsername string, req dto.CompleteProfileRequest) (*dto.LoginResponse, error)
 	Me(username string) (*dto.MeResponse, error)
 	Register(req dto.RegisterRequest) (*entity.User, error)
 	RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error)

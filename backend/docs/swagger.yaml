@@ -21,6 +21,27 @@ definitions:
       type:
         type: string
     type: object
+  dto.CompleteProfileRequest:
+    properties:
+      name:
+        maxLength: 100
+        type: string
+      phone:
+        maxLength: 12
+        type: string
+      school:
+        maxLength: 100
+        type: string
+      username:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    - phone
+    - school
+    - username
+    type: object
   dto.CompleteUploadsRequest:
     properties:
       items:
@@ -324,6 +345,10 @@ definitions:
         type: string
       phone:
         type: string
+      profile_complete:
+        description: ProfileComplete is false for a Google sign-up that has not yet
+          given its school and phone.
+        type: boolean
       role:
         type: string
       role_id:
@@ -1522,6 +1547,39 @@ paths:
       summary: Check a download request
       tags:
       - bundle
+  /me/profile:
+    put:
+      consumes:
+      - application/json
+      description: Saves name, school, phone and username (what a Google sign-up lacks).
+        Returns a new token because the username is part of it.
+      parameters:
+      - description: Profile
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CompleteProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "409":
+          description: Username taken
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Complete the caller's profile
+      tags:
+      - user
   /me/tutorials:
     get:
       description: Only students. Includes the tutor's name and meeting progress.

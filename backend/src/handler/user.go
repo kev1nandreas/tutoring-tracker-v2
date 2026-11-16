@@ -198,6 +198,41 @@ func (h *UserHandler) ResetPasswordHandler(c *gin.Context) {
 	response.NewSuccessResponse("Password updated", nil).Send(c)
 }
 
+// CompleteProfileHandler godoc
+// @Summary Complete the caller's profile
+// @Description Saves name, school, phone and username (what a Google sign-up lacks). Returns a new token because the username is part of it.
+// @Tags user
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param input body dto.CompleteProfileRequest true "Profile"
+// @Success 200 {object} dto.LoginResponse
+// @Failure 400 {string} string "Bad Request"
+// @Failure 409 {string} string "Username taken"
+// @Router /me/profile [put]
+func (h *UserHandler) CompleteProfileHandler(c *gin.Context) {
+	var req dto.CompleteProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Check your details: phone must be digits only (max 12) and username 3+ characters", err.Error()).Send(c)
+		return
+	}
+
+	resp, err := h.usecase.CompleteProfile(c.GetString("username"), req)
+	if err != nil {
+		switch {
+		case errors.Is(err, usecase.ErrUsernameTaken):
+			response.NewErrorResponse(http.StatusConflict, "That username is already taken", err.Error()).Send(c)
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			response.NewErrorResponse(http.StatusUnauthorized, "Unauthorized", "User no longer exists").Send(c)
+		default:
+			response.NewErrorResponse(http.StatusInternalServerError, "Could not save profile", err.Error()).Send(c)
+		}
+		return
+	}
+
+	response.NewSuccessResponse("Profile saved", resp).Send(c)
+}
+
 // GoogleLoginHandler godoc
 // @Summary Authenticate with a Google ID token
 // @Description Verifies the Google ID token, then signs in the user with that email (a new email becomes a student) and returns a JWT

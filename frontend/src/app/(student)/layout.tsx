@@ -3,6 +3,7 @@
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import * as React from "react";
 import useAuthStore from "@/app/stores/useAuthStore";
 import Button from "@/components/button/Button";
 import withAuth from "@/components/hoc/withAuth";
@@ -23,10 +24,18 @@ function StudentLayout({ children }: { children: React.ReactNode }) {
 	const user = useAuthStore.useUser();
 	const logout = useAuthStore.useLogout();
 
+	// A Google sign-up must first give the details Google does not provide.
+	const needsProfile = user?.profile_complete === false;
+	React.useEffect(() => {
+		if (needsProfile) router.replace(PATH.COMPLETE_PROFILE);
+	}, [needsProfile, router]);
+
 	const handleLogout = () => {
 		logout();
 		router.replace(PATH.LOGIN);
 	};
+
+	if (needsProfile) return null;
 
 	return (
 		<div className="min-h-screen bg-gray-50">

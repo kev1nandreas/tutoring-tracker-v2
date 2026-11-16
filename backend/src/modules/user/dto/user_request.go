@@ -39,3 +39,11 @@ type ResetPasswordRequest struct {
 	Token       string `json:"token" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
+
+// CompleteProfileRequest is the identity a Google sign-up still lacks.
+type CompleteProfileRequest struct {
+	Name     string `json:"name" binding:"required,max=100"`
+	School   string `json:"school" binding:"required,max=100"`
+	Phone    string `json:"phone" binding:"required,max=12,numeric"`
+	Username string `json:"username" binding:"required,min=3,max=50"`
+}

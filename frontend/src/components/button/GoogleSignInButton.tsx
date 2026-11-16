@@ -8,7 +8,9 @@ import { PATH } from "@/shared/path";
 /** Starts the Google OAuth flow; `/login/google` finishes the sign-in. */
 export default function GoogleSignInButton({
 	redirect,
+	label = "Continue with Google",
 }: {
+	label?: string;
 	/** Same-site path to open after signing in. */
 	redirect?: string | null;
 }) {
@@ -52,7 +54,7 @@ export default function GoogleSignInButton({
 					d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.3 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"
 				/>
 			</svg>
-			Continue with Google
+			{label}
 		</Button>
 	);
 }

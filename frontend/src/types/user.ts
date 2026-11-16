@@ -11,6 +11,8 @@ export type User = {
 	username: string;
 	email: string;
 	role: Role;
+	/** false for a Google sign-up that has not given its school and phone yet. */
+	profile_complete?: boolean;
 };
 
 export type WithToken = {

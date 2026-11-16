@@ -578,6 +578,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/profile": {
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Saves name, school, phone and username (what a Google sign-up lacks). Returns a new token because the username is part of it.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Complete the caller's profile",
+                "parameters": [
+                    {
+                        "description": "Profile",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CompleteProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Username taken",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/me/tutorials": {
             "get": {
                 "security": [
@@ -3408,6 +3459,34 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CompleteProfileRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "phone",
+                "school",
+                "username"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "phone": {
+                    "type": "string",
+                    "maxLength": 12
+                },
+                "school": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                }
+            }
+        },
         "dto.CompleteUploadsRequest": {
             "type": "object",
             "required": [
@@ -3851,6 +3930,10 @@ const docTemplate = `{
                 },
                 "phone": {
                     "type": "string"
+                },
+                "profile_complete": {
+                    "description": "ProfileComplete is false for a Google sign-up that has not yet given its school and phone.",
+                    "type": "boolean"
                 },
                 "role": {
                     "type": "string"

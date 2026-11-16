@@ -45,6 +45,39 @@ func NewUserUsecase(repo repository.UserRepository, google GoogleVerifier, maile
 	return &userUsecase{repo: repo, google: google, mailer: mailer, frontendURL: strings.TrimRight(frontendURL, "/")}
 }
 
+// ErrUsernameTaken is returned when the chosen username belongs to someone else.
+var ErrUsernameTaken = errors.New("username is already taken")
+
+func (u *userUsecase) CompleteProfile(callerUsername string, req dto.CompleteProfileRequest) (*dto.LoginResponse, error) {
+	user, err := u.repo.FindByUsername(callerUsername)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Username != user.Username {
+		if other, err := u.repo.FindByUsername(req.Username); err == nil && other.ID != user.ID {
+			return nil, ErrUsernameTaken
+		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("could not check username")
+		}
+	}
+
+	user.Name = req.Name
+	user.School = req.School
+	user.Phone = req.Phone
+	user.Username = req.Username
+	if err := u.repo.Update(user); err != nil {
+		return nil, errors.New("could not save profile")
+	}
+
+	// the token carries the username, so it is reissued
+	token, err := auth.GenerateToken(user.ID.String(), user.Username, user.Email, user.Role.Name)
+	if err != nil {
+		return nil, errors.New("error generating token")
+	}
+	return &dto.LoginResponse{Token: token, User: *toMeResponse(user)}, nil
+}
+
 // ErrInvalidResetToken is returned for a bad, expired or already used reset link.
 var ErrInvalidResetToken = errors.New("reset link is invalid or has expired")
 
@@ -341,15 +374,16 @@ func (u *userUsecase) Delete(id string) error {
 
 func toMeResponse(user *entity.User) *dto.MeResponse {
 	return &dto.MeResponse{
-		ID:          user.ID,
-		Name:        user.Name,
-		School:      user.School,
-		Phone:       user.Phone,
-		Email:       user.Email,
-		Username:    user.Username,
-		RoleID:      user.RoleID,
-		Role:        user.Role.Name,
-		LastLoginAt: user.LastLoginAt,
-		CreatedAt:   user.CreatedAt,
+		ID:              user.ID,
+		Name:            user.Name,
+		School:          user.School,
+		Phone:           user.Phone,
+		Email:           user.Email,
+		Username:        user.Username,
+		RoleID:          user.RoleID,
+		Role:            user.Role.Name,
+		ProfileComplete: user.School != "" && user.Phone != "",
+		LastLoginAt:     user.LastLoginAt,
+		CreatedAt:       user.CreatedAt,
 	}
 }
