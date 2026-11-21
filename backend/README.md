@@ -1,323 +1,145 @@
-# Go Modular Monolith REST API Template
+# Tutoring Tracker — Backend
 
-A production-ready **Go REST API** built with a **Modular Monolith** architecture using **Gin**, featuring **JWT Authentication**, **Rate Limiting**, **Swagger**, **PostgreSQL**, **Redis**, **MongoDB Logging**, and **database seeders**. Fully Dockerized and ready for local development or deployment.
+Go REST API for the [Tutoring Tracker](../README.md) platform. Modular monolith on **Gin** and **GORM**.
 
----
+## Stack
 
-## Features
+- Go 1.26, Gin, GORM, PostgreSQL
+- Redis (cache), RabbitMQ (async jobs), MinIO (object storage), MongoDB (logs and notifications)
+- JWT auth, Google sign-in, SMTP email
+- Swagger (swaggo), zap logging, rate limiting, XSS and secure-header middleware
+- Docker, Docker Compose, Air hot reload
 
-* Modular Monolith architecture (clean separation per domain)
-* RESTful API (CRUD-ready)
-* JWT Authentication
-* API Key security
-* Rate Limiting
-* Swagger / OpenAPI documentation
-* PostgreSQL with GORM
-* Redis cache layer
-* MongoDB for request logging
-* Database migration & seeding (gofakeit)
-* End-to-End (E2E) tests
-* Docker & Docker Compose
-* Hot reload with Air
-* Pre-commit hooks & conventional commits
-
----
-
-## Project Structure
+## Project structure
 
 ```text
 .
-├── main.go                         # Application entry point
-├── config
-│   └── config.go                   # Environment variable helpers
+├── main.go
+├── config/                  env helpers
 ├── src
-│   ├── factory
-│   │   ├── db.go                   # PostgreSQL connection & migration
-│   │   ├── cache.go                # Redis client initialization
-│   │   ├── mongo.go                # MongoDB connection
-│   │   └── middleware.go           # All middleware (JWT, API Key, CORS, etc.)
-│   ├── handler
-│   │   ├── router.go              # Route definitions & middleware wiring
-│   │   ├── book.go                # Book HTTP handlers
-│   │   └── user.go                # User HTTP handlers
-│   ├── modules
-│   │   ├── book
-│   │   │   ├── entity
-│   │   │   │   └── book.go        # Book domain entity (GORM model)
-│   │   │   ├── dto
-│   │   │   │   ├── book_request.go     # Request DTOs
-│   │   │   │   └── book_response.go    # Response DTOs
-│   │   │   ├── repository
-│   │   │   │   ├── book_interface.go   # Repository interface
-│   │   │   │   ├── book_postgresql.go  # PostgreSQL implementation
-│   │   │   │   └── mocks/             # Generated mocks
-│   │   │   ├── usecase
-│   │   │   │   ├── book_interface.go   # Usecase interface
-│   │   │   │   ├── book.go            # Usecase implementation
-│   │   │   │   └── mocks/             # Generated mocks
-│   │   │   └── factory
-│   │   │       └── book.go            # Module dependency wiring
-│   │   └── user
-│   │       ├── entity
-│   │       │   └── user.go
-│   │       ├── dto
-│   │       │   ├── user_request.go
-│   │       │   └── user_response.go
-│   │       ├── repository
-│   │       │   ├── user_interface.go
-│   │       │   ├── user_postgresql.go
-│   │       │   └── mocks/
-│   │       ├── usecase
-│   │       │   ├── user_interface.go
-│   │       │   ├── user.go
-│   │       │   └── mocks/
-│   │       └── factory
-│   │           └── user.go
-│   └── shared
-│       ├── auth
-│       │   └── auth.go             # JWT & password hashing utilities
-│       ├── response
-│       │   └── response.go         # Standardized JSON response helpers
-│       └── pagination
-│           └── pagination.go       # Pagination utilities
-├── scripts
-│   ├── generate_key.go             # Random key generator
-│   └── seeders
-│       ├── cmd
-│       │   └── main.go             # Seeder CLI entry point
-│       ├── seeder.go               # Seeder orchestration
-│       ├── book_seeder.go          # Book fake data seeder
-│       └── user_seeder.go          # User fake data seeder
-├── docs                            # Swagger generated docs
-├── tests
-│   ├── e2e.py                      # E2E tests (Python/pytest)
-│   └── requirements.txt
+│   ├── factory/             DB, cache, Mongo, RabbitMQ, MinIO, middleware
+│   ├── handler/             router.go and HTTP handlers
+│   ├── modules/             one folder per domain, each with
+│   │   │                    entity / dto / repository / usecase / factory
+│   │   ├── user, role, student
+│   │   ├── tutorial, meeting, attachment
+│   │   ├── attendance, submission, feedback
+│   │   ├── pending_validation   enrollment requests
+│   │   ├── payment, dashboard
+│   │   └── notification, job, bundle
+│   └── shared/
+│       ├── auth, googleauth     JWT, password hashing, Google ID token check
+│       ├── cache, objstore      Redis and MinIO helpers
+│       ├── notifier             queue publisher and worker for notifications
+│       ├── mailer               SMTP email
+│       ├── scheduleimport       Excel schedule import and template
+│       ├── incomesync           payment sync to personal website API
+│       ├── pdfdoc               PDF writer (bundle summary)
+│       └── pagination, response, datetime
+├── scripts/seeders/         seeders (roles, tutor, fake data)
+├── docs/                    generated Swagger docs
+├── tests/e2e.py             Python E2E tests
 ├── Dockerfile
-├── Makefile
 ├── docker-compose.yml
-├── .air.toml
-├── .env.example
-└── .pre-commit-config.yaml
+└── Makefile
 ```
 
----
+## Getting started
 
-## Getting Started
-
-### Prerequisites
-
-* Go **1.21+**
-* Docker & Docker Compose
-
-### Installation
+Prerequisites: Go 1.26+, Docker.
 
 ```bash
-git clone https://github.com/kev1nandreas/go-rest-api-template.git
-cd go-rest-api-template
 cp .env.example .env
 ```
 
-### Run with Docker
+Fill in the secrets (see [Environment variables](#environment-variables)).
+
+`docker-compose.yml` runs the API, PostgreSQL and MongoDB. Redis, RabbitMQ and MinIO are **not** in the compose file. Point the `REDIS_*`, `RABBITMQ_*` and `MINIO_*` variables at running instances. In production the API joins the external `shared_net` Docker network, so create it first (`docker network create shared_net`).
 
 ```bash
+# Docker
 make up
+
+# Local development
+docker compose up -d db mongo
+make seed-tutor        # roles and default tutor
+go run main.go         # or: air
 ```
 
-### Run Locally (Development)
+## Environment variables
 
-```bash
-# Start infrastructure containers
-docker compose up -d db redis mongo
+Copy [.env.example](.env.example). Main groups:
 
-# Run the application
-make run-local
-```
+| Group | Variables |
+| --- | --- |
+| App | `APP_NAME`, `APP_PORT`, `APP_DEBUG`, `APP_URL_PROD`, `APP_MIGRATIONS`, `APP_MONGO_LOGGING`, `FRONTEND_URL` |
+| PostgreSQL | `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` |
+| Redis | `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_DB` |
+| RabbitMQ | `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`, `RABBITMQ_PASSWORD`, `RABBITMQ_VHOST`, `RABBITMQ_USE_SSL` |
+| MinIO | `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_USE_SSL`, `MINIO_PUBLIC_ENDPOINT`, `MINIO_PUBLIC_USE_SSL`, `STORAGE_UPLOAD_URL_EXPIRY_MINUTES`, `STORAGE_DOWNLOAD_URL_EXPIRY_MINUTES` |
+| MongoDB | `MONGO_HOST`, `MONGO_PORT`, `MONGO_DATABASE`, `MONGO_COLLECTION`, `MONGO_NOTIFICATION_COLLECTION` |
+| Security | `JWT_SECRET_KEY`, `API_SECRET_KEY`, `GOOGLE_CLIENT_ID` |
+| Email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_FROM_NAME` |
+| Seeding | `SEED_TUTOR_USERNAME`, `SEED_TUTOR_PASSWORD`, `SEED_TUTOR_NAME`, `SEED_TUTOR_EMAIL` |
+| Integration | `PERSONAL_WEBSITE_URL`, `PERSONAL_WEBSITE_API_KEY` |
 
-Or with hot reload:
+Generate a random secret with `go run scripts/generate_key.go`.
 
-```bash
-air
-```
-
----
-
-## Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `APP_NAME` | Application name | `go-rest-api-template` |
-| `APP_PORT` | Server port | `8080` |
-| `APP_DEBUG` | Enable debug mode | `true` |
-| `APP_MIGRATIONS` | Auto-run migrations on startup | `true` |
-| `APP_MONGO_LOGGING` | Enable MongoDB request logging | `true` |
-| `POSTGRES_HOST` | PostgreSQL host | `localhost` |
-| `POSTGRES_DB` | Database name | — |
-| `POSTGRES_USER` | Database user | — |
-| `POSTGRES_PASSWORD` | Database password | — |
-| `POSTGRES_PORT` | Database port | `5435` |
-| `REDIS_HOST` | Redis host | `localhost` |
-| `REDIS_PORT` | Redis port | `6379` |
-| `MONGO_HOST` | MongoDB host | `localhost` |
-| `MONGO_PORT` | MongoDB port | — |
-| `MONGO_DATABASE` | MongoDB database name | — |
-| `MONGO_COLLECTION` | MongoDB collection name | — |
-| `JWT_SECRET_KEY` | JWT signing key | — |
-| `API_SECRET_KEY` | API key for header auth | — |
-
----
-
-## Makefile Commands
+## Makefile
 
 | Command | Description |
-|---------|-------------|
-| `make setup` | Install Swagger tools and generate docs |
-| `make build-docker` | Build Docker image (no cache) |
-| `make run-local` | Start infra containers + run app locally |
-| `make up` | Start all services via Docker Compose |
-| `make down` | Stop all containers |
-| `make restart` | Restart all containers |
-| `make build` | Build the Go application |
-| `make test` | Run tests with race detection and coverage |
-| `make seed` | Seed database with fake data |
-| `make seed-clear` | Clear all seeded data |
-| `make clean` | Remove containers and database volumes |
+| --- | --- |
+| `make setup` | Install swag and generate Swagger docs |
+| `make build` | Build the app |
+| `make run-local` | Start infra containers and run the app |
+| `make up` / `make down` / `make restart` | Manage Docker Compose |
+| `make build-docker` | Build the Docker image without cache |
+| `make test` | Run tests with race detector and coverage |
+| `make seed` | Seed roles, tutor and fake data |
+| `make seed-tutor` | Seed roles and the default tutor only |
+| `make seed-clear` | Remove seeded data |
 
----
+Migrations run on startup when `APP_MIGRATIONS=true` (GORM `AutoMigrate`, see `src/factory/db.go`).
 
-## Database Migration
+## API
 
-Migrations run automatically on startup when `APP_MIGRATIONS=true`. The migration logic lives in `src/factory/db.go` and uses GORM's `AutoMigrate` with the registered entities.
+Base path `/api/v1`. Full reference in Swagger: `http://localhost:8080/swagger/index.html`. Regenerate with `make setup`.
 
----
+| Area | Endpoints |
+| --- | --- |
+| Health | `GET /` |
+| Auth (public, rate limited) | `POST /login`, `/login/google`, `/register`, `/register/google`, `/auth/forgot-password`, `/auth/reset-password`, `/auth/verify-email` |
+| Me | `GET /me`, `PUT /me/profile`, `POST /me/email/verification`, `PUT /me/email-notifications` |
+| Public feedback | `GET`/`POST /public/feedback/:code` |
+| Tutorials | `/tutorials`, `/tutorials/:id`, `/me/tutorials`, `/tutorials/:id/meetings/import`, `/schedule-import/template` |
+| Enrollment | `/pending-validations` (list, count, mine, enroll, validate), `DELETE /tutorials/:id/students/:userId` |
+| Meetings | `/meetings`, `/meetings/:id`, `/tutorials/:id/meetings` |
+| Attachments | `/meetings/:id/attachments` (list, `upload-url`, `complete`), `/attachments/:id/download` |
+| Attendance | `/meetings/:id/attendance`, `/meetings/:id/attendance/me`, `/meetings/:id/attendance/upload-url` |
+| Homework | `/meetings/:id/submissions`, `PUT /submissions/:id/grade` |
+| Feedback | `GET /tutorials/:id/feedback`, `GET /me/tutorials/:id/feedback-status` |
+| Bundles | `POST /me/tutorials/:id/bundle`, `GET /me/bundles/:id`, `GET /bundles/:id/download` |
+| Payments | `/payments`, `/payments/:id` |
+| Notifications | `/users/:id/notifications`, `/notifications/:id`, `PATCH /notifications/:id/read` |
+| Dashboard | `GET /dashboard/tutor`, `GET /dashboard/student` |
+| Users, roles, students, jobs | `/users`, `/roles`, `/students`, `/jobs` |
 
-## Database Seeding
+Everything except the public routes needs a JWT (`Authorization: Bearer <token>`).
 
-Seeders use [gofakeit](https://github.com/brianvoe/gofakeit) for realistic fake data.
+## Background work
 
-```bash
-# Seed the database (10 users, 20 books)
-make seed
-
-# Clear all seeded data
-make seed-clear
-```
-
-Manual usage:
-
-```bash
-go run scripts/seeders/cmd/main.go up
-go run scripts/seeders/cmd/main.go down
-```
-
----
-
-## API Documentation (Swagger)
-
-Once the app is running:
-
-```
-http://localhost:8080/swagger/index.html
-```
-
-Regenerate docs after modifying annotations:
-
-```bash
-make setup
-```
-
----
-
-## API Endpoints
-
-### Auth
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/register` | API Key | Register a new user |
-| POST | `/api/v1/login` | API Key | Login and receive JWT |
-
-### Books
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/v1/` | — | Health check |
-| GET | `/api/v1/books` | API Key | List books (paginated, cached) |
-| GET | `/api/v1/books/:id` | API Key | Get book by ID |
-| POST | `/api/v1/books` | API Key + JWT | Create a book |
-| PUT | `/api/v1/books/:id` | API Key | Update a book |
-| DELETE | `/api/v1/books/:id` | API Key | Delete a book |
-
-### Authentication Headers
-
-```bash
-X-API-Key: <your-api-key>
-Authorization: Bearer <your-jwt-token>
-```
-
----
-
-## Adding a New Module
-
-To add a new domain module (e.g., `category`):
-
-1. Create the module structure:
-
-```text
-src/modules/category/
-├── entity/category.go
-├── dto/
-│   ├── category_request.go
-│   └── category_response.go
-├── repository/
-│   ├── category_interface.go
-│   └── category_postgresql.go
-├── usecase/
-│   ├── category_interface.go
-│   └── category.go
-└── factory/
-    └── category.go
-```
-
-2. Register the entity in `src/factory/db.go` for migration.
-3. Create a handler in `src/handler/category.go`.
-4. Wire routes in `src/handler/router.go`.
-5. Initialize via factory in `main.go`.
-
----
+- **Notifications**: a handler publishes one small job to RabbitMQ; a worker fans it out to students (in-app and email).
+- **Bundles**: a student requests a download (`POST /me/tutorials/:id/bundle`), checks `GET /me/bundles/:id`, then downloads a zip of the tutorial's material plus a summary PDF. The zip is streamed, never stored.
+- **Income sync**: payment changes are pushed to the personal website API.
 
 ## Testing
 
-### Unit Tests
-
 ```bash
-make test
+make test                          # Go unit tests
+pip install -r tests/requirements.txt
+pytest tests/e2e.py                # E2E tests against a running API
 ```
 
-### E2E Tests (Python)
+## Deployment
 
-```bash
-cd tests
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-export BASE_URL=http://localhost:8080/api/v1
-export API_KEY=your-api-key
-
-pytest e2e.py
-```
-
----
-
-## Clean Up Script
-
-Remove boilerplate entities (e.g., books) using the cleanup script:
-
-```bash
-bash cleanup.sh
-```
-
-> Review the script before running — it removes files by name pattern.
-
+`.github/workflows/be-main-deploy.yml` and the root `Jenkinsfile` both deploy `main` to a VPS with Docker Compose. See the [root README](../README.md#deployment).
