@@ -148,8 +148,8 @@ func (h *TutorialHandler) FindMyTutorial(c *gin.Context) {
 func (h *TutorialHandler) CreateTutorial(c *gin.Context) {
 	var input dto.CreateTutorialRequest
 
-	if c.GetString("role") != "tutor" {
-		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor can create a tutorial").Send(c)
+	if role := c.GetString("role"); role != "tutor" && role != "admin" {
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor or an admin can create a tutorial").Send(c)
 		return
 	}
 	creatorID, err := uuid.Parse(c.GetString("user_id"))

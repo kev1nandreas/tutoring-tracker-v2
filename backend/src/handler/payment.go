@@ -173,10 +173,15 @@ func (h *PaymentHandler) DeletePayment(c *gin.Context) {
 }
 
 // tutorScope returns the caller's id when they are a tutor, so lookups are limited
-// to tutorials they created. Other roles get nil (no limit).
+// to tutorials they created. An admin gets nil (no limit); anyone else is refused.
 func (h *PaymentHandler) tutorScope(c *gin.Context) (*uuid.UUID, bool) {
-	if c.GetString("role") != "tutor" {
+	switch c.GetString("role") {
+	case "admin":
 		return nil, true
+	case "tutor":
+	default:
+		response.NewErrorResponse(http.StatusForbidden, "Forbidden", "only a tutor or an admin can manage payments").Send(c)
+		return nil, false
 	}
 	id, err := uuid.Parse(c.GetString("user_id"))
 	if err != nil {

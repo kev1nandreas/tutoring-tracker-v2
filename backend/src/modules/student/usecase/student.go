@@ -38,15 +38,24 @@ func NewStudentUsecase(repo repository.StudentRepository, c *cache.Cache) Studen
 	return &studentUsecase{repo: repo, cache: c}
 }
 
+// scope is the tutor whose students are shown; an admin gets uuid.Nil (every tutor's).
+func scope(callerID uuid.UUID, role string) uuid.UUID {
+	if role == "admin" {
+		return uuid.Nil
+	}
+	return callerID
+}
+
 type listResult struct {
 	Rows []dto.StudentRow
 	Meta pagination.Meta
 }
 
 func (u *studentUsecase) List(callerID uuid.UUID, role, search string, params pagination.Params) ([]dto.StudentRow, pagination.Meta, error) {
-	if role != "tutor" {
+	if role != "tutor" && role != "admin" {
 		return nil, pagination.Meta{}, ErrForbidden
 	}
+	callerID = scope(callerID, role)
 	search = strings.TrimSpace(search)
 	key := fmt.Sprintf("list:%s:%s:%+v", callerID, search, params)
 	res, err := cache.Remember(u.cache, cache.NSStudents, key, studentTTL, func() (listResult, error) {
@@ -57,9 +66,10 @@ func (u *studentUsecase) List(callerID uuid.UUID, role, search string, params pa
 }
 
 func (u *studentUsecase) Detail(callerID uuid.UUID, role, studentID string) (*dto.StudentDetail, error) {
-	if role != "tutor" {
+	if role != "tutor" && role != "admin" {
 		return nil, ErrForbidden
 	}
+	callerID = scope(callerID, role)
 	sid, err := uuid.Parse(studentID)
 	if err != nil {
 		return nil, ErrNotFound

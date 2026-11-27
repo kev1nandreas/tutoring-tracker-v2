@@ -18,7 +18,19 @@ import (
 const (
 	roleStudent = "student"
 	roleTutor   = "tutor"
+	roleAdmin   = "admin"
 )
+
+// isStaff is a tutor, or an admin, who can do everything a tutor can on every tutorial.
+func isStaff(role string) bool { return role == roleTutor || role == roleAdmin }
+
+// creatorScope limits lookups to the tutor's own tutorials; an admin gets uuid.Nil (all of them).
+func creatorScope(callerID uuid.UUID, role string) uuid.UUID {
+	if role == roleAdmin {
+		return uuid.Nil
+	}
+	return callerID
+}
 
 var (
 	ErrForbidden       = errors.New("you are not allowed to do this")
@@ -113,14 +125,17 @@ func (u *pendingValidationUsecase) notifyTutor(tutorial *tutorialEntity.Tutorial
 }
 
 func (u *pendingValidationUsecase) CountPending(callerID uuid.UUID, role string) (int64, error) {
-	if role != roleTutor {
+	if !isStaff(role) {
 		return 0, ErrForbidden
 	}
-	return u.repo.CountPendingByCreator(callerID)
+	return u.repo.CountPendingByCreator(creatorScope(callerID, role))
 }
 
-// requireOwner returns ErrForbidden unless the caller is a tutor who created the tutorial.
+// requireOwner returns ErrForbidden unless the caller is an admin or the tutor who created the tutorial.
 func requireOwner(callerID uuid.UUID, role string, tutorial *tutorialEntity.Tutorial) error {
+	if role == roleAdmin {
+		return nil
+	}
 	if role != roleTutor || tutorial.CreatedBy == nil || *tutorial.CreatedBy != callerID {
 		return ErrForbidden
 	}
@@ -135,14 +150,14 @@ func (u *pendingValidationUsecase) FindMine(callerID uuid.UUID, role string, par
 }
 
 func (u *pendingValidationUsecase) FindGrouped(callerID uuid.UUID, role string, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error) {
-	if role != roleTutor {
+	if !isStaff(role) {
 		return nil, pagination.Meta{}, ErrForbidden
 	}
-	return u.repo.FindGroupedByCreator(callerID, status, strings.TrimSpace(search), params)
+	return u.repo.FindGroupedByCreator(creatorScope(callerID, role), status, strings.TrimSpace(search), params)
 }
 
 func (u *pendingValidationUsecase) FindByTutorial(callerID uuid.UUID, role, tutorialID string, params pagination.Params) ([]dto.PendingStudent, pagination.Meta, error) {
-	if role != roleTutor {
+	if !isStaff(role) {
 		return nil, pagination.Meta{}, ErrForbidden
 	}
 	tid, err := uuid.Parse(tutorialID)
@@ -172,7 +187,7 @@ func (u *pendingValidationUsecase) FindByTutorial(callerID uuid.UUID, role, tuto
 }
 
 func (u *pendingValidationUsecase) Unenroll(callerID uuid.UUID, role, tutorialID, studentID string) error {
-	if role != roleTutor {
+	if !isStaff(role) {
 		return ErrForbidden
 	}
 	tid, err := uuid.Parse(tutorialID)
@@ -205,7 +220,7 @@ func (u *pendingValidationUsecase) Unenroll(callerID uuid.UUID, role, tutorialID
 }
 
 func (u *pendingValidationUsecase) Validate(callerID uuid.UUID, role string, req dto.ValidateRequest) (*dto.ValidateResponse, error) {
-	if role != roleTutor {
+	if !isStaff(role) {
 		return nil, ErrForbidden
 	}
 	tutorial, err := u.repo.FindTutorialByCustomID(strings.ToUpper(strings.TrimSpace(req.TutorialCode)))

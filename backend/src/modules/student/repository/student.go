@@ -10,9 +10,11 @@ import (
 )
 
 type StudentRepository interface {
-	// List returns the users accepted into any of the tutor's tutorials; search matches name, username, email or school.
+	// List returns the users accepted into any of the tutor's tutorials (any tutorial for
+	// uuid.Nil, an admin); search matches name, username, email or school.
 	List(tutorID uuid.UUID, search string, params pagination.Params) ([]dto.StudentRow, pagination.Meta, error)
-	// Detail returns one user who has a request in any of the tutor's tutorials; gorm.ErrRecordNotFound otherwise.
+	// Detail returns one user who has a request in any of the tutor's tutorials (any tutorial
+	// for uuid.Nil, an admin); gorm.ErrRecordNotFound otherwise.
 	Detail(tutorID, studentID uuid.UUID) (*dto.StudentDetail, error)
 }
 
@@ -50,8 +52,10 @@ func studentOrderBy(params pagination.Params) string {
 }
 
 func (r *studentPostgresRepository) List(tutorID uuid.UUID, search string, params pagination.Params) ([]dto.StudentRow, pagination.Meta, error) {
-	where := "t.created_by = ? AND pv.is_validated = 1"
-	args := []interface{}{tutorID}
+	where, args := "t.created_by = ? AND pv.is_validated = 1", []interface{}{tutorID}
+	if tutorID == uuid.Nil { // an admin: students of every tutor
+		where, args = "pv.is_validated = 1", []interface{}{}
+	}
 	if search != "" {
 		p := "%" + likeEscaper.Replace(search) + "%"
 		where += " AND " + searchCond
@@ -78,6 +82,10 @@ func (r *studentPostgresRepository) List(tutorID uuid.UUID, search string, param
 }
 
 func (r *studentPostgresRepository) Detail(tutorID, studentID uuid.UUID) (*dto.StudentDetail, error) {
+	owner, args := "t.created_by = ? AND ", []interface{}{tutorID, studentID}
+	if tutorID == uuid.Nil { // an admin: every tutor's tutorials
+		owner, args = "", []interface{}{studentID}
+	}
 	tutorials := []dto.StudentTutorial{}
 	err := r.db.Raw(`
 		SELECT t.id::text AS tutorial_id, t.custom_id, t.name, t.is_done,
@@ -90,8 +98,8 @@ func (r *studentPostgresRepository) Detail(tutorID, studentID uuid.UUID) (*dto.S
 		       (SELECT AVG(s.grade)::float8 FROM submissions s JOIN meetings m ON m.id = s.meeting_id
 		         WHERE m.tutorial_id = t.id AND s.user_id = pv.user_id AND s.grade IS NOT NULL) AS avg_grade
 		FROM pending_validations pv JOIN tutorials t ON t.id = pv.tutorial_id
-		WHERE t.created_by = ? AND pv.user_id = ?
-		ORDER BY t.created_at DESC`, tutorID, studentID).Scan(&tutorials).Error
+		WHERE `+owner+`pv.user_id = ?
+		ORDER BY t.created_at DESC`, args...).Scan(&tutorials).Error
 	if err != nil {
 		return nil, err
 	}

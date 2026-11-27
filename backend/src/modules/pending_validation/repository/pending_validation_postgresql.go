@@ -79,10 +79,13 @@ func (r *pendingValidationPostgresRepository) FindByTutorialID(tutorialID uuid.U
 
 func (r *pendingValidationPostgresRepository) CountPendingByCreator(creatorID uuid.UUID) (int64, error) {
 	var total int64
-	err := r.db.Model(&entity.PendingValidation{}).
+	q := r.db.Model(&entity.PendingValidation{}).
 		Joins("JOIN tutorials t ON t.id = pending_validations.tutorial_id").
-		Where("t.created_by = ? AND pending_validations.is_validated = ?", creatorID, entity.StatusPending).
-		Count(&total).Error
+		Where("pending_validations.is_validated = ?", entity.StatusPending)
+	if creatorID != uuid.Nil { // uuid.Nil is an admin: every tutor's tutorials
+		q = q.Where("t.created_by = ?", creatorID)
+	}
+	err := q.Count(&total).Error
 	return total, err
 }
 
@@ -170,7 +173,11 @@ func groupOrderBy(params pagination.Params, countExpr string) string {
 func (r *pendingValidationPostgresRepository) FindGroupedByCreator(creatorID uuid.UUID, status *int, search string, params pagination.Params) ([]dto.TutorialPendingGroup, pagination.Meta, error) {
 	// a tutorial is listed when it has at least one request matching status and search
 	exists := "EXISTS (SELECT 1 FROM pending_validations pv JOIN users u ON u.id = pv.user_id WHERE pv.tutorial_id = tutorials.id"
-	args := []interface{}{creatorID}
+	// uuid.Nil is an admin: every tutor's tutorials
+	owner, args := "created_by = ?", []interface{}{creatorID}
+	if creatorID == uuid.Nil {
+		owner, args = "TRUE", []interface{}{}
+	}
 	if status != nil {
 		exists += " AND pv.is_validated = ?"
 		args = append(args, *status)
@@ -184,7 +191,7 @@ func (r *pendingValidationPostgresRepository) FindGroupedByCreator(creatorID uui
 	exists += ")"
 
 	base := func() *gorm.DB {
-		return r.db.Model(&tutorialEntity.Tutorial{}).Where("created_by = ? AND "+exists, args...)
+		return r.db.Model(&tutorialEntity.Tutorial{}).Where(owner+" AND "+exists, args...)
 	}
 
 	var total int64
