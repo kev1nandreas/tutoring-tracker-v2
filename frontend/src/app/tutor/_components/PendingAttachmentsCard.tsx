@@ -1,6 +1,7 @@
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import ItemRow from "@/components/dashboard/ItemRow";
 import { formatDay } from "@/lib/helper";
+import { PATH } from "@/shared/path";
 import type { PendingAttachment } from "@/types/dashboard";
 
 type Props = { items?: PendingAttachment[]; isLoading: boolean };
@@ -25,6 +26,7 @@ export default function PendingAttachmentsCard({
 						title={a.title}
 						subtitle={a.tutorial_name}
 						aside={formatDay(a.date)}
+						href={`${PATH.TUTORIALS}/${a.tutorial_id}`}
 					/>
 				))}
 			</ul>

@@ -29,13 +29,17 @@ const STEPS = [
 	},
 ];
 
-export default function EnrollView() {
+export default function EnrollView({
+	initialCode = "",
+}: {
+	initialCode?: string;
+}) {
 	const [sentCode, setSentCode] = React.useState<string | null>(null);
 	const [serverError, setServerError] = React.useState<string | null>(null);
 
 	const methods = useForm<EnrollFormValues>({
 		resolver: zodResolver(enrollSchema),
-		defaultValues: { tutorial_code: "" },
+		defaultValues: { tutorial_code: initialCode },
 	});
 	const mutation = useEnrollMutation();
 

@@ -2,6 +2,7 @@ import Typography from "@/components/Typography";
 import { formatDay } from "@/lib/helper";
 import type { TutorialItem } from "@/types/dashboard";
 import ProgressBar from "./ProgressBar";
+import RowLink from "./RowLink";
 
 type TutorialRowProps = {
 	tutorial: TutorialItem;
@@ -10,6 +11,8 @@ type TutorialRowProps = {
 	showProgress?: boolean;
 	/** Right-aligned slot, e.g. an "Enrolled" badge. */
 	trailing?: React.ReactNode;
+	/** Opens this page when the row is clicked. */
+	href?: string;
 };
 
 /** One tutorial in a list; shared by tutor and student dashboards. */
@@ -18,35 +21,38 @@ export default function TutorialRow({
 	meta,
 	showProgress = false,
 	trailing,
+	href,
 }: TutorialRowProps) {
 	return (
-		<li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-			<div className="flex items-start justify-between gap-3">
-				<div className="min-w-0">
-					<Typography
-						weight="medium"
-						className="truncate text-sm text-gray-900"
-					>
-						{tutorial.name}
-					</Typography>
-					<Typography className="break-words text-xs text-gray-500">
-						{tutorial.custom_id}
-						{meta ? ` · ${meta}` : ""}
-					</Typography>
+		<li className="py-1.5 first:pt-0 last:pb-0">
+			<RowLink href={href} className="flex flex-col gap-2 py-1.5">
+				<div className="flex items-start justify-between gap-3">
+					<div className="min-w-0">
+						<Typography
+							weight="medium"
+							className="truncate text-sm text-gray-900"
+						>
+							{tutorial.name}
+						</Typography>
+						<Typography className="break-words text-xs text-gray-500">
+							{tutorial.custom_id}
+							{meta ? ` · ${meta}` : ""}
+						</Typography>
+					</div>
+					{trailing}
 				</div>
-				{trailing}
-			</div>
-			{showProgress && (
-				<ProgressBar
-					value={tutorial.done_meetings}
-					max={tutorial.total_meetings}
-					label={
-						tutorial.next_meeting_date
-							? `${tutorial.done_meetings}/${tutorial.total_meetings} meetings · next ${formatDay(tutorial.next_meeting_date)}`
-							: `${tutorial.done_meetings}/${tutorial.total_meetings} meetings`
-					}
-				/>
-			)}
+				{showProgress && (
+					<ProgressBar
+						value={tutorial.done_meetings}
+						max={tutorial.total_meetings}
+						label={
+							tutorial.next_meeting_date
+								? `${tutorial.done_meetings}/${tutorial.total_meetings} meetings · next ${formatDay(tutorial.next_meeting_date)}`
+								: `${tutorial.done_meetings}/${tutorial.total_meetings} meetings`
+						}
+					/>
+				)}
+			</RowLink>
 		</li>
 	);
 }

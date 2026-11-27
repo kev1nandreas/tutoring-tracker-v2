@@ -1,6 +1,8 @@
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import StatTile from "@/components/dashboard/StatTile";
+import ViewAllLink from "@/components/dashboard/ViewAllLink";
 import { formatCurrency } from "@/lib/helper";
+import { PATH } from "@/shared/path";
 import type { Income } from "@/types/dashboard";
 
 type Props = { income?: Income; isLoading: boolean };
@@ -18,6 +20,7 @@ export default function IncomeCard({ income, isLoading }: Props) {
 			title="Income"
 			description="Paid payments only"
 			isLoading={isLoading}
+			action={<ViewAllLink href={PATH.PAYMENTS}>Payments</ViewAllLink>}
 		>
 			{income && (
 				<div className="grid gap-3 sm:grid-cols-2">
@@ -25,11 +28,13 @@ export default function IncomeCard({ income, isLoading }: Props) {
 						label={monthName(income.month)}
 						value={formatCurrency(income.this_month)}
 						hint={payments(income.payments_month)}
+						href={PATH.PAYMENTS}
 					/>
 					<StatTile
 						label={String(income.year)}
 						value={formatCurrency(income.this_year)}
 						hint={payments(income.payments_year)}
+						href={PATH.PAYMENTS}
 					/>
 				</div>
 			)}

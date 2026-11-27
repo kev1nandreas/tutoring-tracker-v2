@@ -1,6 +1,7 @@
 import DashboardCard from "@/components/dashboard/DashboardCard";
 import ItemRow from "@/components/dashboard/ItemRow";
 import { formatDay } from "@/lib/helper";
+import { PATH } from "@/shared/path";
 import type { PendingHomework } from "@/types/dashboard";
 
 type Props = { items?: PendingHomework[]; isLoading: boolean };
@@ -22,6 +23,7 @@ export default function PendingHomeworkCard({ items = [], isLoading }: Props) {
 						subtitle={h.text_homework || h.tutorial_name}
 						aside={formatDay(h.date)}
 						asideHint={h.tutorial_name}
+						href={`${PATH.STUDENT_TUTORIALS}/${h.tutorial_id}`}
 					/>
 				))}
 			</ul>
