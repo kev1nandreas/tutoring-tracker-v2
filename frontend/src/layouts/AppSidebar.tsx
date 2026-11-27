@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 	LayoutGrid,
 	Settings,
+	ShieldCheck,
 	UserCheck,
 	Users,
 	Wallet,
@@ -21,6 +22,7 @@ import { useSidebar } from "@/context/SidebarContext";
 import { usePendingCount } from "@/hooks/usePendingCount";
 import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
+import type { Role } from "@/types/user";
 
 type NavItem = {
 	name: string;
@@ -32,6 +34,8 @@ type NavItem = {
 	/** Active only on this exact path (a parent route such as /tutor). */
 	exact?: boolean;
 	subItems?: { name: string; path: string; description?: string }[];
+	/** Only these roles see the entry; everyone when omitted. */
+	roles?: Role[];
 };
 
 // Add your sidebar entries here. Use `subItems` for a collapsible group.
@@ -69,6 +73,13 @@ const NAV_ITEMS: NavItem[] = [
 		description: "Payments and income",
 	},
 	{
+		name: "Users",
+		icon: <ShieldCheck className="w-5 h-5" />,
+		path: PATH.USERS,
+		description: "Every registered user",
+		roles: ["admin"],
+	},
+	{
 		name: "Settings",
 		icon: <Settings className="w-5 h-5" />,
 		path: PATH.TUTOR_SETTINGS,
@@ -82,7 +93,9 @@ const AppSidebar: React.FC = () => {
 	const { user } = useAuthStore();
 	const pathname = usePathname();
 
-	const navItems = NAV_ITEMS;
+	const navItems = NAV_ITEMS.filter(
+		(item) => !item.roles || (user?.role && item.roles.includes(user.role)),
+	);
 	const { data: pendingCount = 0 } = usePendingCount();
 
 	const [openSubmenu, setOpenSubmenu] = useState<number | null>(null);

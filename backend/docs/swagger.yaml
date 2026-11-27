@@ -993,6 +993,33 @@ definitions:
       username:
         type: string
     type: object
+  dto.UserRow:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      last_login_at:
+        description: LastLoginAt is nil until the user logs in for the first time.
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      role:
+        description: Role is admin, tutor or student.
+        type: string
+      school:
+        type: string
+      tutorial_count:
+        description: TutorialCount is the tutorials a tutor created, or the ones a
+          student was accepted into.
+        type: integer
+      username:
+        type: string
+    type: object
   dto.ValidateRequest:
     properties:
       action:
@@ -1283,6 +1310,87 @@ paths:
       summary: Health check
       tags:
       - health
+  /admin/users:
+    get:
+      description: Admins only. Search with ?q= (name, username, email or school),
+        filter with ?role=admin|tutor|student.
+      parameters:
+      - default: 1
+        description: Page
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Page size
+        in: query
+        name: page_size
+        type: integer
+      - description: Search
+        in: query
+        name: q
+        type: string
+      - description: Role
+        in: query
+        name: role
+        type: string
+      - description: name, email, role, last_login_at, created_at or tutorial_count
+        in: query
+        name: sort
+        type: string
+      - description: asc or desc
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserRow'
+            type: array
+        "403":
+          description: Not an admin
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: List every registered user
+      tags:
+      - admin
+  /admin/users/{id}:
+    delete:
+      description: Admins only, never their own account. A tutor's tutorials go with
+        them (meetings, files, enrollments, payments); a student's enrollments, homework,
+        attendance and download requests too. A student's payments stay with the tutor,
+        without the student. Notifications and stored files are removed.
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            type: string
+        "403":
+          description: Not an admin, or your own account
+          schema:
+            type: string
+        "404":
+          description: Not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Delete a user and everything that is theirs
+      tags:
+      - admin
   /attachments/{id}:
     delete:
       description: Tutor of the tutorial (or admin). Also removes the stored file.

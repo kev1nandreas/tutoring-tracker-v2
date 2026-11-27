@@ -77,6 +77,10 @@ export const MAIN_ENDPOINT = {
 		ByUser: (userId: string) => `/v1/users/${userId}/notifications`,
 		Read: (id: string) => `/v1/notifications/${id}/read`,
 	},
+	Admin: {
+		Users: "/v1/admin/users",
+		User: (id: string) => `/v1/admin/users/${id}`,
+	},
 	Auth: {
 		Login: "/v1/login",
 		Google: "/v1/login/google",

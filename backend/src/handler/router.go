@@ -30,6 +30,7 @@ type Handlers struct {
 	Dashboard         *DashboardHandler
 	Bundle            *BundleHandler
 	Attendance        *AttendanceHandler
+	Admin             *AdminHandler
 	Feedback          *FeedbackHandler
 	Student           *StudentHandler
 }
@@ -100,10 +101,14 @@ func NewRouter(
 
 		protected.GET("/students", h.Student.FindStudents)
 		protected.GET("/students/:id", h.Student.FindStudent)
-		protected.GET("/users", h.User.FindUsers)
-		protected.GET("/users/:id", h.User.FindUser)
-		protected.PUT("/users/:id", h.User.UpdateUser)
-		protected.DELETE("/users/:id", h.User.DeleteUser)
+		// raw user records: admins only
+		protected.GET("/users", h.Admin.RequireAdmin(), h.User.FindUsers)
+		protected.GET("/users/:id", h.Admin.RequireAdmin(), h.User.FindUser)
+		protected.PUT("/users/:id", h.Admin.RequireAdmin(), h.User.UpdateUser)
+		protected.DELETE("/users/:id", h.Admin.RequireAdmin(), h.Admin.DeleteUser)
+
+		protected.GET("/admin/users", h.Admin.ListUsers)
+		protected.DELETE("/admin/users/:id", h.Admin.DeleteUser)
 
 		protected.GET("/me/tutorials", h.Tutorial.FindMyTutorials)
 		protected.GET("/me/tutorials/:id", h.Tutorial.FindMyTutorial)

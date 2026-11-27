@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	adminFactory "github.com/kev1nandreas/go-rest-api-template/src/modules/admin/factory"
 	"log"
 	"strconv"
 	"time"
@@ -190,6 +191,7 @@ func main() {
 		Student:           handler.NewStudentHandler(studentFactory.NewStudentUsecase(db, readCache)),
 		Feedback:          handler.NewFeedbackHandler(feedbackFactory.NewFeedbackUsecase(db)),
 		Attendance:        handler.NewAttendanceHandler(attendanceFactory.NewAttendanceUsecase(db, storage)),
+		Admin:             handler.NewAdminHandler(adminFactory.NewAdminUsecase(db, storage, notificationCollection)),
 	}
 
 	// Setup router

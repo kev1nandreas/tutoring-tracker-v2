@@ -293,7 +293,7 @@ const (
 // ErrEmailTaken is returned when registering an email that is already in use.
 var ErrEmailTaken = errors.New("email is already registered")
 
-var ErrForbidden = errors.New("only a tutor can register a tutor")
+var ErrForbidden = errors.New("only a tutor or an admin can register a tutor")
 
 // Me returns the profile (id and role included) of the user from the token.
 func (u *userUsecase) Me(username string) (*dto.MeResponse, error) {
@@ -309,17 +309,13 @@ func (u *userUsecase) Register(req dto.RegisterRequest) (*entity.User, error) {
 	return u.createWithRole(roleStudent, req)
 }
 
-// RegisterTutor creates a tutor account. Only an existing tutor may do this.
+// RegisterTutor creates a tutor account. Only an existing tutor or an admin may do this.
 func (u *userUsecase) RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error) {
-	caller, err := u.repo.FindByUsername(callerUsername)
+	caller, err := u.repo.FindByUsername(callerUsername) // the role is preloaded
 	if err != nil {
 		return nil, ErrForbidden
 	}
-	tutorRole, err := u.repo.FindRoleByName(roleTutor)
-	if err != nil {
-		return nil, errors.New("tutor role not found")
-	}
-	if caller.RoleID != tutorRole.ID {
+	if caller.Role.Name != roleTutor && caller.Role.Name != "admin" {
 		return nil, ErrForbidden
 	}
 

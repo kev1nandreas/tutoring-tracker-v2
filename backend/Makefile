@@ -36,6 +36,9 @@ seed:
 seed-tutor:
 	go run scripts/seeders/cmd/main.go tutor
 
+seed-admin:
+	go run scripts/seeders/cmd/main.go admin
+
 seed-clear:
 	go run scripts/seeders/cmd/main.go down
 
