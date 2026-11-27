@@ -9,9 +9,9 @@ import {
 	PackageOpen,
 } from "lucide-react";
 import Button from "@/components/button/Button";
+import { useBundleDownload } from "@/hooks/useBundleDownload";
 import { formatBytes } from "@/lib/helper";
 import type { EnrolledTutorial } from "@/types/student-tutorial";
-import { useBundleDownload } from "../_hooks/useBundleDownload";
 
 /** "Download everything": all files of the class by meeting, plus a summary PDF, as one zip. */
 export default function DownloadPackageCard({

@@ -22,17 +22,19 @@ func (r *bundlePostgresRepository) Access(tutorialID, userID uuid.UUID) (*Access
 		ShowDownload      bool
 		IncludeRecordings bool
 		IncludeHomework   bool
+		Owner             bool
 		Accepted          bool
 	}
 	res := r.db.Raw(`
 		SELECT t.name, t.show_download,
 		       t.bundle_include_recordings AS include_recordings,
 		       t.bundle_include_homework AS include_homework,
+		       COALESCE(t.created_by = ?, false) AS owner,
 		       EXISTS (SELECT 1 FROM pending_validations pv
 		                WHERE pv.tutorial_id = t.id AND pv.user_id = ? AND pv.is_validated = 1) AS accepted
 		FROM tutorials t
 		WHERE t.id = ?
-		LIMIT 1`, userID, tutorialID).Scan(&row)
+		LIMIT 1`, userID, userID, tutorialID).Scan(&row)
 	if res.Error != nil {
 		return nil, res.Error
 	}
@@ -41,6 +43,7 @@ func (r *bundlePostgresRepository) Access(tutorialID, userID uuid.UUID) (*Access
 	}
 	return &Access{
 		TutorialName:      row.Name,
+		Owner:             row.Owner,
 		Accepted:          row.Accepted,
 		ShowDownload:      row.ShowDownload,
 		IncludeRecordings: row.IncludeRecordings,

@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/entity"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/repository"
 	"gorm.io/gorm"
@@ -456,5 +457,63 @@ func TestSafeName(t *testing.T) {
 		if got := safeName(in); got != want {
 			t.Errorf("safeName(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestTutorRequest(t *testing.T) {
+	uc, repo, store, pub, _ := setup()
+	ctx := context.Background()
+	tut := uuid.New().String()
+	all := dto.Options{IncludeAttachments: true, IncludeHomework: true, IncludeRecordings: true}
+
+	if _, _, err := uc.RequestAsTutor(ctx, uuid.New(), "student", tut, all); !errors.Is(err, ErrNotTutor) {
+		t.Fatalf("student: got %v", err)
+	}
+	repo.access.Owner = false
+	if _, _, err := uc.RequestAsTutor(ctx, uuid.New(), "tutor", tut, all); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("other tutor's class: got %v", err)
+	}
+
+	// the tutor's own copy works even with student downloads off
+	repo.access.Owner, repo.access.ShowDownload = true, false
+	repo.plan = demoPlan()
+	store.files = map[string]string{"meetings/m1/aaa.pptx": "AAAAAAAAA", "meetings/m1/bbb.pptx": "BBBBBBB", "meetings/m1/ccc.pdf": "CCCCC"}
+	tutor := uuid.New()
+	resp, created, err := uc.RequestAsTutor(ctx, tutor, "tutor", tut, all)
+	if err != nil || !created || len(pub.jobs) != 1 {
+		t.Fatalf("own class: created=%v err=%v jobs=%d", created, err, len(pub.jobs))
+	}
+
+	// same contents again: the same request; other contents: a new one
+	if again, created, _ := uc.RequestAsTutor(ctx, tutor, "tutor", tut, all); created || again.ID != resp.ID {
+		t.Fatal("same options should reuse the request")
+	}
+	noFiles := dto.Options{IncludeHomework: true}
+	resp2, created, err := uc.RequestAsTutor(ctx, tutor, "tutor", tut, noFiles)
+	if err != nil || !created || resp2.ID == resp.ID || resp2.IncludeAttachments {
+		t.Fatalf("new options: %+v created=%v err=%v", resp2, created, err)
+	}
+
+	// without attachments the zip holds only the summary
+	id := uuid.MustParse(resp2.ID)
+	if err := uc.Prepare(ctx, id); err != nil {
+		t.Fatal(err)
+	}
+	if r := repo.requests[id]; r.Status != entity.StatusReady || r.FileCount != 0 {
+		t.Fatalf("prepared: %+v", r)
+	}
+	pkg, err := uc.Open(id, tutor)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := readZip(t, pkg)
+	if len(files) != 1 || len(store.reads) != 0 {
+		t.Fatalf("want only the summary, got %d entries, reads %v", len(files), store.reads)
+	}
+
+	// no longer the tutor: the link stops working
+	repo.access.Owner = false
+	if _, err := uc.Open(id, tutor); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("after losing the class: got %v", err)
 	}
 }

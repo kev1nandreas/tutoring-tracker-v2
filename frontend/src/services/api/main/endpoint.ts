@@ -45,6 +45,7 @@ export const MAIN_ENDPOINT = {
 	},
 	Bundle: {
 		Request: (tutorialId: string) => `/v1/me/tutorials/${tutorialId}/bundle`,
+		TutorRequest: (tutorialId: string) => `/v1/tutorials/${tutorialId}/bundle`,
 		Status: (id: string) => `/v1/me/bundles/${id}`,
 	},
 	Me: {

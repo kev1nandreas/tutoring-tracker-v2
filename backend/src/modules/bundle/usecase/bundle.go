@@ -28,6 +28,7 @@ const downloadPath = "/api/v1/bundles/%s/download?token=%s"
 
 var (
 	ErrForbidden    = errors.New("only students can download a class package")
+	ErrNotTutor     = errors.New("only the tutor of this class can download it this way")
 	ErrNotFound     = errors.New("tutorial or download not found")
 	ErrDownloadsOff = errors.New("your tutor has not turned on downloads for this class")
 	ErrNotReady     = errors.New("this download is not ready, or it has expired; request it again")
@@ -86,6 +87,7 @@ func (u *bundleUsecase) respond(r *entity.Request) *dto.RequestResponse {
 	resp := &dto.RequestResponse{
 		ID: r.ID.String(), Status: r.Status, FileCount: r.FileCount, TotalBytes: r.TotalBytes,
 		Error: r.Error, ExpiresAt: r.ExpiresAt,
+		IncludeAttachments: !r.SkipAttachments, IncludeHomework: r.IncludeHomework, IncludeRecordings: r.IncludeRecordings,
 	}
 	if r.Status == entity.StatusReady {
 		if r.ExpiresAt != nil && !r.ExpiresAt.After(now) {
@@ -127,10 +129,53 @@ func (u *bundleUsecase) Request(ctx context.Context, userID uuid.UUID, role, tut
 		return nil, false, err
 	}
 
-	req := &entity.Request{
-		TutorialID: tid, UserID: userID, Status: entity.StatusQueued,
+	return u.enqueue(ctx, &entity.Request{
+		TutorialID: tid, UserID: userID, Status: entity.StatusQueued, Requester: "student",
 		IncludeRecordings: access.IncludeRecordings, IncludeHomework: access.IncludeHomework,
+	})
+}
+
+func (u *bundleUsecase) RequestAsTutor(ctx context.Context, userID uuid.UUID, role, tutorialID string, opt dto.Options) (*dto.RequestResponse, bool, error) {
+	if role != "tutor" && role != "admin" {
+		return nil, false, ErrNotTutor
 	}
+	tid, err := uuid.Parse(tutorialID)
+	if err != nil {
+		return nil, false, ErrNotFound
+	}
+
+	access, err := u.repo.Access(tid, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, false, ErrNotFound
+		}
+		return nil, false, err
+	}
+	if role == "tutor" && !access.Owner {
+		return nil, false, ErrNotFound // another tutor's class looks like a missing one
+	}
+	// the tutor's own download ignores show_download: that switch is only for students
+
+	// reuse an unfinished (or still valid) request only when it holds the same things
+	if existing, err := u.repo.FindActive(tid, userID, u.nowFunc()); err == nil {
+		if existing.IncludeHomework == opt.IncludeHomework &&
+			existing.IncludeRecordings == opt.IncludeRecordings &&
+			existing.SkipAttachments == !opt.IncludeAttachments {
+			return u.respond(existing), false, nil
+		}
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, err
+	}
+
+	return u.enqueue(ctx, &entity.Request{
+		TutorialID: tid, UserID: userID, Status: entity.StatusQueued, Requester: role,
+		IncludeRecordings: opt.IncludeRecordings, IncludeHomework: opt.IncludeHomework,
+		SkipAttachments: !opt.IncludeAttachments,
+	})
+}
+
+// enqueue stores a new request and puts its job on the queue.
+func (u *bundleUsecase) enqueue(ctx context.Context, req *entity.Request) (*dto.RequestResponse, bool, error) {
 	if err := u.repo.Create(req); err != nil {
 		return nil, false, err
 	}
@@ -191,6 +236,7 @@ func (u *bundleUsecase) Prepare(ctx context.Context, requestID uuid.UUID) error 
 		}
 		return err
 	}
+	applyOptions(plan, req)
 
 	var files int
 	var total int64
@@ -202,7 +248,11 @@ func (u *bundleUsecase) Prepare(ctx context.Context, requestID uuid.UUID) error 
 	}
 
 	if total > u.maxBytes {
-		u.fail(req, plan.TutorialName, fmt.Sprintf("This class has %s of files, more than the %s limit for one download. Ask your tutor to share them another way.", humanBytes(total), humanBytes(u.maxBytes)))
+		advice := "Ask your tutor to share them another way."
+		if isStaff(req) {
+			advice = "Leave the files out, or download them per meeting."
+		}
+		u.fail(req, plan.TutorialName, fmt.Sprintf("This class has %s of files, more than the %s limit for one download. %s", humanBytes(total), humanBytes(u.maxBytes), advice))
 		return nil
 	}
 
@@ -264,19 +314,34 @@ func (u *bundleUsecase) Open(requestID, userID uuid.UUID) (*Package, error) {
 
 	// the situation may have changed since the request
 	access, err := u.repo.Access(req.TutorialID, userID)
-	if err != nil || !access.Accepted {
+	if err != nil {
 		return nil, ErrNotFound
 	}
-	if !access.ShowDownload {
-		return nil, ErrDownloadsOff
+	switch req.Requester {
+	case "admin":
+	case "tutor":
+		if !access.Owner {
+			return nil, ErrNotFound
+		}
+	default: // a student
+		if !access.Accepted {
+			return nil, ErrNotFound
+		}
+		if !access.ShowDownload {
+			return nil, ErrDownloadsOff
+		}
 	}
 
 	plan, err := u.repo.Plan(req.TutorialID, userID)
 	if err != nil {
 		return nil, err
 	}
+	applyOptions(plan, req)
 	u.settleFiles(context.Background(), plan)
-	opt := summaryOptions{Recordings: req.IncludeRecordings, Homework: req.IncludeHomework, Now: u.nowFunc().In(u.loc)}
+	opt := summaryOptions{
+		Attachments: !req.SkipAttachments, Recordings: req.IncludeRecordings, Homework: req.IncludeHomework,
+		Now: u.nowFunc().In(u.loc),
+	}
 
 	return &Package{
 		FileName: safeName(plan.TutorialName) + " - materials.zip",
@@ -309,5 +374,18 @@ func (u *bundleUsecase) settleFiles(ctx context.Context, plan *repository.Plan) 
 			kept = append(kept, f)
 		}
 		plan.Meetings[i].Files = kept
+	}
+}
+
+// isStaff is true for a request a tutor or admin made for themselves.
+func isStaff(r *entity.Request) bool { return r.Requester == "tutor" || r.Requester == "admin" }
+
+// applyOptions removes from the plan what the request leaves out.
+func applyOptions(plan *repository.Plan, req *entity.Request) {
+	if !req.SkipAttachments {
+		return
+	}
+	for i := range plan.Meetings {
+		plan.Meetings[i].Files = nil
 	}
 }

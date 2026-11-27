@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/dto"
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/usecase"
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/response"
 )
@@ -39,6 +40,45 @@ func (h *BundleHandler) RequestBundle(c *gin.Context) {
 	}
 
 	resp, created, err := h.usecase.Request(c.Request.Context(), userID, c.GetString("role"), c.Param("id"))
+	if err != nil {
+		h.fail(c, err, "Failed to start the download")
+		return
+	}
+
+	status := http.StatusOK
+	if created {
+		status = http.StatusAccepted
+	}
+	response.Response{StatusCode: status, Success: true, Message: "Download requested", Data: resp}.Send(c)
+}
+
+// RequestTutorBundle godoc
+// @Summary Download everything of your own class
+// @Description The tutor of the tutorial (or an admin), whether or not students may download it. The body picks what goes in: the stored files, homework (in the summary PDF) and recording links. Then works like the student request: poll GET /me/bundles/{id}. An unfinished or still-valid request with the same contents is returned instead of a new one (200 instead of 202).
+// @Tags bundle
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Tutorial ID"
+// @Param body body dto.Options true "What to include"
+// @Success 202 {object} dto.RequestResponse
+// @Success 200 {object} dto.RequestResponse
+// @Failure 403 {string} string "Not a tutor"
+// @Failure 404 {string} string "Tutorial not found"
+// @Router /tutorials/{id}/bundle [post]
+func (h *BundleHandler) RequestTutorBundle(c *gin.Context) {
+	userID, ok := h.userID(c)
+	if !ok {
+		return
+	}
+
+	var opt dto.Options
+	if err := c.ShouldBindJSON(&opt); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Bad request", "invalid options").Send(c)
+		return
+	}
+
+	resp, created, err := h.usecase.RequestAsTutor(c.Request.Context(), userID, c.GetString("role"), c.Param("id"), opt)
 	if err != nil {
 		h.fail(c, err, "Failed to start the download")
 		return
@@ -122,7 +162,7 @@ func (h *BundleHandler) userID(c *gin.Context) (uuid.UUID, bool) {
 
 func (h *BundleHandler) fail(c *gin.Context, err error, msg string) {
 	switch {
-	case errors.Is(err, usecase.ErrForbidden), errors.Is(err, usecase.ErrDownloadsOff):
+	case errors.Is(err, usecase.ErrForbidden), errors.Is(err, usecase.ErrNotTutor), errors.Is(err, usecase.ErrDownloadsOff):
 		response.NewErrorResponse(http.StatusForbidden, "Forbidden", err.Error()).Send(c)
 	case errors.Is(err, usecase.ErrNotFound):
 		response.NewErrorResponse(http.StatusNotFound, "Not found", err.Error()).Send(c)

@@ -59,7 +59,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export default function TutorialInfoCard({ tutorial }: { tutorial: Tutorial }) {
 	return (
-		<aside className="rounded-xl border border-gray-200 bg-white lg:sticky lg:top-20">
+		<section className="rounded-xl border border-gray-200 bg-white">
 			<h2 className="border-b border-gray-100 px-5 py-4 text-base font-semibold text-gray-900">
 				Tutorial details
 			</h2>
@@ -122,6 +122,6 @@ export default function TutorialInfoCard({ tutorial }: { tutorial: Tutorial }) {
 					})}
 				</ul>
 			</div>
-		</aside>
+		</section>
 	);
 }

@@ -14,14 +14,18 @@ const WORKING = ["queued", "preparing"];
 
 /**
  * "Download everything" for one class: ask for it, poll while it is prepared, then let the
- * student start the download. The zip is built while it downloads; nothing is stored.
+ * user start the download. The zip is built while it downloads; nothing is stored.
+ * Students use the default request; a tutor passes their own (with the contents they picked).
  */
-export function useBundleDownload(tutorialId: string) {
+export function useBundleDownload(
+	tutorialId: string,
+	ask: () => Promise<BundleRequest> = () => requestBundle(tutorialId),
+) {
 	const [requestId, setRequestId] = React.useState<string | null>(null);
 	const announced = React.useRef<string | null>(null);
 
 	const request = useMutation({
-		mutationFn: () => requestBundle(tutorialId),
+		mutationFn: ask,
 		onSuccess: (data) => setRequestId(data.id),
 		onError: (error: Error) => toast.error(error.message),
 	});
@@ -39,7 +43,7 @@ export function useBundleDownload(tutorialId: string) {
 
 	const current: BundleRequest | undefined = status.data ?? request.data;
 
-	// tell the student once when it turns ready or fails
+	// say it once when it turns ready or fails
 	React.useEffect(() => {
 		if (!current || announced.current === `${current.id}:${current.status}`)
 			return;

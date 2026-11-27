@@ -13,6 +13,7 @@ import {
 } from "../_hooks/useTutorialDetail";
 import MeetingLedger from "./MeetingLedger";
 import StudentsCard from "./StudentsCard";
+import TutorDownloadCard from "./TutorDownloadCard";
 import TutorialActions from "./TutorialActions";
 import TutorialHeader from "./TutorialHeader";
 import TutorialInfoCard from "./TutorialInfoCard";
@@ -97,7 +98,12 @@ export default function TutorialDetail({ id }: { id: string }) {
 						<StudentsCard tutorialId={id} tutorialCode={tutorial.custom_id} />
 					)}
 				</div>
-				{tutorial && <TutorialInfoCard tutorial={tutorial} />}
+				{tutorial && (
+					<aside className="flex min-w-0 flex-col gap-4">
+						<TutorialInfoCard tutorial={tutorial} />
+						<TutorDownloadCard tutorial={tutorial} />
+					</aside>
+				)}
 			</div>
 		</PageTemplate>
 	);

@@ -2124,6 +2124,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/pending-validations/count": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only tutors. Across all tutorials the caller created.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "Count my still-pending enrollment requests",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Only tutors",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/pending-validations/enroll": {
             "post": {
                 "security": [
@@ -3217,6 +3252,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/tutorials/{id}/bundle": {
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "The tutor of the tutorial (or an admin), whether or not students may download it. The body picks what goes in: the stored files, homework (in the summary PDF) and recording links. Then works like the student request: poll GET /me/bundles/{id}. An unfinished or still-valid request with the same contents is returned instead of a new one (200 instead of 202).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bundle"
+                ],
+                "summary": "Download everything of your own class",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "What to include",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.Options"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestResponse"
+                        }
+                    },
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RequestResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Not a tutor",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Tutorial not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/tutorials/{id}/feedback": {
             "get": {
                 "security": [
@@ -3441,6 +3540,59 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "Not your tutorial",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/tutorials/{id}/students/{userId}": {
+            "delete": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Only the tutor who created the tutorial. The student loses access and can request to join again; attendance and homework are kept.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pending-validation"
+                ],
+                "summary": "Remove a student from a tutorial",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Tutorial ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Student user ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Student removed",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Not your tutorial",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Student is not enrolled",
                         "schema": {
                             "type": "string"
                         }
@@ -3735,7 +3887,7 @@ const docTemplate = `{
                 },
                 "phone": {
                     "type": "string",
-                    "maxLength": 12
+                    "maxLength": 13
                 },
                 "school": {
                     "type": "string",
@@ -4120,7 +4272,7 @@ const docTemplate = `{
                 },
                 "phone": {
                     "type": "string",
-                    "maxLength": 12
+                    "maxLength": 13
                 },
                 "registration_token": {
                     "type": "string"
@@ -4353,6 +4505,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.Options": {
+            "type": "object",
+            "properties": {
+                "include_attachments": {
+                    "type": "boolean"
+                },
+                "include_homework": {
+                    "type": "boolean"
+                },
+                "include_recordings": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dto.PaymentResponse": {
             "type": "object",
             "properties": {
@@ -4524,6 +4690,16 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                },
+                "include_attachments": {
+                    "description": "What this package holds.",
+                    "type": "boolean"
+                },
+                "include_homework": {
+                    "type": "boolean"
+                },
+                "include_recordings": {
+                    "type": "boolean"
                 },
                 "status": {
                     "description": "Status is queued, preparing, ready, failed or expired.",

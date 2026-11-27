@@ -10,11 +10,12 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/shared/pdfdoc"
 )
 
-// summaryOptions are the tutor's choices for what the summary PDF contains.
+// summaryOptions are the choices for what the package contains.
 type summaryOptions struct {
-	Recordings bool
-	Homework   bool
-	Now        time.Time
+	Attachments bool // the stored files are in the zip
+	Recordings  bool
+	Homework    bool
+	Now         time.Time
 }
 
 func humanBytes(n int64) string {
@@ -73,8 +74,12 @@ func renderSummary(w io.Writer, plan *repository.Plan, opt summaryOptions) error
 			bytes += f.Size
 		}
 	}
-	doc.Note(fmt.Sprintf("%d meetings (%d done), %d files (%s). Files are in folders named after each meeting, numbered like this summary.",
-		len(plan.Meetings), done, files, humanBytes(bytes)))
+	if opt.Attachments {
+		doc.Note(fmt.Sprintf("%d meetings (%d done), %d files (%s). Files are in folders named after each meeting, numbered like this summary.",
+			len(plan.Meetings), done, files, humanBytes(bytes)))
+	} else {
+		doc.Note(fmt.Sprintf("%d meetings (%d done). Files are not included in this download.", len(plan.Meetings), done))
+	}
 
 	doc.Heading(1, "Meetings")
 	if len(plan.Meetings) == 0 {
@@ -124,6 +129,9 @@ func renderSummary(w io.Writer, plan *repository.Plan, opt summaryOptions) error
 			doc.Labeled("Recording", strings.TrimSpace(m.YoutubeLink))
 		}
 
+		if !opt.Attachments {
+			continue
+		}
 		if len(m.Files) == 0 {
 			doc.Note("No files for this meeting.")
 			continue

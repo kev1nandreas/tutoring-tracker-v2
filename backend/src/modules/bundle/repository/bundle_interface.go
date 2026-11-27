@@ -7,9 +7,10 @@ import (
 	"github.com/kev1nandreas/go-rest-api-template/src/modules/bundle/entity"
 )
 
-// Access is what decides whether a student may request a package.
+// Access is what decides whether a user may request a package.
 type Access struct {
 	TutorialName      string
+	Owner             bool // the user is the tutor who created the tutorial
 	Accepted          bool // the student was accepted into the tutorial
 	ShowDownload      bool // the tutor turned on "download everything"
 	IncludeRecordings bool

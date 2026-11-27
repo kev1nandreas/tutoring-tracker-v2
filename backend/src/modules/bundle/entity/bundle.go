@@ -14,7 +14,7 @@ const (
 	StatusFailed    = "failed"
 )
 
-// Request is a student's request to download everything of one tutorial as a zip.
+// Request is a request to download everything of one tutorial as a zip.
 // Only the request is stored: the zip itself is never written anywhere. It is built
 // on the fly, straight into the download, from the files already in storage.
 type Request struct {
@@ -23,9 +23,18 @@ type Request struct {
 	UserID     uuid.UUID `json:"user_id" gorm:"type:uuid;not null;index"`
 	Status     string    `json:"status" gorm:"size:20;not null;index"`
 
-	// What goes into the summary PDF, copied from the tutorial when requested.
+	// Requester is the role that asked: "student" (empty on old rows) gets the package the
+	// tutor configured; "tutor" or "admin" picked the contents themselves.
+	Requester string `json:"requester" gorm:"size:20;not null;default:'student'"`
+
+	// What goes into the package: copied from the tutorial for a student, chosen by a tutor.
+	// No default of true on these: GORM leaves a false out of the INSERT when the column has
+	// a default, so the database default would win over a deliberate false.
 	IncludeRecordings bool `json:"include_recordings" gorm:"not null;default:false"`
-	IncludeHomework   bool `json:"include_homework" gorm:"not null;default:true"`
+	IncludeHomework   bool `json:"include_homework" gorm:"not null;default:false"`
+	// SkipAttachments leaves the stored files out (summary PDF only). Stored inverted so old
+	// rows, and the false GORM may drop, both mean "include the files".
+	SkipAttachments bool `json:"skip_attachments" gorm:"not null;default:false"`
 
 	// Filled in by the worker.
 	FileCount  int        `json:"file_count" gorm:"not null;default:0"`

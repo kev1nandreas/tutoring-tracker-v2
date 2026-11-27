@@ -99,6 +99,7 @@ export default function StudentsCard({ tutorialId, tutorialCode }: Props) {
 	return (
 		<DashboardCard
 			title="Students"
+			collapsible
 			description={`Share the code ${tutorialCode} so students can request to join.`}
 			count={accepted.data?.total}
 			isLoading={accepted.isLoading && tab === "accepted"}

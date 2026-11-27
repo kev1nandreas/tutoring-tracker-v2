@@ -32,7 +32,7 @@ definitions:
         maxLength: 100
         type: string
       phone:
-        maxLength: 12
+        maxLength: 13
         type: string
       school:
         maxLength: 100
@@ -297,7 +297,7 @@ definitions:
         maxLength: 100
         type: string
       phone:
-        maxLength: 12
+        maxLength: 13
         type: string
       registration_token:
         type: string
@@ -465,6 +465,15 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.Options:
+    properties:
+      include_attachments:
+        type: boolean
+      include_homework:
+        type: boolean
+      include_recordings:
+        type: boolean
+    type: object
   dto.PaymentResponse:
     properties:
       created_at:
@@ -581,6 +590,13 @@ definitions:
         type: integer
       id:
         type: string
+      include_attachments:
+        description: What this package holds.
+        type: boolean
+      include_homework:
+        type: boolean
+      include_recordings:
+        type: boolean
       status:
         description: Status is queued, preparing, ready, failed or expired.
         type: string
@@ -2640,6 +2656,28 @@ paths:
       summary: List enrollment requests of all my tutorials, grouped by tutorial
       tags:
       - pending-validation
+  /pending-validations/count:
+    get:
+      description: Only tutors. Across all tutorials the caller created.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "403":
+          description: Only tutors
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Count my still-pending enrollment requests
+      tags:
+      - pending-validation
   /pending-validations/enroll:
     post:
       consumes:
@@ -3355,6 +3393,51 @@ paths:
       summary: Update a tutorial by ID
       tags:
       - tutorial
+  /tutorials/{id}/bundle:
+    post:
+      consumes:
+      - application/json
+      description: 'The tutor of the tutorial (or an admin), whether or not students
+        may download it. The body picks what goes in: the stored files, homework (in
+        the summary PDF) and recording links. Then works like the student request:
+        poll GET /me/bundles/{id}. An unfinished or still-valid request with the same
+        contents is returned instead of a new one (200 instead of 202).'
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: What to include
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.Options'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.RequestResponse'
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/dto.RequestResponse'
+        "403":
+          description: Not a tutor
+          schema:
+            type: string
+        "404":
+          description: Tutorial not found
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Download everything of your own class
+      tags:
+      - bundle
   /tutorials/{id}/feedback:
     get:
       description: Tutors of the tutorial (or an admin). Answers only; who sent them
@@ -3507,6 +3590,41 @@ paths:
       security:
       - JwtAuth: []
       summary: List enrollment requests of a tutorial
+      tags:
+      - pending-validation
+  /tutorials/{id}/students/{userId}:
+    delete:
+      description: Only the tutor who created the tutorial. The student loses access
+        and can request to join again; attendance and homework are kept.
+      parameters:
+      - description: Tutorial ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Student user ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Student removed
+          schema:
+            type: string
+        "403":
+          description: Not your tutorial
+          schema:
+            type: string
+        "404":
+          description: Student is not enrolled
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Remove a student from a tutorial
       tags:
       - pending-validation
   /users:

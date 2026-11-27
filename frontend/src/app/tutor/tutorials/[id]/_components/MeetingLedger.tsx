@@ -90,6 +90,7 @@ export default function MeetingLedger({
 		<>
 			<DashboardCard
 				title="Meetings"
+				collapsible
 				count={meetings.length}
 				isLoading={isLoading}
 				isEmpty={meetings.length === 0}
