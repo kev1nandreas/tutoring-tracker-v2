@@ -144,11 +144,41 @@ func (u *userUsecase) ResetPassword(req dto.ResetPasswordRequest) error {
 	if err != nil {
 		return errors.New("could not hash password")
 	}
-	user.Password = hashed
+	user.Password, user.PasswordUnset = hashed, false
 	if err := u.repo.Update(user); err != nil {
 		return errors.New("could not save password")
 	}
 	return nil
+}
+
+// ErrNoPassword is returned when a Google sign-up without its own password tries the email login.
+var ErrNoPassword = errors.New("this account was created with Google and has no password yet. Sign in with Google, or use \"Forgot password\" to set one")
+
+// ErrWrongPassword is returned when the current password given to change it does not match.
+var ErrWrongPassword = errors.New("your current password is not correct")
+
+// SetPassword sets the caller's password. A Google sign-up sets its first one without the
+// current password (nobody knows it); everyone else must give the current one.
+func (u *userUsecase) SetPassword(callerUsername string, req dto.SetPasswordRequest) (*dto.MeResponse, error) {
+	user, err := u.repo.FindByUsername(callerUsername)
+	if err != nil {
+		return nil, err
+	}
+	if !user.PasswordUnset {
+		if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.CurrentPassword)) != nil {
+			return nil, ErrWrongPassword
+		}
+	}
+
+	hashed, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		return nil, errors.New("could not hash password")
+	}
+	user.Password, user.PasswordUnset = hashed, false
+	if err := u.repo.Update(user); err != nil {
+		return nil, errors.New("could not save password")
+	}
+	return toMeResponse(user), nil
 }
 
 // ErrGoogleDisabled is returned when Google login is not configured.
@@ -252,6 +282,7 @@ func (u *userUsecase) RegisterWithGoogle(req dto.GoogleRegisterRequest) (*dto.Lo
 		// Google checked the email
 		EmailVerified:      true,
 		EmailNotifications: true,
+		PasswordUnset:      true,
 	}
 	if err := u.repo.Create(user); err != nil {
 		return nil, errors.New("could not save user")
@@ -266,6 +297,9 @@ func (u *userUsecase) Login(req dto.LoginRequest) (*dto.LoginResponse, error) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		if user.PasswordUnset {
+			return nil, ErrNoPassword
+		}
 		return nil, errors.New("invalid email or password")
 	}
 
@@ -426,6 +460,7 @@ func toMeResponse(user *entity.User) *dto.MeResponse {
 		ProfileComplete:    user.School != "" && user.Phone != "",
 		EmailVerified:      user.EmailVerified,
 		EmailNotifications: user.EmailNotifications,
+		HasPassword:        !user.PasswordUnset,
 		LastLoginAt:        user.LastLoginAt,
 		CreatedAt:          user.CreatedAt,
 	}

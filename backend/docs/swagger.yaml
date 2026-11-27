@@ -394,6 +394,11 @@ definitions:
         description: 'EmailVerified: Google sign-ups start verified; others verify
           by link.'
         type: boolean
+      has_password:
+        description: |-
+          HasPassword is false for a Google sign-up that has not set a password yet: it can
+          only sign in with Google until it does.
+        type: boolean
       id:
         type: string
       last_login_at:
@@ -624,6 +629,16 @@ definitions:
         type: array
       total:
         type: integer
+    type: object
+  dto.SetPasswordRequest:
+    properties:
+      current_password:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - new_password
     type: object
   dto.Status:
     properties:
@@ -1816,6 +1831,40 @@ paths:
       security:
       - JwtAuth: []
       summary: Email a verification link to the caller
+      tags:
+      - user
+  /me/password:
+    put:
+      consumes:
+      - application/json
+      description: A Google sign-up without a password sets its first one (current_password
+        is not needed); anyone else must give the current one. Afterwards the email
+        login works too.
+      parameters:
+      - description: Passwords
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "403":
+          description: Current password is wrong
+          schema:
+            type: string
+      security:
+      - JwtAuth: []
+      summary: Set or change your password
       tags:
       - user
   /me/profile:

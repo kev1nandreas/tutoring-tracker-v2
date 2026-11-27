@@ -27,6 +27,8 @@ type UserUsecase interface {
 	VerifyEmail(token string) error
 	// SetEmailNotifications turns the emailed copies of notifications on or off. Turning on needs a verified email.
 	SetEmailNotifications(callerUsername string, enabled bool) (*dto.MeResponse, error)
+	// SetPassword sets or changes the caller's password (see dto.SetPasswordRequest).
+	SetPassword(callerUsername string, req dto.SetPasswordRequest) (*dto.MeResponse, error)
 	Me(username string) (*dto.MeResponse, error)
 	Register(req dto.RegisterRequest) (*entity.User, error)
 	RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error)

@@ -818,6 +818,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/me/password": {
+            "put": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "A Google sign-up without a password sets its first one (current_password is not needed); anyone else must give the current one. Afterwards the email login works too.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Set or change your password",
+                "parameters": [
+                    {
+                        "description": "Passwords",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "Current password is wrong",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/me/profile": {
             "put": {
                 "security": [
@@ -4525,6 +4576,10 @@ const docTemplate = `{
                     "description": "EmailVerified: Google sign-ups start verified; others verify by link.",
                     "type": "boolean"
                 },
+                "has_password": {
+                    "description": "HasPassword is false for a Google sign-up that has not set a password yet: it can\nonly sign in with Google until it does.",
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -4860,6 +4915,21 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.SetPasswordRequest": {
+            "type": "object",
+            "required": [
+                "new_password"
+            ],
+            "properties": {
+                "current_password": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
                 }
             }
         },

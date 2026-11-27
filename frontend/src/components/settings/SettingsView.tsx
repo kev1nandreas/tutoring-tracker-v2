@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Switch from "@mui/material/Switch";
 import {
 	BadgeCheck,
+	KeyRound,
 	Mail,
 	Phone,
 	School,
@@ -20,9 +21,15 @@ import {
 	useMe,
 	useSaveProfile,
 	useSendVerification,
+	useSetPassword,
 	useToggleEmailNotifications,
 } from "@/hooks/useSettings";
-import { type ProfileValues, profileSchema } from "@/types/settings";
+import {
+	type PasswordValues,
+	type ProfileValues,
+	passwordSchema,
+	profileSchema,
+} from "@/types/settings";
 import type { User as UserType } from "@/types/user";
 
 function ProfileCard({ me }: { me: UserType }) {
@@ -198,6 +205,100 @@ function EmailCard({ me }: { me: UserType }) {
 	);
 }
 
+const EMPTY_PASSWORDS: PasswordValues = {
+	current_password: "",
+	new_password: "",
+	confirm_password: "",
+};
+
+/** Set a first password (Google sign-ups) or change the current one. */
+function PasswordCard({ me }: { me: UserType }) {
+	const hasPassword = me.has_password !== false;
+	const methods = useForm<PasswordValues>({
+		resolver: zodResolver(passwordSchema(hasPassword)),
+		defaultValues: EMPTY_PASSWORDS,
+	});
+	const save = useSetPassword({
+		onSuccess: () => methods.reset(EMPTY_PASSWORDS),
+	});
+
+	return (
+		<DashboardCard
+			title={hasPassword ? "Password" : "Set a password"}
+			description={
+				hasPassword
+					? "Change the password you sign in with."
+					: "You signed up with Google. Set a password to also sign in with your email."
+			}
+		>
+			<FormProvider {...methods}>
+				<form
+					id="password"
+					onSubmit={methods.handleSubmit((v) => save.mutate(v))}
+					className="flex flex-col gap-5"
+					noValidate
+				>
+					{!hasPassword && (
+						<div className="flex items-start gap-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+							<TriangleAlert
+								size={18}
+								className="mt-0.5 shrink-0"
+								aria-hidden
+							/>
+							<p>
+								Your account has no password yet, so for now you can only sign
+								in with Google.
+							</p>
+						</div>
+					)}
+					{hasPassword && (
+						<div>
+							<LabelText labelTextClasname="mb-1.5 font-semibold">
+								Current password
+							</LabelText>
+							<Input
+								id="current_password"
+								type="password"
+								leftIcon={KeyRound}
+								autoComplete="current-password"
+							/>
+						</div>
+					)}
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<LabelText labelTextClasname="mb-1.5 font-semibold">
+								New password
+							</LabelText>
+							<Input
+								id="new_password"
+								type="password"
+								leftIcon={KeyRound}
+								autoComplete="new-password"
+							/>
+						</div>
+						<div>
+							<LabelText labelTextClasname="mb-1.5 font-semibold">
+								Confirm new password
+							</LabelText>
+							<Input
+								id="confirm_password"
+								type="password"
+								leftIcon={KeyRound}
+								autoComplete="new-password"
+							/>
+						</div>
+					</div>
+					<div>
+						<Button type="submit" variant="brand" isLoading={save.isPending}>
+							{hasPassword ? "Change password" : "Set password"}
+						</Button>
+					</div>
+				</form>
+			</FormProvider>
+		</DashboardCard>
+	);
+}
+
 /** Profile and email settings of the signed-in user. Shared by the student and tutor pages. */
 export default function SettingsView() {
 	const { data: me, isLoading, isError, error, refetch } = useMe();
@@ -221,6 +322,7 @@ export default function SettingsView() {
 	return (
 		<div className="mx-auto flex w-full max-w-3xl flex-col gap-6 pt-2 pb-16 sm:pt-4">
 			<ProfileCard me={me} />
+			<PasswordCard me={me} />
 			<EmailCard me={me} />
 		</div>
 	);

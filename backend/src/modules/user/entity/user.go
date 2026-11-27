@@ -20,8 +20,11 @@ type User struct {
 	// EmailVerified: Google sign-ups start verified; others must follow the emailed link.
 	EmailVerified bool `json:"email_verified" gorm:"not null;default:false"`
 	// EmailNotifications: send a copy of notifications by email (only while EmailVerified).
-	EmailNotifications bool       `json:"email_notifications" gorm:"not null;default:true"`
-	LastLoginAt        *time.Time `json:"last_login_at"`
-	CreatedAt          time.Time  `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt          time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
+	EmailNotifications bool `json:"email_notifications" gorm:"not null;default:true"`
+	// PasswordUnset: a Google sign-up whose password is a random one nobody knows, until
+	// they set their own. Stored this way round so the default (false) means "has one".
+	PasswordUnset bool       `json:"-" gorm:"not null;default:false"`
+	LastLoginAt   *time.Time `json:"last_login_at"`
+	CreatedAt     time.Time  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt     time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
 }

@@ -459,6 +459,37 @@ func (h *UserHandler) RegisterTutorHandler(c *gin.Context) {
 	}.Send(c)
 }
 
+// SetPasswordHandler godoc
+// @Summary Set or change your password
+// @Description A Google sign-up without a password sets its first one (current_password is not needed); anyone else must give the current one. Afterwards the email login works too.
+// @Tags user
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param input body dto.SetPasswordRequest true "Passwords"
+// @Success 200 {object} dto.MeResponse
+// @Failure 400 {string} string "Bad Request"
+// @Failure 403 {string} string "Current password is wrong"
+// @Router /me/password [put]
+func (h *UserHandler) SetPasswordHandler(c *gin.Context) {
+	var req dto.SetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", "the new password must be at least 8 characters").Send(c)
+		return
+	}
+
+	me, err := h.usecase.SetPassword(c.GetString("username"), req)
+	if err != nil {
+		if errors.Is(err, usecase.ErrWrongPassword) {
+			response.NewErrorResponse(http.StatusForbidden, "Wrong password", err.Error()).Send(c)
+			return
+		}
+		h.notFoundOrError(c, err)
+		return
+	}
+	response.NewSuccessResponse("Password saved", me).Send(c)
+}
+
 // MeHandler godoc
 // @Summary Get the current user
 // @Description Returns the authenticated user's id, profile and role

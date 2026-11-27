@@ -31,6 +31,13 @@ type GoogleLoginRequest struct {
 	IDToken string `json:"id_token" binding:"required"`
 }
 
+// SetPasswordRequest sets or changes the caller's password. CurrentPassword is required
+// only when the account already has a password (not for a Google sign-up setting its first).
+type SetPasswordRequest struct {
+	CurrentPassword string `json:"current_password"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
+}
+
 type ForgotPasswordRequest struct {
 	Email string `json:"email" binding:"required,email"`
 }

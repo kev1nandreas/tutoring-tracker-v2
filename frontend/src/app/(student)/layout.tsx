@@ -8,6 +8,7 @@ import useAuthStore from "@/app/stores/useAuthStore";
 import Button from "@/components/button/Button";
 import withAuth from "@/components/hoc/withAuth";
 import NotificationBell from "@/components/notification/NotificationBell";
+import PasswordReminder from "@/components/settings/PasswordReminder";
 import Typography from "@/components/Typography";
 import clsxm from "@/lib/clsxm";
 import { PATH } from "@/shared/path";
@@ -141,6 +142,7 @@ function StudentLayout({ children }: { children: React.ReactNode }) {
 				)}
 			</header>
 			<main className="mx-auto w-full min-w-0 max-w-5xl px-4 py-6 md:px-6">
+				<PasswordReminder />
 				{children}
 			</main>
 		</div>

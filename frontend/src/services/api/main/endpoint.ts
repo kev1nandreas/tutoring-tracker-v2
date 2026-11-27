@@ -4,6 +4,7 @@ export const MAIN_ENDPOINT = {
 		Profile: "/v1/me/profile",
 		SendVerification: "/v1/me/email/verification",
 		EmailNotifications: "/v1/me/email-notifications",
+		Password: "/v1/me/password",
 	},
 	Tutorial: {
 		List: "/v1/tutorials",

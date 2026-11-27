@@ -31,10 +31,13 @@ type MeResponse struct {
 	// ProfileComplete is false for a Google sign-up that has not yet given its school and phone.
 	ProfileComplete bool `json:"profile_complete"`
 	// EmailVerified: Google sign-ups start verified; others verify by link.
-	EmailVerified      bool       `json:"email_verified"`
-	EmailNotifications bool       `json:"email_notifications"`
-	LastLoginAt        *time.Time `json:"last_login_at"`
-	CreatedAt          time.Time  `json:"created_at"`
+	EmailVerified      bool `json:"email_verified"`
+	EmailNotifications bool `json:"email_notifications"`
+	// HasPassword is false for a Google sign-up that has not set a password yet: it can
+	// only sign in with Google until it does.
+	HasPassword bool       `json:"has_password"`
+	LastLoginAt *time.Time `json:"last_login_at"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 type LoginResponse struct {

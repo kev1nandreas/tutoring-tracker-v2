@@ -17,6 +17,8 @@ export type User = {
 	email_verified?: boolean;
 	/** Send a copy of notifications by email (needs a verified email). */
 	email_notifications?: boolean;
+	/** false for a Google sign-up that has not set a password: it can only sign in with Google. */
+	has_password?: boolean;
 };
 
 export type WithToken = {

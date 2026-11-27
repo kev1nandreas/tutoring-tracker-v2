@@ -3,7 +3,7 @@ import { get, post, put } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
 import type { MainResponse } from "@/types/api";
 import type { LoginResponse } from "@/types/login";
-import type { ProfileValues } from "@/types/settings";
+import type { PasswordValues, ProfileValues } from "@/types/settings";
 import type { User } from "@/types/user";
 
 function fail(Kind: unknown, status: number, fallback: string): never {
@@ -46,6 +46,20 @@ export async function setEmailNotifications(enabled: boolean) {
 	);
 	const data = (Kind as MainResponse<User>)?.data;
 	if (!OK || !data) fail(Kind, StatusCode, "Could not save your choice.");
+	return data as User;
+}
+
+/** Sets the first password of a Google sign-up, or changes an existing one. */
+export async function setPassword({
+	current_password,
+	new_password,
+}: PasswordValues) {
+	const { OK, Kind, StatusCode } = await put<MainResponse<User>>(
+		MAIN_ENDPOINT.User.Password,
+		{ current_password, new_password },
+	);
+	const data = (Kind as MainResponse<User>)?.data;
+	if (!OK || !data) fail(Kind, StatusCode, "Could not save your password.");
 	return data as User;
 }
 

@@ -76,6 +76,7 @@ func Migrate(db *gorm.DB) error {
 	if err := dropOldFeedbackTable(db); err != nil {
 		return err
 	}
+	hadPasswordUnset := db.Migrator().HasColumn(&userEntity.User{}, "PasswordUnset")
 
 	if err := db.AutoMigrate(
 		&roleEntity.Role{},
@@ -95,7 +96,28 @@ func Migrate(db *gorm.DB) error {
 		return err
 	}
 
+	if !hadPasswordUnset {
+		if err := backfillPasswordUnset(db); err != nil {
+			return err
+		}
+	}
+
 	return ensureCascadeDeletes(db)
+}
+
+// backfillPasswordUnset flags the Google sign-ups made before password_unset existed.
+// Their password is random and was never stored anywhere, so it is recognised from how
+// the account was made: only a Google sign-up is created already verified (a seeded,
+// tutor-made or email sign-up starts unverified and verifies later by link), and the row
+// was never changed after. A Google account edited since is missed; it can still use
+// "Forgot password". Runs once, when the column is added.
+func backfillPasswordUnset(db *gorm.DB) error {
+	res := db.Exec(`UPDATE users SET password_unset = TRUE
+		WHERE email_verified AND updated_at - created_at < interval '2 seconds'`)
+	if res.Error == nil {
+		log.Printf("migrate: flagged %d Google sign-ups without a password", res.RowsAffected)
+	}
+	return res.Error
 }
 
 // dropOldFeedbackTable removes the first version of the feedbacks table (other questions,

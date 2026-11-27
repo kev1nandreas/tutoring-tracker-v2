@@ -7,6 +7,7 @@ import {
 	saveProfile,
 	sendVerificationEmail,
 	setEmailNotifications,
+	setPassword,
 } from "@/services/api/main/settings";
 
 export const ME_KEY = ["me"] as const;
@@ -50,6 +51,25 @@ export const useToggleEmailNotifications = () => {
 					? "Email notifications are on."
 					: "Email notifications are off.",
 			);
+		},
+		onError: (e: Error) => toast.error(e.message),
+	});
+};
+
+export const useSetPassword = ({
+	onSuccess,
+}: {
+	onSuccess?: () => void;
+} = {}) => {
+	const queryClient = useQueryClient();
+	const login = useAuthStore.useLogin();
+	return useMutation({
+		mutationFn: setPassword,
+		onSuccess: (user) => {
+			login({ ...user, access_token: getToken() });
+			queryClient.setQueryData(ME_KEY, user);
+			toast.success("Password saved. You can now sign in with your email too.");
+			onSuccess?.();
 		},
 		onError: (e: Error) => toast.error(e.message),
 	});

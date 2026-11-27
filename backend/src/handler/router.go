@@ -76,6 +76,7 @@ func NewRouter(
 		v1.PUT("/me/profile", factory.JWTAuth(), limit, h.User.CompleteProfileHandler)
 		v1.POST("/me/email/verification", factory.JWTAuth(), limit, h.User.SendVerificationEmailHandler)
 		v1.PUT("/me/email-notifications", factory.JWTAuth(), limit, h.User.EmailNotificationsHandler)
+		v1.PUT("/me/password", factory.JWTAuth(), limit, h.User.SetPasswordHandler)
 		v1.POST("/auth/verify-email", limit, h.User.VerifyEmailHandler)
 
 		// public feedback form (no login): per-IP rate limit

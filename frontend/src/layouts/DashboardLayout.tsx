@@ -1,5 +1,6 @@
 "use client";
 
+import PasswordReminder from "@/components/settings/PasswordReminder";
 import { useSidebar } from "@/context/SidebarContext";
 import clsxm from "@/lib/clsxm";
 import AppHeader from "./AppHeader";
@@ -30,6 +31,7 @@ function DashboardLayout({ children, className }: LayoutProps) {
 			>
 				<AppHeader />
 				<div className={clsxm("mx-auto min-w-0 px-4 pt-6 md:px-6", className)}>
+					<PasswordReminder />
 					{children}
 				</div>
 			</div>
