@@ -44,6 +44,26 @@ func (h *AdminHandler) ListUsers(c *gin.Context) {
 	response.NewPaginatedResponse("Users retrieved successfully", items, meta).Send(c)
 }
 
+// UserDetail godoc
+// @Summary One user, with their tutorials
+// @Description Admins only. A student's tutorials are the ones they asked to join (with the request status); a tutor's are the ones they created (with the accepted-student count).
+// @Tags admin
+// @Security JwtAuth
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.UserDetail
+// @Failure 403 {string} string "Not an admin"
+// @Failure 404 {string} string "Not found"
+// @Router /admin/users/{id} [get]
+func (h *AdminHandler) UserDetail(c *gin.Context) {
+	out, err := h.usecase.UserDetail(c.GetString("role"), c.Param("id"))
+	if err != nil {
+		h.fail(c, err, "Failed to retrieve the user")
+		return
+	}
+	response.NewSuccessResponse("User retrieved successfully", out).Send(c)
+}
+
 // DeleteUser godoc
 // @Summary Delete a user and everything that is theirs
 // @Description Admins only, never their own account. A tutor's tutorials go with them (meetings, files, enrollments, payments); a student's enrollments, homework, attendance and download requests too. A student's payments stay with the tutor, without the student. Notifications and stored files are removed.

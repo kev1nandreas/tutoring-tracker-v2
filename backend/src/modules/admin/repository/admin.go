@@ -20,6 +20,8 @@ type AdminRepository interface {
 	List(search, role string, params pagination.Params) ([]dto.UserRow, pagination.Meta, error)
 	// Find returns one user; gorm.ErrRecordNotFound when there is none.
 	Find(id uuid.UUID) (*dto.UserRow, error)
+	// Detail returns one user with their tutorials; gorm.ErrRecordNotFound when there is none.
+	Detail(id uuid.UUID) (*dto.UserDetail, error)
 	// Delete removes the user and everything that belongs to them, in one transaction.
 	Delete(id uuid.UUID) (*Removed, error)
 }
@@ -100,6 +102,45 @@ func (r *adminPostgresRepository) Find(id uuid.UUID) (*dto.UserRow, error) {
 		return nil, gorm.ErrRecordNotFound
 	}
 	return &row, nil
+}
+
+func (r *adminPostgresRepository) Detail(id uuid.UUID) (*dto.UserDetail, error) {
+	row, err := r.Find(id)
+	if err != nil {
+		return nil, err
+	}
+	out := &dto.UserDetail{UserRow: *row, Tutorials: []dto.UserTutorial{}}
+
+	var flags struct {
+		EmailVerified bool
+		PasswordUnset bool
+	}
+	if err := r.db.Raw(`SELECT email_verified, password_unset FROM users WHERE id = ?`, id).Scan(&flags).Error; err != nil {
+		return nil, err
+	}
+	out.EmailVerified, out.HasPassword = flags.EmailVerified, !flags.PasswordUnset
+
+	// a student's requests, and the tutorials anyone created (a tutor or an admin)
+	err = r.db.Raw(`
+		SELECT t.id::text AS tutorial_id, t.custom_id, t.name, t.is_done,
+		       COALESCE(tu.name, '') AS tutor_name,
+		       CASE pv.is_validated WHEN 1 THEN 'accepted' WHEN 2 THEN 'declined' ELSE 'pending' END AS status,
+		       0 AS student_count, t.created_at
+		FROM pending_validations pv
+		JOIN tutorials t ON t.id = pv.tutorial_id
+		LEFT JOIN users tu ON tu.id = t.created_by
+		WHERE pv.user_id = ?
+		UNION ALL
+		SELECT t.id::text, t.custom_id, t.name, t.is_done, '' , '',
+		       (SELECT COUNT(*) FROM pending_validations pv WHERE pv.tutorial_id = t.id AND pv.is_validated = 1),
+		       t.created_at
+		FROM tutorials t
+		WHERE t.created_by = ?
+		ORDER BY created_at DESC`, id, id).Scan(&out.Tutorials).Error
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (r *adminPostgresRepository) Delete(id uuid.UUID) (*Removed, error) {

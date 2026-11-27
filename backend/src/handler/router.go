@@ -109,6 +109,8 @@ func NewRouter(
 		protected.DELETE("/users/:id", h.Admin.RequireAdmin(), h.Admin.DeleteUser)
 
 		protected.GET("/admin/users", h.Admin.ListUsers)
+		protected.POST("/admin/users", h.Admin.RequireAdmin(), h.User.CreateUserHandler)
+		protected.GET("/admin/users/:id", h.Admin.UserDetail)
 		protected.DELETE("/admin/users/:id", h.Admin.DeleteUser)
 
 		protected.GET("/me/tutorials", h.Tutorial.FindMyTutorials)

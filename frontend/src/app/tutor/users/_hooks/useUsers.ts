@@ -6,9 +6,10 @@ import {
 } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
+	createUser,
 	deleteUser,
+	fetchUserDetail,
 	fetchUsers,
-	registerTutor,
 	type UserListParams,
 } from "@/services/api/main/admin";
 
@@ -17,6 +18,13 @@ export const useUsers = (params: UserListParams) =>
 		queryKey: ["admin-users", params],
 		queryFn: () => fetchUsers(params),
 		placeholderData: keepPreviousData,
+	});
+
+export const useUserDetail = (id: string | null) =>
+	useQuery({
+		queryKey: ["admin-user", id],
+		queryFn: () => fetchUserDetail(id as string),
+		enabled: id !== null,
 	});
 
 export const useDeleteUserMutation = () => {
@@ -32,16 +40,16 @@ export const useDeleteUserMutation = () => {
 	});
 };
 
-export const useRegisterTutorMutation = ({
+export const useCreateUserMutation = ({
 	onSuccess,
 }: {
 	onSuccess?: () => void;
 } = {}) => {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: registerTutor,
+		mutationFn: createUser,
 		onSuccess: () => {
-			toast.success("Tutor added.");
+			toast.success("User added.");
 			queryClient.invalidateQueries({ queryKey: ["admin-users"] });
 			onSuccess?.();
 		},

@@ -32,6 +32,8 @@ type UserUsecase interface {
 	Me(username string) (*dto.MeResponse, error)
 	Register(req dto.RegisterRequest) (*entity.User, error)
 	RegisterTutor(callerUsername string, req dto.RegisterRequest) (*entity.User, error)
+	// CreateUser makes an account of any role (admin, tutor or student). The route is admins only.
+	CreateUser(req dto.CreateUserRequest) (*entity.User, error)
 	FindAll(params pagination.Params) ([]entity.User, pagination.Meta, error)
 	FindByID(id string) (*entity.User, error)
 	Update(id string, req dto.UpdateUserRequest) (*entity.User, error)

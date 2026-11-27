@@ -1,7 +1,7 @@
 import { ApiError } from "@/lib/errors";
 import { del, get, post } from "@/services/api/main/call";
 import { MAIN_ENDPOINT } from "@/services/api/main/endpoint";
-import type { AdminUserRow } from "@/types/admin-user";
+import type { AdminUserDetail, AdminUserRow } from "@/types/admin-user";
 import type { MainResponse, PaginatedMainResponse } from "@/types/api";
 import type { RegisterRequest } from "@/types/register";
 import type { Role } from "@/types/user";
@@ -44,6 +44,15 @@ export async function fetchUsers({
 	return { items: r.data ?? [], meta: r.meta };
 }
 
+export async function fetchUserDetail(id: string) {
+	const { OK, Kind, StatusCode } = await get<MainResponse<AdminUserDetail>>(
+		MAIN_ENDPOINT.Admin.User(id),
+	);
+	const data = (Kind as MainResponse<AdminUserDetail>)?.data;
+	if (!OK || !data) fail(Kind, StatusCode, "Failed to load the user.");
+	return data as AdminUserDetail;
+}
+
 /** Deletes the user and everything that is theirs. */
 export async function deleteUser(id: string) {
 	const { OK, Kind, StatusCode } = await del<MainResponse>(
@@ -52,13 +61,14 @@ export async function deleteUser(id: string) {
 	if (!OK) fail(Kind, StatusCode, "Failed to delete the user.");
 }
 
-export async function registerTutor({
+/** Creates an account of any role. */
+export async function createUser({
 	confirm_password: _,
 	...body
-}: RegisterRequest) {
+}: RegisterRequest & { role: Role }) {
 	const { OK, Kind, StatusCode } = await post<MainResponse>(
-		MAIN_ENDPOINT.Auth.RegisterTutor,
+		MAIN_ENDPOINT.Admin.Users,
 		body,
 	);
-	if (!OK) fail(Kind, StatusCode, "Failed to add the tutor.");
+	if (!OK) fail(Kind, StatusCode, "Failed to add the user.");
 }

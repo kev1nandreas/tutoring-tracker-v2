@@ -27,6 +27,8 @@ type FileStore interface {
 type AdminUsecase interface {
 	// ListUsers returns every registered user. Admins only.
 	ListUsers(role, search, roleFilter string, params pagination.Params) ([]dto.UserRow, pagination.Meta, error)
+	// UserDetail returns one user with their account state and tutorials. Admins only.
+	UserDetail(role, id string) (*dto.UserDetail, error)
 	// DeleteUser removes a user and everything that is theirs: a tutor's tutorials (with
 	// meetings, files, enrollments and payments), a student's enrollments, homework,
 	// attendance and download requests, and their notifications. A student's payments
@@ -54,6 +56,21 @@ func (u *adminUsecase) ListUsers(role, search, roleFilter string, params paginat
 		roleFilter = ""
 	}
 	return u.repo.List(search, roleFilter, params)
+}
+
+func (u *adminUsecase) UserDetail(role, id string) (*dto.UserDetail, error) {
+	if role != "admin" {
+		return nil, ErrForbidden
+	}
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, ErrNotFound
+	}
+	d, err := u.repo.Detail(uid)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrNotFound
+	}
+	return d, err
 }
 
 func (u *adminUsecase) DeleteUser(ctx context.Context, callerID uuid.UUID, role, id string) error {

@@ -16,6 +16,12 @@ type RegisterRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
+// CreateUserRequest is an admin creating an account of any role.
+type CreateUserRequest struct {
+	Role string `json:"role" binding:"required,oneof=admin tutor student"`
+	RegisterRequest
+}
+
 type UpdateUserRequest struct {
 	RoleID   *uuid.UUID `json:"role_id"`
 	Name     *string    `json:"name"`

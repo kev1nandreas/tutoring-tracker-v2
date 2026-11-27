@@ -18,3 +18,26 @@ type UserRow struct {
 	LastLoginAt *time.Time `json:"last_login_at"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
+
+// UserTutorial is one tutorial in a user's detail: one the tutor created, or one the
+// student asked to join.
+type UserTutorial struct {
+	TutorialID string `json:"tutorial_id"`
+	CustomID   string `json:"custom_id"`
+	Name       string `json:"name"`
+	IsDone     bool   `json:"is_done"`
+	// TutorName is who runs it (for a student's tutorials).
+	TutorName string `json:"tutor_name"`
+	// Status is the student's enrollment: pending, accepted or declined; empty for a tutor's own.
+	Status string `json:"status"`
+	// StudentCount is the accepted students (for a tutor's own tutorials).
+	StudentCount int `json:"student_count"`
+}
+
+// UserDetail is one user with their account state and tutorials.
+type UserDetail struct {
+	UserRow
+	EmailVerified bool           `json:"email_verified"`
+	HasPassword   bool           `json:"has_password"`
+	Tutorials     []UserTutorial `json:"tutorials"`
+}

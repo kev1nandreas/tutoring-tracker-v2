@@ -20,7 +20,8 @@ import { PATH } from "@/shared/path";
 import type { AdminUserRow } from "@/types/admin-user";
 import type { Role } from "@/types/user";
 import { useDeleteUserMutation, useUsers } from "../_hooks/useUsers";
-import AddTutorDialog from "./AddTutorDialog";
+import AddUserDialog from "./AddUserDialog";
+import UserDrawer, { ROLE_STYLE } from "./UserDrawer";
 
 const PAGE_SIZE = 10;
 
@@ -35,14 +36,10 @@ const SORT_COLUMNS = {
 
 type RoleTab = "all" | Role;
 
-const ROLE_STYLE: Record<Role, string> = {
-	admin: "bg-purple-50 text-purple-700",
-	tutor: "bg-brand-50 text-brand-700",
-	student: "bg-gray-100 text-gray-700",
-};
-
 /** What deleting this user takes with them, in plain words. */
-function deleteMessage(u: AdminUserRow) {
+function deleteMessage(
+	u: Pick<AdminUserRow, "name" | "role" | "tutorial_count">,
+) {
 	if (u.role === "tutor")
 		return `Delete ${u.name}? Their ${u.tutorial_count} ${u.tutorial_count === 1 ? "tutorial" : "tutorials"} go with them: every meeting, file, enrollment, homework, attendance record, feedback and payment in them. This cannot be undone.`;
 	if (u.role === "student")
@@ -56,6 +53,7 @@ function UsersView({ user: me }: WithAuthProps) {
 	const [searchInput, setSearchInput] = React.useState("");
 	const [isAddOpen, setIsAddOpen] = React.useState(false);
 	const [deleting, setDeleting] = React.useState<AdminUserRow | null>(null);
+	const [selected, setSelected] = React.useState<string | null>(null);
 	const search = useDebouncedValue(searchInput.trim(), 300);
 
 	const { sorting, handleSortingChange, sort, order } = useServerSort(
@@ -86,7 +84,11 @@ function UsersView({ user: me }: WithAuthProps) {
 				header: "User",
 				meta: { align: "left" },
 				cell: ({ row }) => (
-					<span className="flex items-center gap-3">
+					<button
+						type="button"
+						onClick={() => setSelected(row.original.id)}
+						className="flex items-center gap-3 rounded-md text-left focus-visible:outline-2 focus-visible:outline-brand-600"
+					>
 						<span
 							aria-hidden
 							className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-700"
@@ -94,7 +96,7 @@ function UsersView({ user: me }: WithAuthProps) {
 							{getInitials(row.original.name)}
 						</span>
 						<span className="flex min-w-0 flex-col">
-							<span className="truncate font-medium text-gray-900">
+							<span className="truncate font-medium text-gray-900 hover:text-brand-700 hover:underline">
 								{row.original.name}
 								{row.original.id === me.id && (
 									<span className="ml-1.5 text-xs font-normal text-gray-400">
@@ -106,7 +108,7 @@ function UsersView({ user: me }: WithAuthProps) {
 								@{row.original.username}
 							</span>
 						</span>
-					</span>
+					</button>
 				),
 			},
 			{
@@ -224,7 +226,7 @@ function UsersView({ user: me }: WithAuthProps) {
 						leftIcon={UserPlus}
 						onClick={() => setIsAddOpen(true)}
 					>
-						Add tutor
+						Add new user
 					</Button>
 				</div>
 			</div>
@@ -258,7 +260,13 @@ function UsersView({ user: me }: WithAuthProps) {
 				</div>
 			)}
 
-			<AddTutorDialog isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
+			<AddUserDialog isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} />
+			<UserDrawer
+				userId={selected}
+				meId={me.id}
+				onClose={() => setSelected(null)}
+				onDelete={(u) => setDeleting(u)}
+			/>
 			<ConfirmationDialog
 				isOpen={deleting !== null}
 				setIsOpen={(open) => !open && setDeleting(null)}
@@ -266,7 +274,13 @@ function UsersView({ user: me }: WithAuthProps) {
 				confirmLabel="Delete"
 				cancelLabel="Cancel"
 				confirmVariant="red"
-				onConfirm={() => deleting && remove.mutate(deleting.id)}
+				onConfirm={() =>
+					deleting &&
+					remove.mutate(deleting.id, {
+						// the drawer would show a user that is gone
+						onSuccess: () => setSelected(null),
+					})
+				}
 			/>
 		</PageTemplate>
 	);

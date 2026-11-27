@@ -109,9 +109,102 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Admins only. The role is admin, tutor or student. The email must not be in use.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create an account of any role",
+                "parameters": [
+                    {
+                        "description": "New user",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "409": {
+                        "description": "Email already registered",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         },
         "/admin/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "JwtAuth": []
+                    }
+                ],
+                "description": "Admins only. A student's tutorials are the ones they asked to join (with the request status); a tutor's are the ones they created (with the accepted-student count).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "One user, with their tutorials",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserDetail"
+                        }
+                    },
+                    "403": {
+                        "description": "Not an admin",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -4244,6 +4337,46 @@
                 }
             }
         },
+        "dto.CreateUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password",
+                "phone",
+                "role",
+                "school",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string",
+                    "enum": [
+                        "admin",
+                        "tutor",
+                        "student"
+                    ]
+                },
+                "school": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.DownloadResponse": {
             "type": "object",
             "properties": {
@@ -5465,6 +5598,56 @@
                 }
             }
         },
+        "dto.UserDetail": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verified": {
+                    "type": "boolean"
+                },
+                "has_password": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "last_login_at": {
+                    "description": "LastLoginAt is nil until the user logs in for the first time.",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "Role is admin, tutor or student.",
+                    "type": "string"
+                },
+                "school": {
+                    "type": "string"
+                },
+                "tutorial_count": {
+                    "description": "TutorialCount is the tutorials a tutor created, or the ones a student was accepted into.",
+                    "type": "integer"
+                },
+                "tutorials": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.UserTutorial"
+                    }
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.UserRow": {
             "type": "object",
             "properties": {
@@ -5499,6 +5682,35 @@
                     "type": "integer"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UserTutorial": {
+            "type": "object",
+            "properties": {
+                "custom_id": {
+                    "type": "string"
+                },
+                "is_done": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status is the student's enrollment: pending, accepted or declined; empty for a tutor's own.",
+                    "type": "string"
+                },
+                "student_count": {
+                    "description": "StudentCount is the accepted students (for a tutor's own tutorials).",
+                    "type": "integer"
+                },
+                "tutor_name": {
+                    "description": "TutorName is who runs it (for a student's tutorials).",
+                    "type": "string"
+                },
+                "tutorial_id": {
                     "type": "string"
                 }
             }

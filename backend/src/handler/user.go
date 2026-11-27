@@ -490,6 +490,43 @@ func (h *UserHandler) SetPasswordHandler(c *gin.Context) {
 	response.NewSuccessResponse("Password saved", me).Send(c)
 }
 
+// CreateUserHandler godoc
+// @Summary Create an account of any role
+// @Description Admins only. The role is admin, tutor or student. The email must not be in use.
+// @Tags admin
+// @Security JwtAuth
+// @Accept json
+// @Produce json
+// @Param user body dto.CreateUserRequest true "New user"
+// @Success 201 {string} string "Created"
+// @Failure 400 {string} string "Bad Request"
+// @Failure 409 {string} string "Email already registered"
+// @Router /admin/users [post]
+func (h *UserHandler) CreateUserHandler(c *gin.Context) {
+	var req dto.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.NewErrorResponse(http.StatusBadRequest, "Invalid request body", err.Error()).Send(c)
+		return
+	}
+
+	user, err := h.usecase.CreateUser(req)
+	if err != nil {
+		if errors.Is(err, usecase.ErrEmailTaken) {
+			response.NewErrorResponse(http.StatusConflict, "Email already registered", err.Error()).Send(c)
+			return
+		}
+		response.NewErrorResponse(http.StatusInternalServerError, "Could not create the user", err.Error()).Send(c)
+		return
+	}
+
+	response.Response{
+		StatusCode: http.StatusCreated,
+		Success:    true,
+		Message:    "User created",
+		Data:       gin.H{"id": user.ID},
+	}.Send(c)
+}
+
 // MeHandler godoc
 // @Summary Get the current user
 // @Description Returns the authenticated user's id, profile and role

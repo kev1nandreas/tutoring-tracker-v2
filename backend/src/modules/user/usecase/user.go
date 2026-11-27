@@ -356,6 +356,15 @@ func (u *userUsecase) RegisterTutor(callerUsername string, req dto.RegisterReque
 	return u.createWithRole(roleTutor, req)
 }
 
+func (u *userUsecase) CreateUser(req dto.CreateUserRequest) (*entity.User, error) {
+	switch req.Role {
+	case "admin", roleTutor, roleStudent:
+	default:
+		return nil, errors.New("unknown role")
+	}
+	return u.createWithRole(req.Role, req.RegisterRequest)
+}
+
 func (u *userUsecase) createWithRole(roleName string, req dto.RegisterRequest) (*entity.User, error) {
 	role, err := u.repo.FindRoleByName(roleName)
 	if err != nil {
